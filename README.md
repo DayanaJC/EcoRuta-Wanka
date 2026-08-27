@@ -140,11 +140,13 @@ Se utiliza **Semantic Versioning** (`MAJOR.MINOR.PATCH`). El PMV final será **`
 
 ## Documentación
 
-- [docs/inicio](docs/inicio/README.md) — descripción, problemática, objetivo, actores, alcance.
-- [docs/planificacion](docs/planificacion/README.md) — alcance de cada versión, arquitectura, riesgos.
-- [docs/ejecucion](docs/ejecucion/README.md) — desarrollo implementado.
-- [docs/seguimiento_control](docs/seguimiento_control/README.md) — evolución, commits, ramas, PRs.
-- [docs/cierre](docs/cierre/README.md) — resultados y conclusiones.
+- [docs/inicio](docs/inicio/) — descripción, problemática, objetivo, actores, alcance.
+- [docs/planificacion](docs/planificacion/) — alcance de cada versión, arquitectura, riesgos.
+- [docs/ejecucion](docs/ejecucion/) — desarrollo implementado.
+- [docs/seguimiento_control](docs/seguimiento_control/) — evolución, commits, ramas, PRs.
+- [docs/cierre](docs/cierre/) — resultados y conclusiones.
+
+> La documentación formal se agregará progresivamente en cada fase del proyecto.
 
 ---
 
