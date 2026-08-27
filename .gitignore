@@ -34,7 +34,10 @@ serviceAccountKey.json
 service-account*.json
 firebase-service-account.json
 firebase*.json
-credentials/
+# Carpeta credentials: se ignoran sus contenidos, pero se versiona .gitkeep
+# (no se puede re-incluir un archivo si su carpeta padre esta excluida).
+credentials/*
+!credentials/.gitkeep
 
 # ---------- Node / Frontend ----------
 node_modules/
