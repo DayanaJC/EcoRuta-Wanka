@@ -89,8 +89,14 @@ Reglas de la arquitectura:
 ```
 EcoRuta-Wanka/
 ├── backend/                 # API REST (FastAPI, arquitectura por capas)
+│   ├── app/                 # presentación, negocio, datos, schemas, config
+│   ├── credentials/         # .gitkeep (el JSON real NO se versiona)
+│   ├── tests/               # unit/ e integration/
+│   ├── .env.example
+│   ├── requirements.txt
+│   └── pytest.ini
 ├── frontend/                # Interfaz de usuario (React + Vite)
-├── database/                # Documentación del modelo de datos
+├── database/                # Documentación de la base de datos (Firestore)
 ├── docs/                    # Documentación del proyecto por fases
 │   ├── inicio/
 │   ├── planificacion/
@@ -98,7 +104,6 @@ EcoRuta-Wanka/
 │   ├── seguimiento_control/
 │   ├── cierre/
 │   └── otros/
-├── .env.example
 ├── .gitignore
 └── README.md
 ```
@@ -107,16 +112,16 @@ EcoRuta-Wanka/
 
 1. Crear un proyecto en la [Firebase Console](https://console.firebase.google.com).
 2. En **Configuración del proyecto → Cuentas de servicio**, generar una clave (service account) en JSON.
-3. Guardar el archivo JSON fuera del repositorio (p. ej., en `credentials/`, carpeta excluida por `.gitignore`).
-4. Indicar su ruta en `.env` mediante `FIREBASE_CREDENTIALS_PATH`.
+3. Guardar el JSON en `backend/credentials/serviceAccountKey.json` (carpeta excluida por `.gitignore`).
+4. Indicar su ruta en `backend/.env` mediante `FIREBASE_CREDENTIALS_PATH=credentials/serviceAccountKey.json`.
 
 ## Variables de entorno
 
-Copiar `.env.example` a `.env` y completar los valores. Ver las variables en `.env.example`:
+Copiar `backend/.env.example` a `backend/.env` y completar el valor:
 
-- `FIREBASE_CREDENTIALS_PATH` — ruta de la credencial de Firebase.
+- `FIREBASE_CREDENTIALS_PATH` — ruta relativa (a `backend/`) o absoluta del JSON de Firestore.
 
-> `.env` y los archivos de credenciales están excluidos por `.gitignore`. Nunca subirlos a GitHub.
+> `backend/.env` y `backend/credentials/*` están excluidos por `.gitignore`. Nunca subir credenciales a GitHub.
 
 ## Estrategia Git
 
