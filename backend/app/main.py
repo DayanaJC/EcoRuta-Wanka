@@ -12,6 +12,7 @@ from fastapi import FastAPI
 
 from app.config.firebase import initialize_firebase
 from app.presentation.controllers.health import router as health_router
+from app.presentation.controllers.vehiculos import router as vehiculos_router
 
 
 @asynccontextmanager
@@ -29,8 +30,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="EcoRuta Wanka API",
     description="API REST de EcoRuta Wanka para la gestion logistica de WankaLogistica S.A.C.",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
 app.include_router(health_router, tags=["health"])
+app.include_router(vehiculos_router)
