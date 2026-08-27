@@ -10,7 +10,11 @@ from app.business.exceptions.vehiculo import (
     VehiculoExistenteError,
     VehiculoNotFoundError,
 )
-from app.business.models.vehiculo import EstadoVehiculo, Vehiculo
+from app.business.models.vehiculo import (
+    EstadoVehiculo,
+    TipoVehiculo,
+    Vehiculo,
+)
 from app.business.services.vehiculo_service import VehiculoService
 from app.data.repositories.vehiculo import VehiculoRepository
 from app.schemas.vehiculo import VehiculoCreate, VehiculoUpdate
@@ -18,6 +22,11 @@ from app.schemas.vehiculo import VehiculoCreate, VehiculoUpdate
 
 class RepositorioMemoria(VehiculoRepository):
     """Repositorio en memoria que implementa el mismo contrato."""
+
+    _CAMPOS_ENUM = {
+        "tipo": TipoVehiculo,
+        "estado": EstadoVehiculo,
+    }
 
     def __init__(self) -> None:
         self._vehiculos: dict[str, Vehiculo] = {}
@@ -48,6 +57,8 @@ class RepositorioMemoria(VehiculoRepository):
         if vehiculo is None:
             raise VehiculoNotFoundError(vehiculo_id)
         for clave, valor in datos.items():
+            if clave in self._CAMPOS_ENUM and valor is not None:
+                valor = self._CAMPOS_ENUM[clave](valor)
             setattr(vehiculo, clave, valor)
         return vehiculo
 
