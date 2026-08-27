@@ -6,6 +6,8 @@ Vehiculo y viceversa. No aplica reglas de negocio: se limita a persistir.
 
 from typing import Any, Optional
 
+from google.cloud.firestore_v1.base_query import FieldFilter
+
 from app.business.exceptions.vehiculo import VehiculoNotFoundError
 from app.business.models.vehiculo import EstadoVehiculo, TipoVehiculo, Vehiculo
 from app.data.repositories.vehiculo import VehiculoRepository
@@ -60,7 +62,11 @@ class FirestoreVehiculoRepository(VehiculoRepository):
         return self._buscar(vehiculo_id)
 
     def get_by_placa(self, placa: str) -> Optional[Vehiculo]:
-        docs = self._coleccion.where("placa", "==", placa).limit(1).stream()
+        docs = (
+            self._coleccion.where(filter=FieldFilter("placa", "==", placa))
+            .limit(1)
+            .stream()
+        )
         for doc in docs:
             return self._desde_documento(doc.id, doc.to_dict())
         return None
@@ -68,7 +74,7 @@ class FirestoreVehiculoRepository(VehiculoRepository):
     def listar(self, estado: Optional[EstadoVehiculo] = None) -> list[Vehiculo]:
         consulta: Any = self._coleccion
         if estado is not None:
-            consulta = consulta.where("estado", "==", estado.value)
+            consulta = consulta.where(filter=FieldFilter("estado", "==", estado.value))
         return [self._desde_documento(d.id, d.to_dict()) for d in consulta.stream()]
 
     def crear(self, vehiculo: Vehiculo) -> Vehiculo:
