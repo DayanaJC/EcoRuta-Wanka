@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.firebase import initialize_firebase
+from app.presentation.controllers.asignaciones import router as asignaciones_router
 from app.presentation.controllers.health import router as health_router
 from app.presentation.controllers.pedidos import router as pedidos_router
 from app.presentation.controllers.vehiculos import router as vehiculos_router
@@ -32,7 +33,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="EcoRuta Wanka API",
     description="API REST de EcoRuta Wanka para la gestion logistica de WankaLogistica S.A.C.",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -51,3 +52,4 @@ app.add_middleware(
 app.include_router(health_router, tags=["health"])
 app.include_router(vehiculos_router)
 app.include_router(pedidos_router)
+app.include_router(asignaciones_router)
