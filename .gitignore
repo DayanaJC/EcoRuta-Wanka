@@ -1,0 +1,56 @@
+# =====================================================
+# EcoRuta Wanka — Archivos ignorados por Git
+# =====================================================
+
+# ---------- Python / Backend ----------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+.Python
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.tox/
+
+# ---------- Variables de entorno y credenciales ----------
+# .env real (NUNCA versionar) pero mantiene .env.example
+.env
+.env.*
+!.env.example
+
+# Credenciales de Firebase / service accounts
+*.key
+*.pem
+serviceAccountKey.json
+service-account*.json
+firebase-service-account.json
+firebase*.json
+credentials/
+
+# ---------- Node / Frontend ----------
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------- Editor y sistema operativo ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
