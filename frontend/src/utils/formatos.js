@@ -5,6 +5,17 @@ export const ETIQUETAS_ESTADO = {
   cancelado: 'Cancelado',
 }
 
+export const ETIQUETAS_ESTADO_ASIGNACION = {
+  asignada: 'Asignada',
+  cancelada: 'Cancelada',
+}
+
+export const ETIQUETAS_TIPO_VEHICULO = {
+  camioneta: 'Camioneta',
+  furgon: 'Furgón',
+  moto: 'Moto',
+}
+
 export const ETIQUETAS_PRIORIDAD = {
   express: 'Express',
   estandar: 'Estándar',
@@ -21,6 +32,11 @@ export const COLORES_ESTADO = {
   en_ruta: '#d97706',
   entregado: '#16a34a',
   cancelado: '#b91c1c',
+}
+
+export const COLORES_ESTADO_ASIGNACION = {
+  asignada: '#16a34a',
+  cancelada: '#b91c1c',
 }
 
 export const COLORES_PRIORIDAD = {

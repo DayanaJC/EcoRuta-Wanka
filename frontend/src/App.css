@@ -59,12 +59,31 @@ h3 {
   opacity: 0.9;
 }
 
-.categoria {
-  background: rgba(255, 255, 255, 0.18);
-  padding: 6px 12px;
+.nav-modulos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nav-modulo {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 999px;
+  padding: 6px 14px;
   font-size: 0.85rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nav-modulo:not(.nav-modulo-activo):hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.nav-modulo-activo {
+  background: #ffffff;
+  color: var(--verde-oscuro);
 }
 
 .panel {

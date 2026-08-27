@@ -50,4 +50,14 @@ export const api = {
       body: JSON.stringify({ estado }),
     }),
   cancelarPedido: (id) => pedir(`/pedidos/${id}`, { method: 'DELETE' }),
+  listarVehiculos: (params = {}) => pedir(`/vehiculos${aQueryParams(params)}`),
+  listarAsignaciones: () => pedir('/asignaciones'),
+  obtenerAsignacion: (id) => pedir(`/asignaciones/${id}`),
+  crearAsignacion: (datos) =>
+    pedir('/asignaciones', { method: 'POST', body: JSON.stringify(datos) }),
+  asignacionesPorPedido: (pedidoId) => pedir(`/asignaciones/pedido/${pedidoId}`),
+  asignacionesPorVehiculo: (vehiculoId) =>
+    pedir(`/asignaciones/vehiculo/${vehiculoId}`),
+  cancelarAsignacion: (id) =>
+    pedir(`/asignaciones/${id}`, { method: 'DELETE' }),
 }

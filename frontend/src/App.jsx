@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from './services/api.js'
+import { AsignacionFormulario } from './components/AsignacionFormulario.jsx'
+import { AsignacionLista } from './components/AsignacionLista.jsx'
 import { PedidoDetalle } from './components/PedidoDetalle.jsx'
 import { PedidoFormulario } from './components/PedidoFormulario.jsx'
 import { PedidoLista } from './components/PedidoLista.jsx'
@@ -9,6 +11,7 @@ import './App.css'
 const FILTROS_VACIOS = { estado: '', prioridad: '', busqueda: '' }
 
 function App() {
+  const [modulo, setModulo] = useState('pedidos')
   const [pedidos, setPedidos] = useState([])
   const [filtros, setFiltros] = useState(FILTROS_VACIOS)
   const [vista, setVista] = useState('lista')
@@ -18,6 +21,12 @@ function App() {
   const [gestionando, setGestionando] = useState(false)
   const [error, setError] = useState('')
   const [mensaje, setMensaje] = useState('')
+
+  const [vehiculos, setVehiculos] = useState([])
+  const [asignaciones, setAsignaciones] = useState([])
+  const [vistaAsignacion, setVistaAsignacion] = useState('lista')
+  const [cargandoAsignaciones, setCargandoAsignaciones] = useState(true)
+  const [asignando, setAsignando] = useState(false)
 
   const cargarPedidos = useCallback(
     async (f = filtros) => {
@@ -56,6 +65,55 @@ function App() {
       activo = false
     }
   }, [])
+
+  const cargarDatosAsignaciones = useCallback(async () => {
+    setCargandoAsignaciones(true)
+    setError('')
+    try {
+      const [asignacionesDatos, vehiculosDatos] = await Promise.all([
+        api.listarAsignaciones(),
+        api.listarVehiculos(),
+      ])
+      setAsignaciones(asignacionesDatos)
+      setVehiculos(vehiculosDatos)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setCargandoAsignaciones(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let activo = true
+    Promise.all([api.listarAsignaciones(), api.listarVehiculos()])
+      .then(([asignacionesDatos, vehiculosDatos]) => {
+        if (activo) {
+          setAsignaciones(asignacionesDatos)
+          setVehiculos(vehiculosDatos)
+        }
+      })
+      .catch((e) => {
+        if (activo) setError(e.message)
+      })
+      .finally(() => {
+        if (activo) setCargandoAsignaciones(false)
+      })
+    return () => {
+      activo = false
+    }
+  }, [])
+
+  const cambiarModulo = (m) => {
+    setModulo(m)
+    setError('')
+    setMensaje('')
+    if (m === 'asignaciones') {
+      setVistaAsignacion('lista')
+    } else {
+      setVista('lista')
+      setPedidoActivo(null)
+    }
+  }
 
   const abrirCrear = () => {
     setPedidoActivo(null)
@@ -130,6 +188,49 @@ function App() {
     }
   }
 
+  const alAsignar = async (payload) => {
+    setAsignando(true)
+    setError('')
+    try {
+      await api.crearAsignacion(payload)
+      setMensaje('Pedido asignado correctamente.')
+      setVistaAsignacion('lista')
+      await cargarDatosAsignaciones()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setAsignando(false)
+    }
+  }
+
+  const alCancelarAsignacion = async (asignacion) => {
+    const confirmar = window.confirm(
+      '¿Estás seguro de cancelar esta asignación? El pedido quedará sin vehículo asignado.',
+    )
+    if (!confirmar) return
+    setGestionando(true)
+    setError('')
+    try {
+      await api.cancelarAsignacion(asignacion.id)
+      setMensaje('Asignación cancelada.')
+      await cargarDatosAsignaciones()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setGestionando(false)
+    }
+  }
+
+  const mapaPedidos = Object.fromEntries(pedidos.map((p) => [p.id, p]))
+  const mapaVehiculos = Object.fromEntries(vehiculos.map((v) => [v.id, v]))
+  const pedidosDisponibles = pedidos.filter(
+    (p) =>
+      p.estado !== 'entregado' &&
+      p.estado !== 'cancelado' &&
+      !asignaciones.some((a) => a.pedido_id === p.id && a.estado === 'asignada'),
+  )
+  const vehiculosActivos = vehiculos.filter((v) => v.estado === 'activo')
+
   return (
     <div className="contenedor">
       <header className="cabecera">
@@ -137,7 +238,22 @@ function App() {
           <h1>EcoRuta Wanka</h1>
           <p className="subtitulo">Optimización sostenible de reparto · Huancayo</p>
         </div>
-        <span className="categoria">Gestión de pedidos</span>
+        <nav className="nav-modulos" aria-label="Módulos del sistema">
+          <button
+            type="button"
+            className={modulo === 'pedidos' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'}
+            onClick={() => cambiarModulo('pedidos')}
+          >
+            Pedidos
+          </button>
+          <button
+            type="button"
+            className={modulo === 'asignaciones' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'}
+            onClick={() => cambiarModulo('asignaciones')}
+          >
+            Asignaciones
+          </button>
+        </nav>
       </header>
 
       <main>
@@ -152,42 +268,72 @@ function App() {
           </div>
         )}
 
-        {vista === 'lista' && (
-          <PedidoLista
-            pedidos={pedidos}
-            filtros={filtros}
-            onCambiarFiltros={(f) => {
-              setFiltros(f)
-              cargarPedidos(f)
-            }}
-            onCrear={abrirCrear}
-            onVer={abrirDetalle}
-            onEditar={abrirEditar}
-            onCambiarEstado={alCambiarEstado}
-            onCancelar={alCancelar}
-            cargando={cargando}
-          />
+        {modulo === 'pedidos' && (
+          <>
+            {vista === 'lista' && (
+              <PedidoLista
+                pedidos={pedidos}
+                filtros={filtros}
+                onCambiarFiltros={(f) => {
+                  setFiltros(f)
+                  cargarPedidos(f)
+                }}
+                onCrear={abrirCrear}
+                onVer={abrirDetalle}
+                onEditar={abrirEditar}
+                onCambiarEstado={alCambiarEstado}
+                onCancelar={alCancelar}
+                cargando={cargando}
+              />
+            )}
+
+            {vista === 'formulario' && (
+              <PedidoFormulario
+                modo={pedidoActivo?.id ? 'editar' : 'crear'}
+                pedidoInicial={pedidoActivo}
+                onGuardar={alGuardar}
+                onVolver={volver}
+                guardando={guardando}
+              />
+            )}
+
+            {vista === 'detalle' && pedidoActivo && (
+              <PedidoDetalle
+                pedido={pedidoActivo}
+                onCambiarEstado={alCambiarEstado}
+                onCancelar={alCancelar}
+                onEditar={abrirEditar}
+                onVolver={volver}
+                gestionando={gestionando}
+              />
+            )}
+          </>
         )}
 
-        {vista === 'formulario' && (
-          <PedidoFormulario
-            modo={pedidoActivo?.id ? 'editar' : 'crear'}
-            pedidoInicial={pedidoActivo}
-            onGuardar={alGuardar}
-            onVolver={volver}
-            guardando={guardando}
-          />
-        )}
+        {modulo === 'asignaciones' && (
+          <>
+            {vistaAsignacion === 'lista' && (
+              <AsignacionLista
+                asignaciones={asignaciones}
+                mapaPedidos={mapaPedidos}
+                mapaVehiculos={mapaVehiculos}
+                onNueva={() => setVistaAsignacion('nueva')}
+                onCancelar={alCancelarAsignacion}
+                cargando={cargandoAsignaciones}
+                gestionando={gestionando}
+              />
+            )}
 
-        {vista === 'detalle' && pedidoActivo && (
-          <PedidoDetalle
-            pedido={pedidoActivo}
-            onCambiarEstado={alCambiarEstado}
-            onCancelar={alCancelar}
-            onEditar={abrirEditar}
-            onVolver={volver}
-            gestionando={gestionando}
-          />
+            {vistaAsignacion === 'nueva' && (
+              <AsignacionFormulario
+                pedidosDisponibles={pedidosDisponibles}
+                vehiculosActivos={vehiculosActivos}
+                onAsignar={alAsignar}
+                onVolver={() => setVistaAsignacion('lista')}
+                asignando={asignando}
+              />
+            )}
+          </>
         )}
       </main>
 
