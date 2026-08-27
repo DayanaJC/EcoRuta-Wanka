@@ -18,9 +18,9 @@ from app.presentation.controllers.health import router as health_router
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Acciones al iniciar y detener la aplicacion.
 
-    Al arrancar se intenta inicializar Firebase. La inicializacion es
-    tolerante: si no hay credenciales, la aplicacion arranca igualmente
-    y el endpoint /health lo reporta.
+    Al arrancar se inicializa Firebase con las credenciales configuradas.
+    Si faltan credenciales, la inicializacion lanza un error explicito
+    (fail-fast): la aplicacion ISOLO arranca con Firestore funcional.
     """
     initialize_firebase()
     yield
