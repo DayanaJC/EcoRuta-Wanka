@@ -60,8 +60,8 @@ class Pedido:
     cliente_nombre: str
     direccion: str
     punto_referencia: str
-    latitud: float
-    longitud: float
+    latitud: Optional[float]
+    longitud: Optional[float]
     peso_kg: float
     volumen_m3: float
     ventana_entrega_inicio: str

@@ -46,6 +46,18 @@ class FirestorePedidoRepository(PedidoRepository):
         }
 
     @staticmethod
+    def _coordenada(valor: Any) -> float | None:
+        """Devuelve una coordenada como float, o None si falta.
+
+        El optimizador de rutas (RF-04) necesita distinguir pedidos SIN
+        coordenadas. Por eso la lectura tolera documentos antiguos o
+        incompletos: None se traduce a 'sin ubicacion' en negocio.
+        """
+        if valor is None:
+            return None
+        return float(valor)
+
+    @staticmethod
     def _desde_documento(id_: str, datos: dict[str, Any]) -> Pedido:
         """Convierte un documento de Firestore al modelo de dominio."""
         return Pedido(
@@ -54,8 +66,8 @@ class FirestorePedidoRepository(PedidoRepository):
             cliente_nombre=datos["cliente_nombre"],
             direccion=datos["direccion"],
             punto_referencia=datos.get("punto_referencia") or "",
-            latitud=float(datos["latitud"]),
-            longitud=float(datos["longitud"]),
+            latitud=FirestorePedidoRepository._coordenada(datos.get("latitud")),
+            longitud=FirestorePedidoRepository._coordenada(datos.get("longitud")),
             peso_kg=float(datos["peso_kg"]),
             volumen_m3=float(datos["volumen_m3"]),
             ventana_entrega_inicio=datos["ventana_entrega_inicio"],
