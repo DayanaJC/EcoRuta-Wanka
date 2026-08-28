@@ -5,6 +5,8 @@ import { AsignacionLista } from './components/AsignacionLista.jsx'
 import { PedidoDetalle } from './components/PedidoDetalle.jsx'
 import { PedidoFormulario } from './components/PedidoFormulario.jsx'
 import { PedidoLista } from './components/PedidoLista.jsx'
+import { RutaFormulario } from './components/RutaFormulario.jsx'
+import { RutaDetalle } from './components/RutaDetalle.jsx'
 import { ETIQUETAS_ESTADO } from './utils/formatos.js'
 import './App.css'
 
@@ -27,6 +29,10 @@ function App() {
   const [vistaAsignacion, setVistaAsignacion] = useState('lista')
   const [cargandoAsignaciones, setCargandoAsignaciones] = useState(true)
   const [asignando, setAsignando] = useState(false)
+
+  const [vistaRuta, setVistaRuta] = useState('formulario')
+  const [ruta, setRuta] = useState(null)
+  const [generando, setGenerando] = useState(false)
 
   const cargarPedidos = useCallback(
     async (f = filtros) => {
@@ -109,6 +115,9 @@ function App() {
     setMensaje('')
     if (m === 'asignaciones') {
       setVistaAsignacion('lista')
+    } else if (m === 'rutas') {
+      setVistaRuta('formulario')
+      setRuta(null)
     } else {
       setVista('lista')
       setPedidoActivo(null)
@@ -221,6 +230,20 @@ function App() {
     }
   }
 
+  const alGenerarRuta = async (payload) => {
+    setGenerando(true)
+    setError('')
+    try {
+      const datos = await api.generarRuta(payload)
+      setRuta(datos)
+      setVistaRuta('resultado')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setGenerando(false)
+    }
+  }
+
   const mapaPedidos = Object.fromEntries(pedidos.map((p) => [p.id, p]))
   const mapaVehiculos = Object.fromEntries(vehiculos.map((v) => [v.id, v]))
   const pedidosDisponibles = pedidos.filter(
@@ -230,6 +253,16 @@ function App() {
       !asignaciones.some((a) => a.pedido_id === p.id && a.estado === 'asignada'),
   )
   const vehiculosActivos = vehiculos.filter((v) => v.estado === 'activo')
+  const vehiculosConRuta = vehiculosActivos.filter((v) =>
+    asignaciones.some(
+      (a) =>
+        a.vehiculo_id === v.id &&
+        a.estado === 'asignada' &&
+        mapaPedidos[a.pedido_id] &&
+        mapaPedidos[a.pedido_id].estado !== 'entregado' &&
+        mapaPedidos[a.pedido_id].estado !== 'cancelado',
+    ),
+  )
 
   return (
     <div className="contenedor">
@@ -252,6 +285,13 @@ function App() {
             onClick={() => cambiarModulo('asignaciones')}
           >
             Asignaciones
+          </button>
+          <button
+            type="button"
+            className={modulo === 'rutas' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'}
+            onClick={() => cambiarModulo('rutas')}
+          >
+            Rutas
           </button>
         </nav>
       </header>
@@ -331,6 +371,35 @@ function App() {
                 onAsignar={alAsignar}
                 onVolver={() => setVistaAsignacion('lista')}
                 asignando={asignando}
+              />
+            )}
+          </>
+        )}
+
+        {modulo === 'rutas' && (
+          <>
+            {vistaRuta === 'formulario' && (
+              <RutaFormulario
+                vehiculos={vehiculosConRuta}
+                asignaciones={asignaciones}
+                mapaPedidos={mapaPedidos}
+                onGenerar={alGenerarRuta}
+                onVolver={() => cambiarModulo('asignaciones')}
+                generando={generando}
+              />
+            )}
+
+            {vistaRuta === 'resultado' && ruta && (
+              <RutaDetalle
+                ruta={ruta}
+                onGenerarOtra={() => {
+                  setRuta(null)
+                  setVistaRuta('formulario')
+                }}
+                onVolver={() => {
+                  setRuta(null)
+                  setVistaRuta('formulario')
+                }}
               />
             )}
           </>
