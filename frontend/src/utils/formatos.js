@@ -22,6 +22,12 @@ export const ETIQUETAS_PRIORIDAD = {
   economico: 'Económico',
 }
 
+export const ETIQUETAS_MOTIVO_EXCLUSION = {
+  sin_coordenadas: 'Sin coordenadas',
+  pedido_no_encontrado: 'Pedido no encontrado',
+  estado_no_entregable: 'Estado no entregable',
+}
+
 export const ETIQUETAS_TIPO = {
   perecedero: 'Perecedero',
   no_perecedero: 'No perecedero',
@@ -54,4 +60,40 @@ export function formatearFecha(iso) {
 
 export function formatearVentana(pedido) {
   return `${pedido.ventana_entrega_inicio} – ${pedido.ventana_entrega_fin}`
+}
+
+export function formatearMinutos(total) {
+  if (!total && total !== 0) return '—'
+  const minutos = Math.round(total)
+  if (minutos < 60) return `${minutos} min`
+  const horas = Math.floor(minutos / 60)
+  const resto = minutos % 60
+  return resto ? `${horas} h ${resto} min` : `${horas} h`
+}
+
+export function sumarMinutos(hora, minutos) {
+  const [horas, m] = String(hora).split(':').map(Number)
+  const total = horas * 60 + m + Math.round(minutos)
+  const hh = Math.floor(total / 60) % 24
+  const mm = total % 60
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+export function formatearKm(valor) {
+  if (valor === null || valor === undefined) return '—'
+  return `${valor.toLocaleString('es-PE', { maximumFractionDigits: 2 })} km`
+}
+
+export function formatearLitros(valor) {
+  if (valor === null || valor === undefined) return '—'
+  return `${valor.toLocaleString('es-PE', {
+    maximumFractionDigits: 2,
+  })} l`
+}
+
+export function formatearCO2(valor) {
+  if (valor === null || valor === undefined) return '—'
+  return `${valor.toLocaleString('es-PE', {
+    maximumFractionDigits: 2,
+  })} kg CO₂`
 }

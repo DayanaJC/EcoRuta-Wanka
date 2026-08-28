@@ -60,4 +60,6 @@ export const api = {
     pedir(`/asignaciones/vehiculo/${vehiculoId}`),
   cancelarAsignacion: (id) =>
     pedir(`/asignaciones/${id}`, { method: 'DELETE' }),
+  generarRuta: (datos) =>
+    pedir('/rutas', { method: 'POST', body: JSON.stringify(datos) }),
 }
