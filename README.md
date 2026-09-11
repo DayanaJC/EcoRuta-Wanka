@@ -8,7 +8,7 @@ Plataforma web para apoyar la gestión logística de **WankaLogística S.A.C.**,
 2. [Problemática](#problemática)
 3. [Objetivo](#objetivo)
 4. [Tecnologías](#tecnologías)
-5. [Arquitectura por capas](#arquitectura-por-capas)
+5. [Arquitectura](#arquitectura)
 6. [Estructura del proyecto](#estructura-del-proyecto)
 7. [Configuración de Firebase](#configuración-de-firebase)
 8. [Variables de entorno](#variables-de-entorno)
@@ -61,28 +61,33 @@ Desarrollar una plataforma web para apoyar la gestión logística de WankaLogís
 - **Pytest**: pruebas unitarias de las reglas de negocio.
 - **Git/GitHub**: control de versiones, ramas y colaboración mediante Pull Requests (exigido por la consigna).
 
-## Arquitectura por capas
+## Arquitectura
+
+EcoRuta Wanka implementa una **Arquitectura Hexagonal (Puertos y Adaptadores)** sobre una API REST, conforme al stack documentado (`docs/01 Inicio/10. Stack tecnológico`) y al modelo de solución de referencia:
 
 ```
-Frontend React
+Frontend React (SPA)
+      ↓ HTTP/JSON
+API REST / FastAPI          (adaptador de entrada → puerto)
       ↓
-API REST / FastAPI
+Capa de presentación        (presentation/controllers, dependencies)
       ↓
-Capa de presentación  (presentation/controllers)
+Capa de dominio             (business/models, business/services: reglas de negocio)
       ↓
-Capa de negocio       (business/services)
+Puertos / contratos         (data/repositories: interfaces de repositorio)
       ↓
-Capa de datos         (data/repositories)
+Adaptadores de salida       (data/repositories/firebase: repositorios Firestore)
       ↓
-Firebase Firestore
+Firebase Cloud Firestore
 ```
 
-Reglas de la arquitectura:
+La estructura interna `schemas → presentation → business → data` define la separación de responsabilidades de la implementación; los `schemas` de Pydantic validan la entrada/salida. Reglas de la arquitectura:
 
-- los controllers NO contienen lógica de negocio;
-- los servicios acceden a datos SOLO mediante repositorios;
-- los repositorios implementan Firestore;
-- la configuración de Firebase está separada.
+- los adaptadores de entrada (controllers) NO contienen lógica de negocio;
+- los servicios del dominio dependen SOLO de puertos (interfaces de repositorio);
+- los adaptadores de salida (repositorios Firestore) implementan los puertos;
+- la capa de dominio es pura y se prueba con repositorios en memoria (Pytest);
+- la configuración de Firebase está separada (`app/config`) y se carga por variables de entorno.
 
 ## Estructura del proyecto
 
@@ -98,12 +103,13 @@ EcoRuta-Wanka/
 ├── frontend/                # Interfaz de usuario (React + Vite)
 ├── database/                # Documentación de la base de datos (Firestore)
 ├── docs/                    # Documentación del proyecto por fases
-│   ├── inicio/
-│   ├── planificacion/
-│   ├── ejecucion/
-│   ├── seguimiento_control/
-│   ├── cierre/
-│   └── otros/
+│   ├── 01 Inicio/           # Requisitos, actores y documentos de inicio
+│   ├── 02 Planificacion/    # Transformación a ágil y artefactos de Jira
+│   ├── 03 Ejecucion/        # Ejecución del desarrollo
+│   ├── 04 Seguimiento_control/  # Seguimiento y control
+│   ├── 05 Cierre/           # Cierre del proyecto
+│   └── 06 Otros/            # Otros recursos
+│       └── evidencias/      # Capturas reales de Jira (evidencias)
 ├── .gitignore
 └── README.md
 ```
@@ -142,14 +148,16 @@ feature/*  → Pull Request →  develop  → Pull Request →  main  → tag vX
 Se utiliza **Semantic Versioning** (`MAJOR.MINOR.PATCH`). El PMV final será **`v1.0.0`**.
 
 - `v0.1.0` — Fundamentos del proyecto.
+- `v1.0.0` — MVP EcoRuta Wanka: release objetivo gestionada en Jira (EW Sprint 1). Ver `docs/02 Planificacion/02 Artefactos Jira V_1_0_0.md`.
 
 ## Documentación
 
-- [docs/inicio](docs/inicio/) — descripción, problemática, objetivo, actores, alcance.
-- [docs/planificacion](docs/planificacion/) — alcance de cada versión, arquitectura, riesgos.
-- [docs/ejecucion](docs/ejecucion/) — desarrollo implementado.
-- [docs/seguimiento_control](docs/seguimiento_control/) — evolución, commits, ramas, PRs.
-- [docs/cierre](docs/cierre/) — resultados y conclusiones.
+- [docs/01 Inicio](docs/01%20Inicio/) — descripción, problemática, objetivo, actores, requisitos y alcance.
+- [docs/02 Planificacion](docs/02%20Planificacion/) — transformación a ágil, artefactos de Jira y planificación.
+- [docs/03 Ejecucion](docs/03%20Ejecucion/) — desarrollo implementado.
+- [docs/04 Seguimiento_control](docs/04%20Seguimiento_control/) — evolución, commits, ramas y PRs.
+- [docs/05 Cierre](docs/05%20Cierre/) — resultados y conclusiones.
+- [docs/06 Otros](docs/06%20Otros/) — evidencias y recursos complementarios.
 
 > La documentación formal se agregará progresivamente en cada fase del proyecto.
 
