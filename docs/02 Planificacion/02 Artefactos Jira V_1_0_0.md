@@ -1,6 +1,10 @@
+# EcoRuta Wanka
+
+*Optimizador de rutas sostenibles de última milla — Huancayo, Junín*
+
 # 02 Artefactos Jira V_1_0_0
 
-**Versión:** V_1_0_0   |   **Fecha:** 2026-09-10   |   **Organización:** WankaLogística S.A.C.   |   **Ubicación:** Huancayo, Junín, Perú   |   **Proyecto:** EcoRuta-Wanka
+**Versión:** V_1_0_0   |   **Fecha:** 11/09/2026   |   **Organización:** WankaLogística S.A.C.   |   **Ubicación:** Huancayo, Junín, Perú   |   **Proyecto:** EcoRuta-Wanka
 
 ## 1. Introducción
 
@@ -130,10 +134,3 @@ Esta selección representa el alcance planificado para el Sprint 1, compuesto po
 ## 7. Conclusión
 
 La parametrización del proyecto EcoRuta-Wanka en Atlassian Jira Software bajo metodología Scrum permitió gestionar el Backlog priorizado, organizar las diez Historias de Usuario por épicas, planificar el Sprint 1 con su objetivo establecido, controlar el flujo de trabajo mediante el tablero Scrum con las columnas To Do, In Progress, In Review / QA y Done, y asociar las historias a la versión de entrega V1.0.0 - MVP EcoRuta Wanka. Con ello, la herramienta queda configurada como soporte del ciclo ágil del proyecto y de la trazabilidad entre las historias y su ejecución.
-
-## Historial de Control de Cambios
-
-| Versión | Fecha | Descripción |
-|---|---|---|
-| V_1_0_0 | 2026-09-10 | Documentación de la configuración de Jira Software y recopilación de evidencias del proyecto EcoRuta-Wanka. |
-
