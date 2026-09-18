@@ -1,105 +1,137 @@
-**PROYECTO FINAL DE CARRERA (PFA)**
-**EcoRuta Wanka**
+# EcoRuta Wanka
+
 *Optimizador de rutas sostenibles de última milla — Huancayo, Junín*
 
 # 04. Presupuesto del proyecto
 
-**Versión:** V_1_0_0   |   **Fecha:** 11/09/2026   |   **Organización:** WankaLogística S.A.C.   |   **Ubicación:** Huancayo, Junín, Perú   |   **Repositorio:** [github.com/DayanaJC/EcoRuta-Wanka](https://github.com/DayanaJC/EcoRuta-Wanka)
+**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
 ---
 
-## 1. Objeto del documento
+## 1. Objetivo
 
-Este documento presenta el modelado financiero integral del MVP de EcoRuta Wanka, desagregando el costo total proyectado de desarrollo e infraestructura en cuatro componentes: Recursos Humanos (CAPEX), Licenciamiento de software, Infraestructura Cloud (OPEX) y Reserva de Contingencia. El alcance corresponde a las **14 semanas / 4 iteraciones** definidas en el [Acta de Constitución](../01%20Inicio/02.%20Acta%20de%20constituci%C3%B3n%20V_1_0_0.md) (doc. 02, §5) y a los requisitos funcionales RF-01 a RF-10 del [doc. 06](../01%20Inicio/06.%20Requisitos%20funcionales%20V_1_0_0.md).
+El presente documento establece el presupuesto estimado para el desarrollo del proyecto **EcoRuta Wanka**, considerando los recursos humanos, herramientas de software, servicios de infraestructura y una reserva de contingencia.
 
----
-
-## 2. Metodología y supuestos de cálculo
-
-- **Técnica de estimación:** bottom-up (desglose por rol, hora y tarifa), a diferencia de la estimación tipo orden de magnitud (ROM) presentada en el Acta de Constitución (doc. 02, §6), que agregaba el presupuesto por macro-categorías.
-- **Tarifas por hora (USD):** reflejan un escenario de consultoría regional para un equipo simulado de WankaLogística S.A.C., coherente con el rango "S/ 25–50/hora" ya referenciado en el Acta de Constitución para el equipo de desarrollo.
-- **Horizonte:** 14 semanas de proyecto (07 sep – 13 dic 2026), con asignación de horas variable por rol según su carga esperada en cada iteración (mayor carga de Arquitectura/UX en la Iteración 1; mayor carga de desarrollo en las Iteraciones 2–4; mayor carga de QA en las Iteraciones 3–4).
-- **Stack de costo cero:** las tarifas de licenciamiento e infraestructura parten del stack seleccionado y justificado en el [doc. 10 "Stack tecnológico"](../01%20Inicio/10.%20Stack%20tecnol%C3%B3gico%20V_1_0_0.md) (React + Vite, FastAPI, Firebase Firestore en plan Spark gratuito), por lo que la mayoría de los ítems de licenciamiento e infraestructura tienen costo USD 0.00.
-- **Reserva de contingencia:** 12% del subtotal del proyecto, replicando el mismo porcentaje de contingencia (12%) ya utilizado en el Acta de Constitución (doc. 02, §6), dentro del rango sugerido de 10%–15%.
+Los valores corresponden a una **estimación académica del proyecto** y no representan gastos reales realizados por el equipo.
 
 ---
 
-## 3. Costo de Recursos Humanos (CAPEX)
+## 2. Criterios de estimación
 
-| Rol | Horas Asignadas | Tarifa Hora (USD) | Costo (USD) |
-| --- | --- | --- | --- |
-| Project Manager | 120 h | $ 25.00 | $ 3,000.00 |
-| Software Architect | 160 h | $ 40.00 | $ 6,400.00 |
-| Senior Developer | 420 h | $ 30.00 | $ 12,600.00 |
-| Junior Developer (× 2) | 700 h | $ 15.00 | $ 10,500.00 |
-| QA Engineer | 180 h | $ 18.00 | $ 3,240.00 |
-| UI/UX Designer | 130 h | $ 20.00 | $ 2,600.00 |
-| **TOTAL RECURSOS HUMANOS** | **1,710 h** | — | **$ 38,340.00** |
+Para elaborar el presupuesto se consideran los siguientes criterios:
 
-> En la ejecución académica real, estos seis roles son cubiertos conjuntamente por los dos integrantes del equipo (Arroyo Canchari Henry y Javier Curi Dayana), conforme a la restricción R-13 del [doc. 13](../01%20Inicio/13.%20Restricciones%20V_1_0_0.md) (equipo de 2 integrantes, perfil académico) y al AS-08 del [doc. 04](../01%20Inicio/04.%20Registro%20de%20supuestos%20y%20restricciones%20V_1_0_0.md).
+* **Moneda principal:** Soles peruanos (S/).
+* **Horizonte de planificación:** período establecido para el desarrollo del proyecto.
+* **Recursos humanos:** estimación de horas de trabajo según las funciones necesarias para desarrollar, probar y gestionar el proyecto.
+* **Herramientas:** se consideran principalmente herramientas gratuitas o planes disponibles para proyectos académicos.
+* **Infraestructura:** se considera el uso de servicios en la nube necesarios para el funcionamiento del sistema.
+* **Contingencia:** se establece una reserva del **12 %** sobre el subtotal del proyecto, dentro del rango solicitado de 10 % a 15 %.
+* **Conversión a USD:** para efectos de presentación, se utiliza un tipo de cambio referencial de **S/ 3.75 por USD** únicamente como supuesto de cálculo.
 
 ---
 
-## 4. Costo de Licenciamiento y Herramientas
+## 3. Recursos Humanos (CAPEX)
 
-| Herramienta / Licencia | Plan / Descripción | Costo (USD) |
-| --- | --- | --- |
-| IDE (VS Code / PyCharm CE) | Gratuito / licencia académica | $ 0.00 |
-| Jira (Atlassian) | Plan Free, hasta 10 usuarios | $ 0.00 |
-| Confluence (Atlassian) | Plan Free | $ 0.00 |
-| Figma | Plan Profesional, 1 editor × 3 meses ($15/mes) | $ 45.00 |
-| GitHub Copilot | 2 desarrolladores × 3 meses ($10/mes c/u) | $ 60.00 |
-| SonarQube Community Edition / SonarCloud | Gratuito para repositorios públicos | $ 0.00 |
-| Postman | Plan Free (equipo) | $ 0.00 |
-| **TOTAL LICENCIAMIENTO** | | **$ 105.00** |
+| Rol                           | Horas estimadas | Tarifa por hora (S/) |       Costo (S/) |
+| ----------------------------- | --------------: | -------------------: | ---------------: |
+| Gestión del proyecto          |           120 h |             S/ 35.00 |      S/ 4,200.00 |
+| Arquitectura y diseño técnico |           160 h |             S/ 50.00 |      S/ 8,000.00 |
+| Desarrollo de software        |           420 h |             S/ 45.00 |     S/ 18,900.00 |
+| Desarrollo de apoyo           |           700 h |             S/ 25.00 |     S/ 17,500.00 |
+| Pruebas y calidad             |           180 h |             S/ 28.00 |      S/ 5,040.00 |
+| Diseño de interfaz            |           130 h |             S/ 30.00 |      S/ 3,900.00 |
+| **TOTAL RECURSOS HUMANOS**    |     **1,710 h** |                    — | **S/ 57,540.00** |
 
----
-
-## 5. Costo de Infraestructura Cloud y Servicios (OPEX)
-
-| Servicio | Proveedor / Plan | Costo (USD) |
-| --- | --- | --- |
-| Firebase Cloud Firestore | Plan Spark (gratuito) | $ 0.00 |
-| Firebase Hosting (frontend) | Plan Spark (gratuito) | $ 0.00 |
-| Backend hosting (Render / Railway) | Capa gratuita + reserva por excedente puntual (3 meses) | $ 21.00 |
-| Dominio web (.app) | Registro anual | $ 18.00 |
-| Certificado SSL | Let's Encrypt (incluido, gratuito) | $ 0.00 |
-| CI/CD | GitHub Actions, plan gratuito para repositorios públicos | $ 0.00 |
-| **TOTAL INFRAESTRUCTURA CLOUD (OPEX)** | | **$ 39.00** |
-
-> El costo casi nulo de licenciamiento e infraestructura (0.4% del subtotal, ver §6) es consecuencia directa de la selección tecnológica justificada en el doc. 10 (criterio "Costo de infraestructura" y "Eficiencia energética / Eco-Design", donde la alternativa seleccionada A4 obtuvo el puntaje máximo) y de las restricciones R-05/R-06/R-07 del doc. 13.
+Los roles representan las funciones necesarias para el proyecto. En la ejecución académica, estas funciones son asumidas por los dos integrantes del equipo.
 
 ---
 
-## 6. Tabla Resumen Financiera
+## 4. Licenciamiento y herramientas
 
-| Categoría | Costo Subtotal (USD) | Porcentaje del Total |
-| --- | --- | --- |
-| 1. Recursos Humanos (CAPEX) | $ 38,340.00 | 99.6% |
-| 2. Licenciamiento de Software | $ 105.00 | 0.3% |
-| 3. Infraestructura Cloud (OPEX) | $ 39.00 | 0.1% |
-| **SUBTOTAL DE PROYECTO** | **$ 38,484.00** | **100.0%** |
-| 4. Reserva de Contingencia (12%) | $ 4,618.08 | N/A |
-| **PRESUPUESTO TOTAL ESTIMADO** | **$ 43,102.08** | **100.0%** |
-
----
-
-## 7. Nota de conciliación con el Acta de Constitución (doc. 02)
-
-El Acta de Constitución presenta una estimación preliminar de tipo **orden de magnitud (ROM)** de **S/ 500,000** (≈ USD 133,333 a un tipo de cambio referencial de S/ 3.75 por USD), agregada por macro-categorías (desarrollo, infraestructura, campo, UX/UI, documentación, contingencia) y explícitamente documentada como **"línea base simulada"** para el escenario comercial ficticio de WankaLogística S.A.C.
-
-El presente documento refina esa estimación aplicando una técnica **bottom-up** (desglose por rol y hora), acotada estrictamente al alcance del MVP académico (RF-01 a RF-10, 14 semanas) y al stack de costo cero seleccionado en el doc. 10. El resultado —**USD 43,102.08 (≈ S/ 161,633)**— es significativamente menor al ROM inicial del Acta. Esta diferencia es esperable y metodológicamente consistente: refleja el paso de una estimación de orden de magnitud (±50%, propia de la fase de Inicio) a una estimación más definitiva (propia de la fase de Planificación), y confirma en cifras la política de "cero infraestructura propia" ya registrada como restricción CO-07 (doc. 04) y R-05/R-06/R-07 (doc. 13).
-
-Ambos documentos permanecen vigentes, con propósitos distintos y complementarios:
-
-- El **Acta de Constitución** fija el techo presupuestal autorizado para el escenario comercial simulado de WankaLogística S.A.C.
-- El **presente documento** traza el costo operativo estimado de la ejecución académica real del PFA, con base en el stack, las horas y las tarifas efectivamente aplicables al equipo del proyecto.
+| Herramienta                             | Tipo                               | Costo estimado (S/) |
+| --------------------------------------- | ---------------------------------- | ------------------: |
+| Visual Studio Code                      | Gratuito                           |             S/ 0.00 |
+| Jira                                    | Plan gratuito                      |             S/ 0.00 |
+| Confluence                              | Plan gratuito                      |             S/ 0.00 |
+| Figma                                   | Plan de trabajo                    |           S/ 168.75 |
+| GitHub                                  | Repositorio y control de versiones |             S/ 0.00 |
+| GitHub Copilot                          | Herramienta de apoyo al desarrollo |           S/ 225.00 |
+| SonarQube / SonarCloud                  | Análisis de calidad                |             S/ 0.00 |
+| Postman                                 | Pruebas de API                     |             S/ 0.00 |
+| **TOTAL LICENCIAMIENTO Y HERRAMIENTAS** |                                    |       **S/ 393.75** |
 
 ---
 
-## 8. Historial de Control de Cambios
+## 5. Infraestructura y servicios Cloud (OPEX)
 
-| Versión | Fecha | Descripción del cambio | Autor |
-| --- | --- | --- | --- |
-| V_1_0_0 | 11/09/2026 | Creación inicial del Presupuesto del proyecto, con desglose bottom-up por rol/hora (CAPEX), licenciamiento y OPEX, y nota de conciliación con la estimación ROM del Acta de Constitución (doc. 02). | Arroyo Canchari Henry, Javier Curi Dayana |
+| Servicio                            | Descripción                                | Costo estimado (S/) |
+| ----------------------------------- | ------------------------------------------ | ------------------: |
+| Firebase / Firestore                | Base de datos en la nube                   |             S/ 0.00 |
+| Firebase Hosting                    | Publicación del frontend                   |             S/ 0.00 |
+| Servicio de alojamiento del backend | Alojamiento del backend                    |            S/ 78.75 |
+| Dominio web                         | Registro del dominio                       |            S/ 67.50 |
+| Certificado SSL                     | Seguridad de conexión                      |             S/ 0.00 |
+| GitHub Actions                      | Automatización de integración y despliegue |             S/ 0.00 |
+| **TOTAL INFRAESTRUCTURA CLOUD**     |                                            |       **S/ 146.25** |
+
+Los costos indicados corresponden a estimaciones para el escenario académico del proyecto.
+
+---
+
+## 6. Resumen del presupuesto
+
+| Categoría                      |    Subtotal (S/) |
+| ------------------------------ | ---------------: |
+| Recursos Humanos (CAPEX)       |     S/ 57,540.00 |
+| Licenciamiento y herramientas  |        S/ 393.75 |
+| Infraestructura Cloud (OPEX)   |        S/ 146.25 |
+| **SUBTOTAL DEL PROYECTO**      | **S/ 58,080.00** |
+| Reserva de contingencia (12 %) |      S/ 6,969.60 |
+| **PRESUPUESTO TOTAL ESTIMADO** | **S/ 65,049.60** |
+
+---
+
+## 7. Resumen en dólares estadounidenses
+
+Para presentar el presupuesto en USD se utiliza el tipo de cambio referencial establecido en este documento:
+
+**S/ 3.75 = USD 1.00**
+
+| Concepto                      |       Monto (S/) | Equivalente (USD) |
+| ----------------------------- | ---------------: | ----------------: |
+| Recursos Humanos              |     S/ 57,540.00 |     USD 15,344.00 |
+| Licenciamiento y herramientas |        S/ 393.75 |        USD 105.00 |
+| Infraestructura Cloud         |        S/ 146.25 |         USD 39.00 |
+| Subtotal                      |     S/ 58,080.00 |     USD 15,488.00 |
+| Contingencia 12 %             |      S/ 6,969.60 |      USD 1,858.56 |
+| **TOTAL ESTIMADO**            | **S/ 65,049.60** | **USD 17,346.56** |
+
+---
+
+## 8. Reserva de contingencia
+
+Se establece una reserva de **12 %** del subtotal del proyecto para atender situaciones no previstas que puedan generar costos adicionales durante el desarrollo.
+
+La reserva calculada es:
+
+**S/ 58,080.00 × 12 % = S/ 6,969.60**
+
+Esta reserva no representa un gasto realizado, sino un monto destinado a cubrir posibles variaciones del presupuesto.
+
+---
+
+## 9. Distribución del presupuesto
+
+| Categoría                     | Porcentaje del subtotal |
+| ----------------------------- | ----------------------: |
+| Recursos Humanos              |                 99.07 % |
+| Licenciamiento y herramientas |                  0.68 % |
+| Infraestructura Cloud         |                  0.25 % |
+| **TOTAL**                     |            **100.00 %** |
+
+La mayor parte del presupuesto corresponde a recursos humanos, debido a que el desarrollo del sistema requiere actividades de análisis, diseño, programación, pruebas y gestión del proyecto.
+
+---
+

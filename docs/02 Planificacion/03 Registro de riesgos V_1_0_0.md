@@ -1,102 +1,108 @@
-**PROYECTO FINAL DE CARRERA (PFA)**
-**EcoRuta Wanka**
+# EcoRuta Wanka
+
 *Optimizador de rutas sostenibles de última milla — Huancayo, Junín*
 
 # 03. Registro de riesgos
 
-**Versión:** V_1_0_0   |   **Fecha:** 11/09/2026   |   **Organización:** WankaLogística S.A.C.   |   **Ubicación:** Huancayo, Junín, Perú   |   **Repositorio:** [github.com/DayanaJC/EcoRuta-Wanka](https://github.com/DayanaJC/EcoRuta-Wanka)
+**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
 ---
 
-## 1. Objeto del documento
+## 1. Objetivo
 
-Este documento consolida la gestión de riesgos de EcoRuta Wanka conforme a los lineamientos de **PMBOK®** (gestión de riesgos como área de conocimiento) y **CMMI** (Risk Management — RSKM, identificación y mitigación proactiva). Actualiza y formaliza en una **Matriz de Evaluación de Riesgos** cuantitativa los riesgos ya identificados de forma preliminar en el [Acta de constitución](../01%20Inicio/02.%20Acta%20de%20constituci%C3%B3n%20V_1_0_0.md) (R-01 a R-07) y en el [Registro de restricciones](../01%20Inicio/13.%20Restricciones%20V_1_0_0.md) (columna "Riesgo" de la matriz multidimensional), e incorpora riesgos adicionales propios de la fase de planificación (equipo, herramientas, proceso).
+El presente documento identifica, analiza y establece acciones de respuesta para los principales riesgos del proyecto **EcoRuta Wanka**.
+
+La evaluación utiliza una matriz cuantitativa basada en **Probabilidad × Impacto**, permitiendo establecer la severidad de cada riesgo y definir medidas preventivas y de contingencia.
 
 ---
 
 ## 2. Metodología de evaluación
 
-Cada riesgo se califica en dos ejes, con escala entera de 1 a 5:
+La evaluación utiliza una escala de 1 a 5 para cada riesgo.
 
-- **Probabilidad (Prob.):** 1 (Muy baja) · 2 (Baja) · 3 (Media) · 4 (Alta) · 5 (Muy alta).
-- **Impacto (Imp.):** 1 (Insignificante) · 2 (Menor) · 3 (Moderado) · 4 (Mayor) · 5 (Catastrófico).
+### Probabilidad
 
-**Severidad (Exposición) = Probabilidad × Impacto**
+* **1:** Muy baja
+* **2:** Baja
+* **3:** Media
+* **4:** Alta
+* **5:** Muy alta
 
-| Rango de Severidad | Clasificación |
-| --- | --- |
-| 1 – 6 | **Low / Baja** |
-| 8 – 12 | **Medium / Media** |
-| 15 – 25 | **High / Alta** |
+### Impacto
 
-> Nota: dado que Probabilidad e Impacto son enteros de 1 a 5, los únicos productos posibles son {1,2,3,4,5,6,8,9,10,12,15,16,20,25}; no existen valores intermedios (7, 11, 13, 14) que generen ambigüedad de clasificación.
+* **1:** Insignificante
+* **2:** Menor
+* **3:** Moderado
+* **4:** Mayor
+* **5:** Catastrófico
 
-Cada riesgo incluye un **Plan de Mitigación (Preventivo)** —acción para reducir probabilidad o impacto antes de que el riesgo se materialice— y un **Plan de Contingencia (Reactivo)** —acción a ejecutar si el riesgo ya se materializó—, siguiendo la distinción estándar de PMBOK entre respuesta proactiva y reactiva.
+**Severidad = Probabilidad × Impacto**
+
+| Severidad | Clasificación |
+| --------- | ------------- |
+| 1 – 6     | Baja          |
+| 8 – 12    | Media         |
+| 15 – 25   | Alta          |
+
+Cada riesgo cuenta con una acción preventiva y una acción de contingencia para responder en caso de que llegue a ocurrir.
 
 ---
 
-## 3. Matriz de Evaluación de Riesgos
+## 3. Matriz de evaluación de riesgos
 
-| ID | Descripción del Riesgo | Categoría | Prob. | Imp. | Severidad | Plan de Mitigación (Preventivo) | Plan de Contingencia (Reactivo) | Responsable |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| RSK-01 | Indisponibilidad de servicios Cloud en el proveedor (Firebase/Firestore) por límites de cuota. | Técnica / Infraestructura | 2 | 4 | 8 (Media) | Monitorear consumo de cuotas e implementar alertas de umbral al 70%. | Migrar temporalmente los contenedores/servicios a una cuenta secundaria de respaldo. | DevOps Engineer |
-| RSK-02 | Curva de aprendizaje elevada en el framework del frontend (React 19 / Vite 8). | Recursos Humanos / Capacidades | 3 | 3 | 9 (Media) | Realizar 2 jornadas de Pair Programming y pases de conocimiento al inicio del Sprint. | Reasignar las tareas de mayor complejidad al arquitecto de software. | Scrum Master |
-| RSK-03 | Baja precisión de los datos de tráfico en tiempo real (Waze/Google Maps) en zonas periféricas de Huancayo. | Técnica / Datos | 4 | 2 | 8 (Media) | Habilitar carga manual de reportes de conductores como fuente complementaria de validación. | Usar promedios históricos de congestión por franja horaria mientras se corrige la fuente de datos. | Software Architect |
-| RSK-04 | Conectividad limitada (2G/3G) en Chilca, Pilcomayo y zonas altas del valle del Mantaro. | Infraestructura / Operativo | 3 | 4 | 12 (Media) | Diseñar el "modo conductor" bajo un enfoque offline-first con sincronización diferida. | Habilitar modo de solo lectura con la última versión de ruta cacheada en el dispositivo. | Software Architect |
-| RSK-05 | Resistencia al cambio por bajo nivel de alfabetización digital de conductores y bodegueros. | Organizacional | 3 | 3 | 9 (Media) | Capacitación previa y "modo conductor" simplificado, validado con pruebas de usabilidad tempranas (RNF-05). | Habilitar soporte telefónico/asistido durante las primeras semanas de operación. | UI/UX Designer |
-| RSK-06 | Cambios en la normativa de tránsito o de protección de datos durante el desarrollo (Ley N° 29733, Ley N° 30224, MTC). | Regulatorio | 2 | 4 | 8 (Media) | Monitoreo normativo periódico y motor de reglas de negocio modular y aislado (RN-003, RN-008). | Ajustar las reglas de negocio afectadas sin retrabajo arquitectónico, aprovechando el aislamiento de la capa `business`. | Project Manager |
-| RSK-07 | El motor de optimización de rutas no alcanza el objetivo de rendimiento (≤45 s / ≤30 s re-optimización) en escenarios de alto volumen. | Técnico / Rendimiento | 4 | 4 | 16 (Alta) | Pruebas de carga progresivas por iteración; paralelización y ajuste de hiperparámetros de la metaheurística propuesta (RF-03, RNF-01). | Degradar temporalmente a la heurística más rápida (vecino cercano sin 2-opt) cuando se exceda el umbral. | Senior Developer |
-| RSK-08 | Heladas y neblina en temporada de invierno afectan tiempos de entrega y seguridad vial. | Ambiental | 4 | 3 | 12 (Media) | Incorporar reglas de ruteo sensibles al clima (RN-010) con alertas visibles al conductor. | Suspender o reprogramar entregas en tramos de alto riesgo climático reportado. | QA Engineer |
-| RSK-09 | La ausencia de una empresa afiliada real limita el acceso a datos operativos representativos. | Alcance | 4 | 2 | 8 (Media) | Uso de datos sintéticos validados mediante estudio de campo (entrevistas y observación directa, doc. 06 §1.1). | Ampliar el estudio de campo (más bodegas/conductores) si los datos sintéticos resultan insuficientes para validar el MVP. | Project Manager |
-| RSK-10 | Se exceden las cuotas gratuitas del plan Spark de Firestore por crecimiento del volumen de datos de prueba. | Financiero / Técnico | 2 | 3 | 6 (Baja) | Monitorear cuotas de lectura/escritura; migrar filtros en memoria a índices compuestos antes de escalar el volumen. | Migración puntual y acotada en el tiempo al plan Blaze (pago por uso), financiada por el equipo. | DevOps Engineer |
-| RSK-11 | Fuga de credenciales de la cuenta de servicio de Firebase si se versionan accidentalmente en el repositorio. | Seguridad | 2 | 5 | 10 (Media) | `.gitignore` de `credentials/`, revisión obligatoria de Pull Request (CO-10) y escaneo de secretos en CI. | Rotación inmediata de credenciales y revocación de la clave de servicio expuesta. | Software Architect |
-| RSK-12 | Retrasos por disponibilidad limitada del equipo (2 integrantes) frente a otras obligaciones académicas. | Recursos Humanos / Cronograma | 4 | 4 | 16 (Alta) | Planificación de sprints con margen, tablero Kanban con límites de WIP y reuniones semanales de seguimiento. | Repriorizar el backlog (MoSCoW) para proteger el alcance mínimo viable (RF-01, RF-02, RF-03). | Scrum Master |
-| RSK-13 | Conflictos de integración de código entre ramas `feature/*`, `develop` y `main` (convención Git Flow). | Técnico / Proceso | 2 | 2 | 4 (Baja) | Pull Requests pequeños y frecuentes, revisión obligatoria de al menos un integrante, integración continua. | Congelar temporalmente `develop` y resolver conflictos en una sesión dedicada de pair programming. | Software Architect |
-| RSK-14 | La ausencia de autenticación (RF-10 propuesto) deja la API sin control de acceso mientras dure su desarrollo. | Seguridad | 3 | 4 | 12 (Media) | Restringir CORS a orígenes de desarrollo (`localhost:5173`, `127.0.0.1:5173`) y no exponer el backend públicamente mientras RF-10 no esté implementado. | Deshabilitar de inmediato cualquier despliegue expuesto a Internet hasta completar RF-10. | Software Architect |
+| ID     | Descripción del riesgo                                                                           | Categoría             | Prob. | Imp. | Severidad | Mitigación preventiva                                                                    | Contingencia reactiva                                                                             | Responsable           |
+| ------ | ------------------------------------------------------------------------------------------------ | --------------------- | ----: | ---: | --------: | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------- |
+| RSK-01 | Indisponibilidad temporal de Firebase o Firestore durante el desarrollo.                         | Técnica               |     2 |    4 |   8 Media | Revisar periódicamente el estado y consumo de los servicios.                             | Reprogramar las actividades dependientes del servicio hasta restablecerlo.                        | Responsable técnico   |
+| RSK-02 | Dificultades del equipo para utilizar las tecnologías seleccionadas.                             | Recursos humanos      |     3 |    3 |   9 Media | Realizar coordinación y revisión técnica entre los integrantes.                          | Reasignar temporalmente las tareas y priorizar las funciones principales.                         | Equipo de desarrollo  |
+| RSK-03 | Datos incompletos o incorrectos de pedidos y ubicaciones.                                        | Datos                 |     4 |    3 |  12 Media | Validar los datos antes de utilizarlos para generar rutas.                               | Corregir o completar los registros antes de generar nuevamente la ruta.                           | Operador              |
+| RSK-04 | Problemas de conexión a Internet durante el uso del sistema.                                     | Infraestructura       |     3 |    3 |   9 Media | Verificar la conectividad durante las pruebas del sistema.                               | Reprogramar la operación o registrar temporalmente la información para procesarla posteriormente. | Responsable técnico   |
+| RSK-05 | Dificultades de los usuarios para utilizar el sistema.                                           | Organizacional        |     3 |    3 |   9 Media | Realizar pruebas de usabilidad y proporcionar orientación básica.                        | Revisar la funcionalidad que presente dificultades y brindar asistencia al usuario.               | Equipo de desarrollo  |
+| RSK-06 | Cambios en los requisitos durante el desarrollo del proyecto.                                    | Alcance               |     3 |    4 |  12 Media | Revisar y priorizar los requisitos antes de cada sprint.                                 | Evaluar el cambio y ajustar el backlog sin afectar el alcance principal.                          | Director del proyecto |
+| RSK-07 | El sistema no alcanza el rendimiento esperado en operaciones principales.                        | Rendimiento           |     3 |    4 |  12 Media | Realizar pruebas de rendimiento durante el desarrollo.                                   | Optimizar las operaciones que presenten mayor tiempo de respuesta.                                | Responsable técnico   |
+| RSK-08 | Condiciones climáticas desfavorables pueden afectar la planificación de los repartos.            | Operativo / Ambiental |     3 |    3 |   9 Media | Considerar las condiciones de entrega registradas durante la planificación.              | Reprogramar o actualizar la ruta cuando las condiciones afecten el reparto.                       | Operador              |
+| RSK-09 | La falta de datos reales de una empresa limita la validación del sistema.                        | Alcance               |     4 |    3 |  12 Media | Utilizar datos simulados coherentes con el contexto de Huancayo.                         | Ampliar los datos de prueba y realizar nuevas validaciones.                                       | Director del proyecto |
+| RSK-10 | El uso de Firebase puede generar costos si se superan los recursos disponibles para el proyecto. | Financiero            |     2 |    3 |    6 Baja | Controlar periódicamente el consumo de los servicios.                                    | Reducir el uso de recursos y ajustar la configuración del proyecto.                               | Responsable técnico   |
+| RSK-11 | Exposición accidental de credenciales o información sensible del proyecto.                       | Seguridad             |     2 |    5 |  10 Media | Mantener credenciales fuera del repositorio y revisar los cambios mediante Pull Request. | Revocar y reemplazar inmediatamente las credenciales expuestas.                                   | Responsable técnico   |
+| RSK-12 | Disponibilidad limitada de los dos integrantes puede generar retrasos.                           | Cronograma            |     4 |    4 |   16 Alta | Planificar las actividades y priorizar las funcionalidades principales.                  | Reorganizar las tareas y priorizar el alcance mínimo del proyecto.                                | Equipo de desarrollo  |
+| RSK-13 | Conflictos durante la integración de cambios en Git y GitHub.                                    | Técnico / Proceso     |     2 |    3 |    6 Baja | Utilizar ramas y Pull Requests para integrar los cambios.                                | Resolver los conflictos antes de integrar nuevamente la rama.                                     | Responsable técnico   |
+| RSK-14 | Problemas de seguridad o acceso pueden afectar las funciones del sistema.                        | Seguridad             |     3 |    4 |  12 Media | Aplicar autenticación, autorización y pruebas de acceso según los roles definidos.       | Bloquear temporalmente el acceso afectado y corregir la configuración de seguridad.               | Responsable técnico   |
 
 ---
 
 ## 4. Distribución de severidad
 
-| Severidad | N° de riesgos | IDs |
-| --- | --- | --- |
-| High / Alta | 2 | RSK-07, RSK-12 |
-| Medium / Media | 10 | RSK-01, RSK-02, RSK-03, RSK-04, RSK-05, RSK-06, RSK-08, RSK-09, RSK-11, RSK-14 |
-| Low / Baja | 2 | RSK-10, RSK-13 |
+| Severidad | Cantidad | Riesgos                                                                                |
+| --------- | -------: | -------------------------------------------------------------------------------------- |
+| Alta      |        1 | RSK-12                                                                                 |
+| Media     |       11 | RSK-01, RSK-02, RSK-03, RSK-04, RSK-05, RSK-06, RSK-07, RSK-08, RSK-09, RSK-11, RSK-14 |
+| Baja      |        2 | RSK-10, RSK-13                                                                         |
 
-Los dos riesgos de severidad **Alta** —rendimiento del motor de optimización (RSK-07) y disponibilidad del equipo frente al cronograma (RSK-12)— coinciden con los dos factores más citados en la documentación previa como condicionantes del alcance del MVP (ver [doc. 06 §3](../01%20Inicio/06.%20Requisitos%20funcionales%20V_1_0_0.md) y [doc. 13 R-13](../01%20Inicio/13.%20Restricciones%20V_1_0_0.md)), por lo que reciben seguimiento prioritario en cada revisión de iteración.
-
----
-
-## 5. Trazabilidad con documentos previos
-
-| ID de riesgo | Origen / referencia previa |
-| --- | --- |
-| RSK-03 | R-01 (Acta de constitución, doc. 02) |
-| RSK-04 | R-02 (Acta de constitución, doc. 02) |
-| RSK-05 | R-03 (Acta de constitución, doc. 02) |
-| RSK-06 | R-04 (Acta de constitución, doc. 02) |
-| RSK-07 | R-05 (Acta de constitución, doc. 02); RNF-01 (doc. 07) |
-| RSK-08 | R-06 (Acta de constitución, doc. 02); RN-010 (doc. 09) |
-| RSK-09 | R-07 (Acta de constitución, doc. 02) |
-| RSK-10 | R-06 (Restricciones, doc. 13) |
-| RSK-11 | R-18 (Restricciones, doc. 13); CO-11 (doc. 04) |
-| RSK-12 | R-13 (Restricciones, doc. 13); CO-13 (doc. 04) |
-| RSK-13 | R-22 (Restricciones, doc. 13); CO-10 (doc. 04) |
-| RSK-14 | R-14, R-20 (Restricciones, doc. 13); RNF-02 (doc. 07) |
-| RSK-01, RSK-02 | Riesgos genéricos de gestión de proyecto (sin precedente directo en docs. 01 Inicio) |
+Los riesgos con mayor severidad corresponden principalmente a la disponibilidad del equipo y a situaciones que pueden afectar directamente el cumplimiento del cronograma.
 
 ---
 
-## 6. Nota sobre responsables
+## 5. Relación con el proyecto
 
-Los roles indicados en la columna "Responsable" (DevOps Engineer, Scrum Master, Software Architect, Senior Developer, QA Engineer, UI/UX Designer, Project Manager) corresponden al **escenario organizacional simulado** de WankaLogística S.A.C., consistente con el usado en el Acta de Constitución (doc. 02). En la **ejecución académica real**, ambos integrantes del equipo —Arroyo Canchari Henry y Javier Curi Dayana— asumen conjuntamente estas funciones, conforme a la restricción R-13 del doc. 13 (equipo de 2 integrantes, perfil académico).
+Los riesgos identificados se relacionan con los principales elementos de EcoRuta Wanka:
+
+| Área                         | Riesgos relacionados   |
+| ---------------------------- | ---------------------- |
+| Requisitos y alcance         | RSK-06, RSK-09         |
+| Datos y rutas                | RSK-03, RSK-08         |
+| Tecnología e infraestructura | RSK-01, RSK-04, RSK-07 |
+| Seguridad                    | RSK-11, RSK-14         |
+| Equipo y cronograma          | RSK-02, RSK-12         |
+| Desarrollo e integración     | RSK-10, RSK-13         |
+| Usuarios                     | RSK-05                 |
 
 ---
 
-## 7. Historial de Control de Cambios
+## 6. Seguimiento de riesgos
 
-| Versión | Fecha | Descripción del cambio | Autor |
-| --- | --- | --- | --- |
-| V_1_0_0 | 11/09/2026 | Creación inicial del Registro de Riesgos, consolidando los riesgos preliminares del Acta de Constitución (doc. 02) y del Registro de Restricciones (doc. 13) en formato de matriz cuantitativa PMBOK/CMMI. | Arroyo Canchari Henry, Javier Curi Dayana |
+Los riesgos serán revisados durante el desarrollo del proyecto y al finalizar cada sprint. Si cambia la probabilidad o el impacto de un riesgo, se actualizará su nivel de severidad y las acciones de respuesta correspondientes.
+
+---
+
+
