@@ -10,6 +10,13 @@ export const ETIQUETAS_ESTADO_ASIGNACION = {
   cancelada: 'Cancelada',
 }
 
+export const ETIQUETAS_ESTADO_RUTA = {
+  generada: 'Generada',
+  en_reparto: 'En reparto',
+  completada: 'Completada',
+  cancelada: 'Cancelada',
+}
+
 export const ETIQUETAS_TIPO_VEHICULO = {
   camioneta: 'Camioneta',
   furgon: 'Furgón',
@@ -36,6 +43,13 @@ export const COLORES_ESTADO = {
 
 export const COLORES_ESTADO_ASIGNACION = {
   asignada: '#16a34a',
+  cancelada: '#b91c1c',
+}
+
+export const COLORES_ESTADO_RUTA = {
+  generada: '#2563eb',
+  en_reparto: '#d97706',
+  completada: '#16a34a',
   cancelada: '#b91c1c',
 }
 

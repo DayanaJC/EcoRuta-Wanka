@@ -1,29 +1,38 @@
 const BASE = '/api/v1'
+const TIMEOUT_MS = 15000
 
 async function pedir(ruta, opciones = {}) {
-  const respuesta = await fetch(`${BASE}${ruta}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opciones,
-  })
+  const controlador = new AbortController()
+  const id = setTimeout(() => controlador.abort(), TIMEOUT_MS)
 
-  if (!respuesta.ok) {
-    let detalle = `Error del servidor (${respuesta.status}).`
-    try {
-      const cuerpo = await respuesta.json()
-      if (cuerpo.detail) {
-        detalle =
-          typeof cuerpo.detail === 'string'
-            ? cuerpo.detail
-            : JSON.stringify(cuerpo.detail)
+  try {
+    const respuesta = await fetch(`${BASE}${ruta}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opciones,
+      signal: controlador.signal,
+    })
+
+    if (!respuesta.ok) {
+      let detalle = `Error del servidor (${respuesta.status}).`
+      try {
+        const cuerpo = await respuesta.json()
+        if (cuerpo.detail) {
+          detalle =
+            typeof cuerpo.detail === 'string'
+              ? cuerpo.detail
+              : JSON.stringify(cuerpo.detail)
+        }
+      } catch {
+        // sin cuerpo JSON: se queda el mensaje generico
       }
-    } catch {
-      // sin cuerpo JSON: se queda el mensaje generico
+      throw new Error(detalle)
     }
-    throw new Error(detalle)
-  }
 
-  if (respuesta.status === 204) return null
-  return respuesta.json()
+    if (respuesta.status === 204) return null
+    return respuesta.json()
+  } finally {
+    clearTimeout(id)
+  }
 }
 
 function aQueryParams(params) {
@@ -51,6 +60,18 @@ export const api = {
     }),
   cancelarPedido: (id) => pedir(`/pedidos/${id}`, { method: 'DELETE' }),
   listarVehiculos: (params = {}) => pedir(`/vehiculos${aQueryParams(params)}`),
+  obtenerVehiculo: (id) => pedir(`/vehiculos/${id}`),
+  crearVehiculo: (datos) =>
+    pedir('/vehiculos', { method: 'POST', body: JSON.stringify(datos) }),
+  actualizarVehiculo: (id, datos) =>
+    pedir(`/vehiculos/${id}`, { method: 'PUT', body: JSON.stringify(datos) }),
+  cambiarEstadoVehiculo: (id, estado) =>
+    pedir(`/vehiculos/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    }),
+  desactivarVehiculo: (id) =>
+    pedir(`/vehiculos/${id}`, { method: 'DELETE' }),
   listarAsignaciones: () => pedir('/asignaciones'),
   obtenerAsignacion: (id) => pedir(`/asignaciones/${id}`),
   crearAsignacion: (datos) =>
@@ -60,4 +81,14 @@ export const api = {
     pedir(`/asignaciones/vehiculo/${vehiculoId}`),
   cancelarAsignacion: (id) =>
     pedir(`/asignaciones/${id}`, { method: 'DELETE' }),
+  listarRutas: () => pedir('/rutas'),
+  obtenerRuta: (id) => pedir(`/rutas/${id}`),
+  generarRuta: (datos) =>
+    pedir('/rutas', { method: 'POST', body: JSON.stringify(datos) }),
+  actualizarEstadoRuta: (id, estado) =>
+    pedir(`/rutas/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    }),
+  cancelarRuta: (id) => pedir(`/rutas/${id}`, { method: 'DELETE' }),
 }

@@ -292,11 +292,18 @@ Contiene la planificación del proyecto y los artefactos relacionados con Jira:
 * registro de riesgos;
 * presupuesto del proyecto.
 
-### Ejecución
+### Implementación
 
-`docs/03 Ejecucion/`
+`docs/03 Implementación/`
 
-Contiene la documentación correspondiente al desarrollo del sistema.
+Contiene los documentos de seguimiento y cierre del Sprint 1:
+
+* [01 Informe de estado del proyecto V_1_0_0.md](docs/03 Implementación/01 Informe de estado del proyecto V_1_0_0.md)
+* [02 Registro de Impedimentos V_1_0_0.md](docs/03 Implementación/02 Registro de Impedimentos V_1_0_0.md)
+* [03 Revisión del Sprint V_1_0_0.md](docs/03 Implementación/03 Revisión del Sprint V_1_0_0.md)
+* [04 Retrospectiva del Sprint V_1_0_0.md](docs/03 Implementación/04 Retrospectiva del Sprint V_1_0_0.md)
+
+> **Volver al [README](../README.md)**
 
 ### Seguimiento y control
 

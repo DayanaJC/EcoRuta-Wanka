@@ -15,6 +15,7 @@ from app.config.firebase import initialize_firebase
 from app.presentation.controllers.asignaciones import router as asignaciones_router
 from app.presentation.controllers.health import router as health_router
 from app.presentation.controllers.pedidos import router as pedidos_router
+from app.presentation.controllers.rutas import router as rutas_router
 from app.presentation.controllers.vehiculos import router as vehiculos_router
 
 
@@ -53,3 +54,4 @@ app.include_router(health_router, tags=["health"])
 app.include_router(vehiculos_router)
 app.include_router(pedidos_router)
 app.include_router(asignaciones_router)
+app.include_router(rutas_router)
