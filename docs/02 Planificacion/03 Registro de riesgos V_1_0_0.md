@@ -4,7 +4,7 @@
 
 # 03. Registro de riesgos
 
-**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Actualizado:** 27/09/2026 (CC-01 – Cambio de stack y arquitectura) | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -54,7 +54,7 @@ Cada riesgo cuenta con una acción preventiva y una acción de contingencia para
 
 | ID     | Descripción del riesgo                                                                           | Categoría             | Prob. | Imp. | Severidad | Mitigación preventiva                                                                    | Contingencia reactiva                                                                             | Responsable           |
 | ------ | ------------------------------------------------------------------------------------------------ | --------------------- | ----: | ---: | --------: | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------- |
-| RSK-01 | Indisponibilidad temporal de Firebase o Firestore durante el desarrollo.                         | Técnica               |     2 |    4 |   8 Media | Revisar periódicamente el estado y consumo de los servicios.                             | Reprogramar las actividades dependientes del servicio hasta restablecerlo.                        | Responsable técnico   |
+| RSK-01 | Indisponibilidad temporal de Neon (base de datos) durante el desarrollo.                         | Técnica               |     2 |    4 |   8 Media | Revisar periódicamente el estado y consumo de los servicios.                             | Reprogramar las actividades dependientes del servicio hasta restablecerlo.                        | Responsable técnico   |
 | RSK-02 | Dificultades del equipo para utilizar las tecnologías seleccionadas.                             | Recursos humanos      |     3 |    3 |   9 Media | Realizar coordinación y revisión técnica entre los integrantes.                          | Reasignar temporalmente las tareas y priorizar las funciones principales.                         | Equipo de desarrollo  |
 | RSK-03 | Datos incompletos o incorrectos de pedidos y ubicaciones.                                        | Datos                 |     4 |    3 |  12 Media | Validar los datos antes de utilizarlos para generar rutas.                               | Corregir o completar los registros antes de generar nuevamente la ruta.                           | Operador              |
 | RSK-04 | Problemas de conexión a Internet durante el uso del sistema.                                     | Infraestructura       |     3 |    3 |   9 Media | Verificar la conectividad durante las pruebas del sistema.                               | Reprogramar la operación o registrar temporalmente la información para procesarla posteriormente. | Responsable técnico   |
@@ -63,11 +63,13 @@ Cada riesgo cuenta con una acción preventiva y una acción de contingencia para
 | RSK-07 | El sistema no alcanza el rendimiento esperado en operaciones principales.                        | Rendimiento           |     3 |    4 |  12 Media | Realizar pruebas de rendimiento durante el desarrollo.                                   | Optimizar las operaciones que presenten mayor tiempo de respuesta.                                | Responsable técnico   |
 | RSK-08 | Condiciones climáticas desfavorables pueden afectar la planificación de los repartos.            | Operativo / Ambiental |     3 |    3 |   9 Media | Considerar las condiciones de entrega registradas durante la planificación.              | Reprogramar o actualizar la ruta cuando las condiciones afecten el reparto.                       | Operador              |
 | RSK-09 | La falta de datos reales de una empresa limita la validación del sistema.                        | Alcance               |     4 |    3 |  12 Media | Utilizar datos simulados coherentes con el contexto de Huancayo.                         | Ampliar los datos de prueba y realizar nuevas validaciones.                                       | Director del proyecto |
-| RSK-10 | El uso de Firebase puede generar costos si se superan los recursos disponibles para el proyecto. | Financiero            |     2 |    3 |    6 Baja | Controlar periódicamente el consumo de los servicios.                                    | Reducir el uso de recursos y ajustar la configuración del proyecto.                               | Responsable técnico   |
+| RSK-10 | El uso de servicios cloud (Neon, hosting) puede generar costos si se superan sus planes gratuitos. | Financiero            |     2 |    3 |    6 Baja | Controlar periódicamente el consumo de los servicios.                                    | Reducir el uso de recursos y ajustar la configuración del proyecto.                               | Responsable técnico   |
 | RSK-11 | Exposición accidental de credenciales o información sensible del proyecto.                       | Seguridad             |     2 |    5 |  10 Media | Mantener credenciales fuera del repositorio y revisar los cambios mediante Pull Request. | Revocar y reemplazar inmediatamente las credenciales expuestas.                                   | Responsable técnico   |
 | RSK-12 | Disponibilidad limitada de los dos integrantes puede generar retrasos.                           | Cronograma            |     4 |    4 |   16 Alta | Planificar las actividades y priorizar las funcionalidades principales.                  | Reorganizar las tareas y priorizar el alcance mínimo del proyecto.                                | Equipo de desarrollo  |
 | RSK-13 | Conflictos durante la integración de cambios en Git y GitHub.                                    | Técnico / Proceso     |     2 |    3 |    6 Baja | Utilizar ramas y Pull Requests para integrar los cambios.                                | Resolver los conflictos antes de integrar nuevamente la rama.                                     | Responsable técnico   |
 | RSK-14 | Problemas de seguridad o acceso pueden afectar las funciones del sistema.                        | Seguridad             |     3 |    4 |  12 Media | Aplicar autenticación, autorización y pruebas de acceso según los roles definidos.       | Bloquear temporalmente el acceso afectado y corregir la configuración de seguridad.               | Responsable técnico   |
+| RSK-15 | La API de optimización de rutas no está disponible o se superan los límites de su plan gratuito. | Técnica               |     2 |    4 |   8 Media | Controlar el consumo diario, validar los datos antes de llamar a la API y solicitar el plan académico. | Permitir guardar la ruta con el orden ingresado por el operador y reintentar la optimización después. | Responsable técnico   |
+| RSK-16 | La migración del stack (CC-01) genera retrabajo y retrasa el Sprint 1.                           | Cronograma            |     3 |    3 |   9 Media | Migrar por módulos (vehículos, pedidos, rutas) reutilizando las reglas de negocio ya definidas. | Priorizar US-003 y trasladar funcionalidades secundarias al siguiente sprint.                     | Equipo de desarrollo  |
 
 ---
 
@@ -76,7 +78,7 @@ Cada riesgo cuenta con una acción preventiva y una acción de contingencia para
 | Severidad | Cantidad | Riesgos                                                                                |
 | --------- | -------: | -------------------------------------------------------------------------------------- |
 | Alta      |        1 | RSK-12                                                                                 |
-| Media     |       11 | RSK-01, RSK-02, RSK-03, RSK-04, RSK-05, RSK-06, RSK-07, RSK-08, RSK-09, RSK-11, RSK-14 |
+| Media     |       13 | RSK-01, RSK-02, RSK-03, RSK-04, RSK-05, RSK-06, RSK-07, RSK-08, RSK-09, RSK-11, RSK-14, RSK-15, RSK-16 |
 | Baja      |        2 | RSK-10, RSK-13                                                                         |
 
 Los riesgos con mayor severidad corresponden principalmente a la disponibilidad del equipo y a situaciones que pueden afectar directamente el cumplimiento del cronograma.
@@ -91,9 +93,9 @@ Los riesgos identificados se relacionan con los principales elementos de EcoRuta
 | ---------------------------- | ---------------------- |
 | Requisitos y alcance         | RSK-06, RSK-09         |
 | Datos y rutas                | RSK-03, RSK-08         |
-| Tecnología e infraestructura | RSK-01, RSK-04, RSK-07 |
+| Tecnología e infraestructura | RSK-01, RSK-04, RSK-07, RSK-15 |
 | Seguridad                    | RSK-11, RSK-14         |
-| Equipo y cronograma          | RSK-02, RSK-12         |
+| Equipo y cronograma          | RSK-02, RSK-12, RSK-16 |
 | Desarrollo e integración     | RSK-10, RSK-13         |
 | Usuarios                     | RSK-05                 |
 

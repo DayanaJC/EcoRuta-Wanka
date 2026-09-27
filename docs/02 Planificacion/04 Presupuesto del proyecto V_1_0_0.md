@@ -4,7 +4,7 @@
 
 # 04. Presupuesto del proyecto
 
-**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Actualizado:** 27/09/2026 (CC-01 – Cambio de stack y arquitectura) | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -68,8 +68,9 @@ Los roles representan las funciones necesarias para el proyecto. En la ejecució
 
 | Servicio                            | Descripción                                | Costo estimado (S/) |
 | ----------------------------------- | ------------------------------------------ | ------------------: |
-| Firebase / Firestore                | Base de datos en la nube                   |             S/ 0.00 |
-| Firebase Hosting                    | Publicación del frontend                   |             S/ 0.00 |
+| Neon (PostgreSQL)                   | Base de datos en la nube (plan gratuito)   |             S/ 0.00 |
+| Vercel                              | Publicación del frontend (plan gratuito)   |             S/ 0.00 |
+| API de OpenRouteService             | Optimización de rutas (plan gratuito)      |             S/ 0.00 |
 | Servicio de alojamiento del backend | Alojamiento del backend                    |            S/ 78.75 |
 | Dominio web                         | Registro del dominio                       |            S/ 67.50 |
 | Certificado SSL                     | Seguridad de conexión                      |             S/ 0.00 |
