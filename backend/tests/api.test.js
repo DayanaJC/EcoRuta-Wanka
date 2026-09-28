@@ -6,13 +6,19 @@ import { crearApp } from "../src/app.js";
 import { crearOptimizadorFalso, crearRepositoriosMemoria, pedidoValido, vehiculoValido } from "./helpers/memoria.js";
 
 const ALMACEN = { nombre: "Almacén", latitud: -12.0681, longitud: -75.2104 };
+// "HH:MM" -> minutos
+const h = (hhmm) => hhmm.split(":").map(Number).reduce((hh, mm) => hh * 60 + mm);
 let repos, optimizador, api;
 
 beforeEach(() => {
   repos = crearRepositoriosMemoria();
   optimizador = crearOptimizadorFalso();
-  api = request(crearApp({ repos, optimizador, almacen: ALMACEN }));
+  api = request(crearApp({ repos, optimizador, geocodificador: geocodificadorFalso, almacen: ALMACEN }));
 });
+
+const geocodificadorFalso = {
+  buscar: async (q) => [{ nombre: `${q}, Huancayo, Junín, Perú`, latitud: -12.06, longitud: -75.2 }],
+};
 
 const crearVehiculo = async (extra) => (await api.post("/api/v1/vehiculos").send(vehiculoValido(extra)).expect(201)).body;
 const crearPedido = async (extra) => (await api.post("/api/v1/pedidos").send(pedidoValido(extra)).expect(201)).body;
@@ -26,6 +32,17 @@ describe("salud", () => {
   it("responde 404 con { detail } en rutas inexistentes", async () => {
     const res = await api.get("/api/v1/no-existe").expect(404);
     expect(res.body.detail).toMatch(/No existe el recurso/);
+  });
+});
+
+describe("geocodificación", () => {
+  it("devuelve sugerencias de direcciones", async () => {
+    const res = await api.get("/api/v1/geocodificar?q=Jr.%20Puno%20450").expect(200);
+    expect(res.body[0]).toMatchObject({ latitud: -12.06, longitud: -75.2 });
+  });
+
+  it("exige al menos 3 caracteres (422)", async () => {
+    await api.get("/api/v1/geocodificar?q=ab").expect(422);
   });
 });
 
@@ -160,11 +177,22 @@ describe("rutas optimizadas (RF-03)", () => {
     expect(ruta.pedido_ids).toEqual([p2.id, p1.id]);
     expect(ruta.paradas.map((x) => x.orden)).toEqual([1, 2]);
     expect(ruta.paradas[0].hora_estimada_llegada).toBe("08:10");
-    expect(ruta).toMatchObject({ estado: "generada", distancia_estimada_km: 12.35, tiempo_estimado_min: 60, hora_salida: "08:00" });
+    expect(ruta.paradas[1].hora_estimada_llegada).toBe("08:25");
+    expect(ruta).toMatchObject({ estado: "generada", distancia_estimada_km: 12.35, tiempo_estimado_min: 40, hora_salida: "08:00", hora_disponible: "08:00" });
     expect(optimizador.ultimaLlamada.almacen).toEqual(ALMACEN);
   });
 
-  it("aplica el factor de tráfico de la franja y tipo de día", async () => {
+  it("no aplica factores de tráfico mientras están deshabilitados (por defecto)", async () => {
+    repos.factoresTrafico.agregar({ tipo_dia: "laborable", hora_inicio: "06:30", hora_fin: "09:00", factor: 0.7 });
+    const v = await crearVehiculo();
+    const p = await crearPedido();
+    const ruta = (await api.post("/api/v1/rutas").send({ vehiculo_id: v.id, pedido_ids: [p.id], fecha: "2026-09-28", hora_salida: "08:00" }).expect(201)).body;
+    expect(optimizador.ultimaLlamada.factorVelocidad).toBe(1);
+    expect(ruta.factor_trafico_aplicado).toBeNull();
+  });
+
+  it("aplica el factor de tráfico de la franja y tipo de día cuando está habilitado", async () => {
+    api = request(crearApp({ repos, optimizador, geocodificador: geocodificadorFalso, almacen: ALMACEN, traficoHabilitado: true }));
     repos.factoresTrafico.agregar({ tipo_dia: "laborable", hora_inicio: "06:30", hora_fin: "09:00", factor: 0.7 });
     const v = await crearVehiculo();
     const p = await crearPedido();
@@ -176,6 +204,30 @@ describe("rutas optimizadas (RF-03)", () => {
     const domingo = (await api.post("/api/v1/rutas").send({ ...cuerpo, fecha: "2026-09-27" }).expect(201)).body;
     expect(optimizador.ultimaLlamada.factorVelocidad).toBe(1);
     expect(domingo.factor_trafico_aplicado).toBe(1);
+  });
+
+  it("retrasa la salida para no esperar en la calle (salida óptima con margen)", async () => {
+    const v = await crearVehiculo();
+    const panaderia = await crearPedido({ cliente_nombre: "Panadería", ventana_entrega_inicio: "08:00", ventana_entrega_fin: "12:00" });
+    const bodega = await crearPedido({ cliente_nombre: "Bodega", ventana_entrega_inicio: "13:00", ventana_entrega_fin: "17:00" });
+    // El optimizador falso invierte el orden: primero la bodega... se envía al revés para que vaya primero la panadería
+    const ruta = (
+      await api.post("/api/v1/rutas").send({ vehiculo_id: v.id, pedido_ids: [bodega.id, panaderia.id], hora_salida: "08:00" }).expect(201)
+    ).body;
+    // Panadería a las 11:45 (12:00 - 15 min de margen) => salida 11:35; bodega a las 13:00
+    expect(ruta).toMatchObject({ hora_disponible: "08:00", hora_salida: "11:35" });
+    expect(ruta.paradas.map((p) => p.hora_estimada_llegada)).toEqual(["11:45", "13:00"]);
+    expect(ruta.paradas[1].espera_min).toBe(60);
+    expect(ruta.tiempo_estimado_min).toBe(100); // 11:35 -> 13:15
+
+    const fija = (
+      await api
+        .post("/api/v1/rutas")
+        .send({ vehiculo_id: v.id, pedido_ids: [bodega.id, panaderia.id], hora_salida: "08:00", ajustar_salida: false })
+        .expect(201)
+    ).body;
+    expect(fija.hora_salida).toBe("08:00");
+    expect(fija.paradas[1].espera_min).toBe(h("13:00") - h("08:25"));
   });
 
   it("valida vehículo, pedidos y capacidad antes de llamar al optimizador", async () => {

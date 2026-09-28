@@ -1,42 +1,28 @@
 import {
-  COLORES_ESTADO,
-  COLORES_ESTADO_ASIGNACION,
-  COLORES_ESTADO_RUTA,
-  COLORES_PRIORIDAD,
   ETIQUETAS_ESTADO,
   ETIQUETAS_ESTADO_ASIGNACION,
   ETIQUETAS_ESTADO_RUTA,
+  ETIQUETAS_ESTADO_VEHICULO,
   ETIQUETAS_PRIORIDAD,
+  TONOS,
 } from '../utils/formatos.js'
 
-export function BadgeEstado({ estado }) {
-  return (
-    <span className="badge" style={{ backgroundColor: COLORES_ESTADO[estado] || '#6b7280' }}>
-      {ETIQUETAS_ESTADO[estado] || estado}
-    </span>
-  )
+function Badge({ tono = 'gris', children }) {
+  return <span className={`badge tono-${tono}`}>{children}</span>
 }
 
-export function BadgeEstadoAsignacion({ estado }) {
-  return (
-    <span className="badge" style={{ backgroundColor: COLORES_ESTADO_ASIGNACION[estado] || '#6b7280' }}>
-      {ETIQUETAS_ESTADO_ASIGNACION[estado] || estado}
-    </span>
-  )
-}
+export const BadgeEstado = ({ estado }) => <Badge tono={TONOS.pedido[estado]}>{ETIQUETAS_ESTADO[estado] ?? estado}</Badge>
 
-export function BadgeEstadoRuta({ estado }) {
-  return (
-    <span className="badge" style={{ backgroundColor: COLORES_ESTADO_RUTA[estado] || '#6b7280' }}>
-      {ETIQUETAS_ESTADO_RUTA[estado] || estado}
-    </span>
-  )
-}
+export const BadgeEstadoVehiculo = ({ estado }) => (
+  <Badge tono={TONOS.vehiculo[estado]}>{ETIQUETAS_ESTADO_VEHICULO[estado] ?? estado}</Badge>
+)
 
-export function BadgePrioridad({ prioridad }) {
-  return (
-    <span className="badge" style={{ backgroundColor: COLORES_PRIORIDAD[prioridad] || '#6b7280' }}>
-      {ETIQUETAS_PRIORIDAD[prioridad] || prioridad}
-    </span>
-  )
-}
+export const BadgeEstadoAsignacion = ({ estado }) => (
+  <Badge tono={TONOS.asignacion[estado]}>{ETIQUETAS_ESTADO_ASIGNACION[estado] ?? estado}</Badge>
+)
+
+export const BadgeEstadoRuta = ({ estado }) => <Badge tono={TONOS.ruta[estado]}>{ETIQUETAS_ESTADO_RUTA[estado] ?? estado}</Badge>
+
+export const BadgePrioridad = ({ prioridad }) => (
+  <Badge tono={TONOS.prioridad[prioridad]}>{ETIQUETAS_PRIORIDAD[prioridad] ?? prioridad}</Badge>
+)

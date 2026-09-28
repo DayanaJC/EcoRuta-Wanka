@@ -88,5 +88,11 @@ export const rutaCrear = z.object({
   pedido_ids: z.array(id).max(48, "Una ruta admite como máximo 48 pedidos."),
   fecha: z.string().regex(PATRON_FECHA, "Fecha inválida: use el formato YYYY-MM-DD.").optional(),
   hora_salida: hora.optional(),
+  // false = salir exactamente a hora_salida (p. ej. por el turno del conductor)
+  ajustar_salida: z.boolean().default(true),
 });
 export const cambiarEstadoRuta = z.object({ estado: z.enum(ESTADOS_RUTA) });
+
+// ---------- Geocodificación ----------
+
+export const busquedaDireccion = z.object({ q: z.string().trim().min(3, "Escribe al menos 3 caracteres.").max(200) });

@@ -5,13 +5,17 @@ import { crearApp } from "./app.js";
 import { config } from "./config/env.js";
 import { obtenerPrisma } from "./db/prisma.js";
 import { crearRepositorios } from "./repositories/prisma.repositories.js";
+import { crearGeocodificador } from "./services/geocodificacion/nominatim.client.js";
 import { crearClienteOrs } from "./services/optimizacion/ors.client.js";
 
 const app = crearApp({
   repos: crearRepositorios(obtenerPrisma()),
   optimizador: crearClienteOrs({ apiKey: config.orsApiKey }),
+  geocodificador: crearGeocodificador(),
   almacen: config.almacen,
   zonaHoraria: config.zonaHoraria,
+  traficoHabilitado: config.traficoHabilitado,
+  margenVentanaMin: config.margenVentanaMin,
   origenesCors: [config.frontendUrl],
 });
 

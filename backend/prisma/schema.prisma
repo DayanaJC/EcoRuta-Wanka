@@ -143,6 +143,8 @@ model Ruta {
   vehiculo_id             String     @db.Uuid
   fecha                   DateTime   @db.Date
   hora_salida             DateTime   @db.Time(0)
+  // Hora desde la que el vehículo está disponible (la salida real puede ser posterior)
+  hora_disponible         DateTime?  @db.Time(0)
   distancia_estimada_km   Decimal?   @db.Decimal(7, 2)
   tiempo_estimado_min     Int?
   factor_trafico_aplicado Decimal?   @db.Decimal(4, 2)
@@ -164,6 +166,8 @@ model RutaParada {
   pedido_id             String    @db.Uuid
   orden                 Int       @db.SmallInt
   hora_estimada_llegada DateTime? @db.Time(0)
+  // Minutos que el vehículo espera a que abra la ventana del cliente
+  espera_min            Int       @default(0) @db.SmallInt
 
   ruta   Ruta   @relation(fields: [ruta_id], references: [id], onDelete: Cascade)
   pedido Pedido @relation(fields: [pedido_id], references: [id])

@@ -44,8 +44,8 @@ export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
     /**
      * @param {{ almacen: {latitud:number, longitud:number}, vehiculo: object, pedidos: object[],
      *           horaSalida: string, factorVelocidad: number }} datos
-     * @returns {{ paradas: {pedido_id:string, llegada_seg:number}[], no_asignados: string[],
-     *             distancia_m:number, duracion_total_s:number, geometria: number[][] }}
+     * @returns {{ paradas: {pedido_id:string, viaje_s:number}[], regreso_s:number, no_asignados: string[],
+     *             distancia_m:number, geometria: number[][] }}
      */
     async optimizarRuta({ almacen, vehiculo, pedidos, horaSalida, factorVelocidad }) {
       if (!apiKey) throw new OptimizacionNoConfiguradaError("El servicio de optimización no está configurado (falta ORS_API_KEY).");
@@ -94,32 +94,27 @@ export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
 
       const ruta = datos.routes?.[0];
       const noAsignados = (datos.unassigned ?? []).map((u) => pedidos[u.id - 1].id);
-      if (!ruta) return { paradas: [], no_asignados: noAsignados, distancia_m: 0, duracion_total_s: 0, geometria: [] };
+      if (!ruta) return { paradas: [], regreso_s: 0, no_asignados: noAsignados, distancia_m: 0, geometria: [] };
 
-      // VROOM puede retrasar la salida para evitar esperas en ventanas tardías.
-      // Recalculamos el horario saliendo a la hora pedida, con sus tiempos de
-      // viaje (step.duration es el tiempo de manejo acumulado): si el vehículo
-      // llega antes de que abra la ventana, espera y entrega al abrir.
-      let reloj = horaASegundos(horaSalida);
+      // De la API se toman el ORDEN y los segundos de manejo de cada tramo
+      // (step.duration es el manejo acumulado). El horario lo calcula
+      // horario.js, porque VROOM puede retrasar la salida por su cuenta.
       let manejoPrevio = 0;
       const paradas = [];
+      let regreso_s = 0;
       for (const paso of ruta.steps) {
         if (paso.type === "start") continue;
-        reloj += paso.duration - manejoPrevio;
+        const viaje_s = paso.duration - manejoPrevio;
         manejoPrevio = paso.duration;
-        if (paso.type !== "job") continue;
-        const pedido = pedidos[paso.id - 1];
-        const entrega = Math.max(reloj, horaASegundos(pedido.ventana_entrega_inicio));
-        paradas.push({ pedido_id: pedido.id, llegada_seg: entrega });
-        reloj = entrega + (paso.service ?? 0);
+        if (paso.type === "job") paradas.push({ pedido_id: pedidos[paso.id - 1].id, viaje_s });
+        else if (paso.type === "end") regreso_s = viaje_s;
       }
 
       return {
         paradas,
+        regreso_s,
         no_asignados: noAsignados,
         distancia_m: ruta.distance ?? 0,
-        // Desde la salida del almacén hasta el regreso, con tiempos de servicio y esperas
-        duracion_total_s: reloj - horaASegundos(horaSalida),
         geometria: ruta.geometry ? decodificarPolilinea(ruta.geometry) : [],
       };
     },

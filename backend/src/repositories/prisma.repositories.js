@@ -71,8 +71,10 @@ const aRuta = (r, { conGeometria = true } = {}) => {
       orden: p.orden,
       pedido_id: p.pedido_id,
       hora_estimada_llegada: dateAHora(p.hora_estimada_llegada),
+      espera_min: p.espera_min ?? 0,
     })),
     fecha: dateAFecha(r.fecha),
+    hora_disponible: dateAHora(r.hora_disponible),
     hora_salida: dateAHora(r.hora_salida),
     distancia_estimada_km: num(r.distancia_estimada_km),
     tiempo_estimado_min: r.tiempo_estimado_min,
@@ -173,18 +175,20 @@ export function crearRepositorios(prisma) {
           ).map((r) => aRuta(r, { conGeometria: false }))
         : [],
     // La ruta y sus paradas se crean en una sola operación (transacción implícita de Prisma)
-    crearConParadas: async ({ paradas, fecha, hora_salida, ...datos }) =>
+    crearConParadas: async ({ paradas, fecha, hora_salida, hora_disponible, ...datos }) =>
       aRuta(
         await prisma.ruta.create({
           data: {
             ...datos,
             fecha: fechaADate(fecha),
             hora_salida: horaADate(hora_salida),
+            hora_disponible: hora_disponible ? horaADate(hora_disponible) : null,
             paradas: {
               create: paradas.map((p) => ({
                 pedido_id: p.pedido_id,
                 orden: p.orden,
                 hora_estimada_llegada: p.hora_estimada_llegada ? horaADate(p.hora_estimada_llegada) : null,
+                espera_min: p.espera_min ?? 0,
               })),
             },
           },

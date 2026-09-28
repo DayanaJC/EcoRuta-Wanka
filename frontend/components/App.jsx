@@ -1,366 +1,158 @@
 'use client'
 
+// Estructura general: barra lateral, datos compartidos, avisos y confirmaciones.
+// Cada módulo se encarga de su propia lista, formulario y detalle.
+
+import { Leaf, Package, Route, Truck } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../services/api.js'
-import { AsignacionFormulario } from './AsignacionFormulario.jsx'
-import { AsignacionLista } from './AsignacionLista.jsx'
-import { PedidoDetalle } from './PedidoDetalle.jsx'
-import { PedidoFormulario } from './PedidoFormulario.jsx'
-import { PedidoLista } from './PedidoLista.jsx'
-import { VehiculoLista } from './VehiculoLista.jsx'
-import { VehiculoFormulario } from './VehiculoFormulario.jsx'
-import { VehiculoDetalle } from './VehiculoDetalle.jsx'
-import { RutaLista } from './RutaLista.jsx'
-import { RutaFormulario, RutaDetalle } from './RutaFormulario.jsx'
-import { ETIQUETAS_ESTADO } from '../utils/formatos.js'
+import { Pedidos } from './modulos/Pedidos.jsx'
+import { Rutas } from './modulos/Rutas.jsx'
+import { Vehiculos } from './modulos/Vehiculos.jsx'
+import { navegar, useUbicacion } from './navegacion.js'
+import { DialogoConfirmacion, Toasts } from './ui.jsx'
 
-const FILTROS_VACIOS = { estado: '', prioridad: '', busqueda: '' }
+// Módulos ocultos por ahora (sus archivos siguen en components/modulos/):
+// - Resumen: agregarlo como primer elemento y cambiar VISTA_INICIAL en navegacion.js.
+// - Asignaciones: { id: 'asignaciones', etiqueta: 'Asignaciones', icono: Link2, componente: Asignaciones }.
+const MODULOS = [
+  { id: 'pedidos', etiqueta: 'Pedidos', icono: Package, componente: Pedidos },
+  { id: 'vehiculos', etiqueta: 'Vehículos', icono: Truck, componente: Vehiculos },
+  { id: 'rutas', etiqueta: 'Rutas', icono: Route, componente: Rutas },
+]
 
-function App() {
-  const [modulo, setModulo] = useState('pedidos')
-  const [pedidos, setPedidos] = useState([])
-  const [filtros, setFiltros] = useState(FILTROS_VACIOS)
-  const [vista, setVista] = useState('lista')
-  const [pedidoActivo, setPedidoActivo] = useState(null)
+const CARGADORES = {
+  pedidos: () => api.listarPedidos(),
+  vehiculos: () => api.listarVehiculos(),
+  asignaciones: () => api.listarAsignaciones(),
+  rutas: () => api.listarRutas(),
+}
+
+function useDatos(notificar) {
+  const [datos, setDatos] = useState({ pedidos: [], vehiculos: [], asignaciones: [], rutas: [] })
   const [cargando, setCargando] = useState(true)
-  const [guardando, setGuardando] = useState(false)
-  const [gestionando, setGestionando] = useState(false)
-  const [error, setError] = useState('')
-  const [mensaje, setMensaje] = useState('')
 
-  const [vehiculos, setVehiculos] = useState([])
-  const [asignaciones, setAsignaciones] = useState([])
-  const [vistaAsignacion, setVistaAsignacion] = useState('lista')
-  const [cargandoAsignaciones, setCargandoAsignaciones] = useState(true)
-  const [asignando, setAsignando] = useState(false)
-
-  const [rutas, setRutas] = useState([])
-  const [rutaActiva, setRutaActiva] = useState(null)
-  const [cargandoRutas, setCargandoRutas] = useState(true)
-  const [vistaRuta, setVistaRuta] = useState('lista')
-  const [generandoRuta, setGenerandoRuta] = useState(false)
-  const [cargandoVehiculos, setCargandoVehiculos] = useState(true)
-
-  const cargarPedidos = useCallback(
-    async (f = filtros) => {
-      setCargando(true)
-      setError('')
+  const recargar = useCallback(
+    async (...claves) => {
+      const lista = claves.length ? claves : Object.keys(CARGADORES)
       try {
-        const datos = await api.listarPedidos({
-          estado: f.estado || undefined,
-          prioridad: f.prioridad || undefined,
-          busqueda: f.busqueda || undefined,
-        })
-        setPedidos(datos)
+        const resultados = await Promise.all(lista.map((c) => CARGADORES[c]()))
+        setDatos((prev) => ({ ...prev, ...Object.fromEntries(lista.map((c, i) => [c, resultados[i]])) }))
       } catch (e) {
-        setError(e.message)
+        notificar('error', `No se pudo cargar la información: ${e.message}`)
       } finally {
         setCargando(false)
       }
     },
-    [filtros],
+    [notificar],
   )
 
+  // Carga inicial de todas las colecciones
   useEffect(() => {
     let activo = true
-    const inicial = async () => {
-      try {
-        const datos = await api.listarPedidos()
-        if (activo) setPedidos(datos)
-      } catch (e) {
-        if (activo) setError(e.message)
-      } finally {
-        if (activo) setCargando(false)
-      }
+    const claves = Object.keys(CARGADORES)
+    Promise.all(claves.map((c) => CARGADORES[c]()))
+      .then((r) => activo && setDatos(Object.fromEntries(claves.map((c, i) => [c, r[i]]))))
+      .catch((e) => activo && notificar('error', `No se pudo conectar con el servidor: ${e.message}`))
+      .finally(() => activo && setCargando(false))
+    return () => {
+      activo = false
     }
-    inicial()
-    return () => { activo = false }
+  }, [notificar])
+
+  return { datos, cargando, recargar }
+}
+
+export default function App() {
+  const ubicacion = useUbicacion()
+  const [avisos, setAvisos] = useState([])
+  const [solicitud, setSolicitud] = useState(null)
+
+  const notificar = useCallback((tipo, texto) => {
+    setAvisos((prev) => [...prev.slice(-3), { id: crypto.randomUUID(), tipo, texto }])
   }, [])
+  const cerrarAviso = useCallback((id) => setAvisos((prev) => prev.filter((a) => a.id !== id)), [])
 
-  const cargarDatosAsignaciones = useCallback(async () => {
-    setCargandoAsignaciones(true)
-    setError('')
-    try {
-      const [asignacionesDatos, vehiculosDatos] = await Promise.all([
-        api.listarAsignaciones(),
-        api.listarVehiculos(),
-      ])
-      setAsignaciones(asignacionesDatos)
-      setVehiculos(vehiculosDatos)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setCargandoAsignaciones(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    let activo = true
-    Promise.all([api.listarAsignaciones(), api.listarVehiculos()])
-      .then(([asignacionesDatos, vehiculosDatos]) => {
-        if (activo) {
-          setAsignaciones(asignacionesDatos)
-          setVehiculos(vehiculosDatos)
-        }
-      })
-      .catch((e) => { if (activo) setError(e.message) })
-      .finally(() => { if (activo) setCargandoAsignaciones(false) })
-    return () => { activo = false }
-  }, [])
-
-  const cargarRutas = useCallback(async () => {
-    setCargandoRutas(true)
-    setError('')
-    try {
-      const datos = await api.listarRutas()
-      setRutas(datos)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setCargandoRutas(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    let activo = true
-    const inicial = async () => {
-      try {
-        await cargarRutas()
-      } catch (e) {
-        if (activo) setError(e.message)
-      } finally {
-        if (activo) setCargandoRutas(false)
-      }
-    }
-    inicial()
-    return () => { activo = false }
-  }, [])
-
-  const cambiarModulo = (m) => {
-    setModulo(m)
-    setError('')
-    setMensaje('')
-    setVista('lista')
-    setPedidoActivo(null)
-    setVistaAsignacion('lista')
-    setVistaRuta('lista')
-    setRutaActiva(null)
-    if (m === 'asignaciones') {
-      cargarDatosAsignaciones()
-    }
+  // confirmar({ titulo, mensaje, textoConfirmar, peligro }) -> Promise<boolean>
+  const confirmar = useCallback((opciones) => new Promise((resolver) => setSolicitud({ ...opciones, resolver })), [])
+  const responder = (respuesta) => {
+    solicitud?.resolver(respuesta)
+    setSolicitud(null)
   }
 
-  const abrirCrear = () => { setPedidoActivo(null); setVista('formulario') }
-  const abrirEditar = (p) => { setPedidoActivo(p); setVista('formulario') }
-  const abrirDetalle = (p) => { setPedidoActivo(p); setVista('detalle') }
-  const volver = () => { setVista('lista'); setPedidoActivo(null) }
+  const { datos, cargando, recargar } = useDatos(notificar)
+  const modulo = MODULOS.find((m) => m.id === ubicacion.vista) ?? MODULOS[0]
+  const Modulo = modulo.componente
 
-  const alGuardar = async (payload) => {
-    setGuardando(true); setError('')
-    try {
-      if (pedidoActivo?.id) {
-        await api.actualizarPedido(pedidoActivo.id, payload)
-        setMensaje('Pedido actualizado correctamente.')
-      } else {
-        await api.crearPedido(payload)
-        setMensaje('Pedido registrado correctamente.')
-      }
-      setVista('lista'); setPedidoActivo(null)
-      await cargarPedidos()
-    } catch (e) { setError(e.message) }
-    finally { setGuardando(false) }
+  const contadores = {
+    pedidos: datos.pedidos.filter((p) => p.estado === 'pendiente').length,
+    rutas: datos.rutas.filter((r) => r.estado === 'generada' || r.estado === 'en_reparto').length,
   }
 
-  const alCambiarEstado = async (pedido, estado) => {
-    setGestionando(true); setError('')
-    try {
-      await api.cambiarEstado(pedido.id, estado)
-      setMensaje(`Estado cambiado a "${ETIQUETAS_ESTADO[estado] || estado}".`)
-      await cargarPedidos()
-    } catch (e) { setError(e.message) }
-    finally { setGestionando(false) }
-  }
-
-  const alCancelar = async (pedido) => {
-    const confirmar = window.confirm(`¿Estás seguro de cancelar el pedido de "${pedido.cliente_nombre}"?`)
-    if (!confirmar) return
-    setGestionando(true); setError('')
-    try {
-      await api.cancelarPedido(pedido.id)
-      setMensaje('Pedido cancelado.')
-      await cargarPedidos()
-    } catch (e) { setError(e.message) }
-    finally { setGestionando(false) }
-  }
-
-  const alAsignar = async (payload) => {
-    setAsignando(true); setError('')
-    try {
-      await api.crearAsignacion(payload)
-      setMensaje('Pedido asignado correctamente.')
-      setVistaAsignacion('lista')
-      await cargarDatosAsignaciones()
-    } catch (e) { setError(e.message) }
-    finally { setAsignando(false) }
-  }
-
-  const alCancelarAsignacion = async (asignacion) => {
-    const confirmar = window.confirm('¿Estás seguro de cancelar esta asignación? El pedido quedará sin vehículo asignado.')
-    if (!confirmar) return
-    setGestionando(true); setError('')
-    try {
-      await api.cancelarAsignacion(asignacion.id)
-      setMensaje('Asignación cancelada.')
-      await cargarDatosAsignaciones()
-    } catch (e) { setError(e.message) }
-    finally { setGestionando(false) }
-  }
-
-  const alGuardarVehiculo = async (payload) => {
-    setGuardando(true); setError('')
-    try {
-      if (vehiculoActivo?.id) {
-        await api.actualizarVehiculo(vehiculoActivo.id, payload)
-        setMensaje('Vehículo actualizado correctamente.')
-      } else {
-        await api.crearVehiculo(payload)
-        setMensaje('Vehículo registrado correctamente.')
-      }
-      setVehiculoVista('lista'); setVehiculoActivo(null)
-      await cargarVehiculos()
-    } catch (e) { setError(e.message) }
-    finally { setGuardando(false) }
-  }
-
-  const [vehiculoActivo, setVehiculoActivo] = useState(null)
-  const [vehiculoVista, setVehiculoVista] = useState('lista')
-
-  const cargarVehiculos = async () => {
-    setCargandoVehiculos(true)
-    try {
-      const datos = await api.listarVehiculos()
-      setVehiculos(datos)
-    } catch (e) { setError(e.message) }
-    finally { setCargandoVehiculos(false) }
-  }
-
-  useEffect(() => {
-    if (modulo === 'vehiculos') cargarVehiculos()
-  }, [modulo])
-
-  const alCambiarEstadoVehiculo = async (vehiculo, estado) => {
-    setGestionando(true); setError('')
-    try {
-      await api.cambiarEstadoVehiculo(vehiculo.id, estado)
-      setMensaje(`Estado de vehículo cambiado a "${estado}".`)
-      await cargarVehiculos()
-    } catch (e) { setError(e.message) }
-    finally { setGestionando(false) }
-  }
-
-  const alGenerarRuta = async (datos) => {
-    setGenerandoRuta(true); setError('')
-    try {
-      const nueva = await api.generarRuta(datos)
-      setMensaje('Ruta generada correctamente.')
-      setVistaRuta('lista')
-      await cargarRutas()
-    } catch (e) { setError(e.message) }
-    finally { setGenerandoRuta(false) }
-  }
-
-  const alCambiarEstadoRuta = async (rutaId, estado) => {
-    setGestionando(true); setError('')
-    try {
-      await api.actualizarEstadoRuta(rutaId, estado)
-      setMensaje(`Estado de ruta cambiado a "${estado}".`)
-      await cargarRutas()
-    } catch (e) { setError(e.message) }
-    finally { setGestionando(false) }
-  }
-
-  const pedidosDisponibles = pedidos.filter(
-    (p) => p.estado !== 'entregado' && p.estado !== 'cancelado' && !asignaciones.some((a) => a.pedido_id === p.id && a.estado === 'asignada'),
-  )
-
-  const vehiculosActivos = vehiculos.filter((v) => v.estado === 'activo')
+  const itemsNav = MODULOS.map((m) => {
+    const Icono = m.icono
+    return (
+      <button
+        key={m.id}
+        type="button"
+        className="nav-item"
+        aria-current={m.id === modulo.id ? 'page' : undefined}
+        onClick={() => navegar({ vista: m.id })}
+      >
+        <Icono size={19} aria-hidden />
+        <span>{m.etiqueta}</span>
+        {contadores[m.id] > 0 && (
+          <span className="nav-contador" aria-label={`${contadores[m.id]} pendientes`}>
+            {contadores[m.id]}
+          </span>
+        )}
+      </button>
+    )
+  })
 
   return (
-    <div className="contenedor">
-      <header className="cabecera">
-        <div>
-          <h1>EcoRuta Wanka</h1>
-          <p className="subtitulo">Optimización sostenible de reparto · Huancayo</p>
+    <div className="app">
+      <aside className="lateral">
+        <div className="marca">
+          <div className="marca-logo">
+            <Leaf size={20} aria-hidden />
+          </div>
+          <div>
+            <div className="marca-nombre">EcoRuta Wanka</div>
+            <div className="marca-lema">Reparto sostenible · Huancayo</div>
+          </div>
         </div>
-        <nav className="nav-modulos" aria-label="Módulos del sistema">
-          <button className={modulo === 'pedidos' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'} onClick={() => cambiarModulo('pedidos')}>Pedidos</button>
-          <button className={modulo === 'vehiculos' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'} onClick={() => cambiarModulo('vehiculos')}>Vehículos</button>
-          <button className={modulo === 'asignaciones' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'} onClick={() => cambiarModulo('asignaciones')}>Asignaciones</button>
-          <button className={modulo === 'rutas' ? 'nav-modulo nav-modulo-activo' : 'nav-modulo'} onClick={() => cambiarModulo('rutas')}>Rutas</button>
+        <nav className="nav" aria-label="Módulos">
+          {itemsNav}
         </nav>
+        <div className="lateral-pie">WankaLogística S.A.C. · Huancayo, Junín</div>
+      </aside>
+
+      <header className="barra-movil">
+        <div className="marca-logo">
+          <Leaf size={18} aria-hidden />
+        </div>
+        <strong>EcoRuta Wanka</strong>
       </header>
 
-      <main>
-        {error && <div className="aviso aviso-error" role="alert">{error}</div>}
-        {mensaje && <div className="aviso aviso-exito" role="status">{mensaje}</div>}
-
-        {modulo === 'pedidos' && (
-          <>
-            {vista === 'lista' && (
-              <PedidoLista pedidos={pedidos} filtros={filtros} onCambiarFiltros={(f) => { setFiltros(f); cargarPedidos(f) }} onCrear={abrirCrear} onVer={abrirDetalle} onEditar={abrirEditar} onCambiarEstado={alCambiarEstado} onCancelar={alCancelar} cargando={cargando} />
-            )}
-            {vista === 'formulario' && (
-              <PedidoFormulario modo={pedidoActivo?.id ? 'editar' : 'crear'} pedidoInicial={pedidoActivo} onGuardar={alGuardar} onVolver={volver} guardando={guardando} />
-            )}
-            {vista === 'detalle' && pedidoActivo && (
-              <PedidoDetalle pedido={pedidoActivo} onCambiarEstado={alCambiarEstado} onCancelar={alCancelar} onEditar={abrirEditar} onVolver={volver} gestionando={gestionando} />
-            )}
-          </>
-        )}
-
-        {modulo === 'vehiculos' && (
-          <>
-            {vehiculoVista === 'lista' && (
-              <VehiculoLista vehiculos={vehiculos} cargando={cargandoVehiculos} onCrear={() => { setVehiculoActivo(null); setVehiculoVista('formulario') }} onEditar={(v) => { setVehiculoActivo(v); setVehiculoVista('formulario') }} onVer={(v) => { setVehiculoActivo(v); setVehiculoVista('detalle') }} />
-            )}
-            {vehiculoVista === 'formulario' && (
-              <VehiculoFormulario vehiculoInicial={vehiculoActivo} onGuardar={alGuardarVehiculo} onVolver={() => { setVehiculoVista('lista'); setVehiculoActivo(null) }} guardando={guardando} />
-            )}
-            {vehiculoVista === 'detalle' && vehiculoActivo && (
-              <VehiculoDetalle vehiculo={vehiculoActivo} onCambiarEstado={alCambiarEstadoVehiculo} onEditar={(v) => { setVehiculoActivo(v); setVehiculoVista('formulario') }} onVolver={() => { setVehiculoVista('lista'); setVehiculoActivo(null) }} gestionando={gestionando} />
-            )}
-          </>
-        )}
-
-        {modulo === 'asignaciones' && (
-          <>
-            {vistaAsignacion === 'lista' && (
-              <AsignacionLista asignaciones={asignaciones} mapaPedidos={Object.fromEntries(pedidos.map((p) => [p.id, p]))} mapaVehiculos={Object.fromEntries(vehiculos.map((v) => [v.id, v]))} onNueva={() => setVistaAsignacion('nueva')} onCancelar={alCancelarAsignacion} cargando={cargandoAsignaciones} gestionando={gestionando} />
-            )}
-            {vistaAsignacion === 'nueva' && (
-              <AsignacionFormulario pedidosDisponibles={pedidosDisponibles} vehiculosActivos={vehiculosActivos} onAsignar={alAsignar} onVolver={() => setVistaAsignacion('lista')} asignando={asignando} />
-            )}
-          </>
-        )}
-
-        {modulo === 'rutas' && (
-          <>
-            {vistaRuta === 'lista' && (
-              <RutaLista rutas={rutas} vehiculos={vehiculos} cargando={cargandoRutas} onVer={(r) => { setRutaActiva(r); setVistaRuta('detalle') }} onGenerar={() => setVistaRuta('formulario')} />
-            )}
-            {vistaRuta === 'formulario' && (
-              <RutaFormulario vehiculos={vehiculos} pedidosDisponibles={pedidosDisponibles} onGuardar={alGenerarRuta} onVolver={() => setVistaRuta('lista')} cargando={generandoRuta} />
-            )}
-            {vistaRuta === 'detalle' && rutaActiva && (
-              <RutaDetalle ruta={rutaActiva} pedidos={pedidos} vehiculos={vehiculos} onCambiarEstado={alCambiarEstadoRuta} onVolver={() => setVistaRuta('lista')} />
-            )}
-          </>
-        )}
+      <main className="contenido">
+        <Modulo
+          key={modulo.id}
+          ubicacion={ubicacion}
+          datos={datos}
+          cargando={cargando}
+          recargar={recargar}
+          notificar={notificar}
+          confirmar={confirmar}
+        />
       </main>
 
-      <footer className="pie">EcoRuta Wanka · Proyecto de optimización logística para Huancayo, Junín, Perú</footer>
+      <nav className="nav-inferior" aria-label="Módulos">
+        {itemsNav}
+      </nav>
+
+      <Toasts avisos={avisos} onCerrar={cerrarAviso} />
+      <DialogoConfirmacion solicitud={solicitud} onResponder={responder} />
     </div>
   )
 }
-
-export default App

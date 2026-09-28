@@ -1,244 +1,187 @@
-import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
-import { api } from '../services/api.js'
-import { BadgeEstadoRuta } from './Badges.jsx'
-import { ETIQUETAS_ESTADO_RUTA, formatearDuracion, formatearFecha, hoyEnLima } from '../utils/formatos.js'
-import { enlacesGoogleMaps } from '../utils/googleMaps.js'
+import { Search } from 'lucide-react'
+import { useState } from 'react'
+import { BadgePrioridad } from './Badges.jsx'
+import { Aviso, Cargando, CampoGrupo, MedidorCapacidad } from './ui.jsx'
+import { IconoVehiculo } from './VehiculoLista.jsx'
+import { ETIQUETAS_TIPO_VEHICULO, formatearKg, formatearVentana, hoyEnLima, normalizar } from '../utils/formatos.js'
 
-const MapaRuta = dynamic(() => import('./MapaRuta.jsx'), {
-  ssr: false,
-  loading: () => <div className="mapa-ruta mapa-cargando">Cargando mapa…</div>,
-})
-
-export function RutaFormulario({ vehiculos, pedidosDisponibles, onGuardar, onVolver, cargando }) {
+/**
+ * @param pedidosDisponibles pedidos que pueden incluirse (no terminales ni en otra ruta activa)
+ * @param asignacionPorPedido pedido_id -> vehiculo_id de la asignación activa
+ */
+export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPedido, onGenerar, onCancelar, generando }) {
   const [vehiculoId, setVehiculoId] = useState('')
-  const [pedidoIds, setPedidoIds] = useState([])
   const [fecha, setFecha] = useState(hoyEnLima)
   const [horaSalida, setHoraSalida] = useState('08:00')
-  const [error, setError] = useState('')
+  const [salidaFija, setSalidaFija] = useState(false)
+  const [seleccion, setSeleccion] = useState(() => new Set())
+  const [busqueda, setBusqueda] = useState('')
 
-  const vehiculoSel = vehiculos.find((v) => v.id === vehiculoId)
-  const pedidosSeleccionados = pedidosDisponibles.filter((p) => pedidoIds.includes(p.id))
-  const pesoTotal = pedidosSeleccionados.reduce((s, p) => s + p.peso_kg, 0)
-  const excedeCapacidad = vehiculoSel && pesoTotal > vehiculoSel.capacidad_carga_kg
+  const vehiculo = vehiculos.find((v) => v.id === vehiculoId)
+  // Pedidos asignados a otro vehículo no se ofrecen para este
+  const opciones = pedidosDisponibles.filter((p) => !asignacionPorPedido[p.id] || asignacionPorPedido[p.id] === vehiculoId)
+  const texto = normalizar(busqueda.trim())
+  const visibles = opciones.filter((p) => !texto || normalizar(`${p.cliente_nombre} ${p.direccion}`).includes(texto))
+  const seleccionados = opciones.filter((p) => seleccion.has(p.id))
+  const peso = seleccionados.reduce((s, p) => s + p.peso_kg, 0)
+  const excede = vehiculo && peso > vehiculo.capacidad_carga_kg
 
-  const togglePedido = (pedidoId) => {
-    setPedidoIds((prev) => (prev.includes(pedidoId) ? prev.filter((id) => id !== pedidoId) : [...prev, pedidoId]))
+  const elegirVehiculo = (v) => {
+    setVehiculoId(v.id)
+    // Preseleccionar los pedidos ya asignados a este vehículo
+    setSeleccion(new Set(pedidosDisponibles.filter((p) => asignacionPorPedido[p.id] === v.id).map((p) => p.id)))
   }
 
-  const enviar = async (e) => {
+  const alternar = (id) =>
+    setSeleccion((prev) => {
+      const s = new Set(prev)
+      s.has(id) ? s.delete(id) : s.add(id)
+      return s
+    })
+
+  const todosVisibles = visibles.length > 0 && visibles.every((p) => seleccion.has(p.id))
+  const alternarTodos = () =>
+    setSeleccion((prev) => {
+      const s = new Set(prev)
+      visibles.forEach((p) => (todosVisibles ? s.delete(p.id) : s.add(p.id)))
+      return s
+    })
+
+  const motivoBloqueo = !vehiculo ? 'Elige un vehículo.' : seleccionados.length === 0 ? 'Selecciona al menos un pedido.' : excede ? 'La carga supera la capacidad.' : null
+
+  const enviar = (e) => {
     e.preventDefault()
-    setError('')
-    if (!vehiculoId) return setError('Selecciona un vehículo.')
-    if (pedidoIds.length === 0) return setError('Selecciona al menos un pedido.')
-    try {
-      await onGuardar({ vehiculo_id: vehiculoId, pedido_ids: pedidoIds, fecha, hora_salida: horaSalida })
-    } catch (e) {
-      setError(e.message)
-    }
+    if (motivoBloqueo) return
+    onGenerar({ vehiculo_id: vehiculoId, pedido_ids: seleccionados.map((p) => p.id), fecha, hora_salida: horaSalida, ajustar_salida: !salidaFija })
   }
 
   return (
-    <section className="panel">
-      <div className="panel-cabecera">
-        <h2>Generar ruta optimizada</h2>
-        <button className="boton boton-secundario" type="button" onClick={onVolver}>
-          ← Volver
-        </button>
-      </div>
-
-      <p className="detalle-suave">
-        El orden de entrega se calcula con la API de optimización de rutas (OpenRouteService) considerando la capacidad del vehículo,
-        las ventanas de entrega y el factor de tráfico de la hora de salida.
-      </p>
-
-      <form className="formulario" onSubmit={enviar}>
-        <div className="grupo-campos">
-          <label className="campo-etiqueta">
-            Vehículo
-            <select className="campo" value={vehiculoId} onChange={(e) => setVehiculoId(e.target.value)} required>
-              <option value="">Selecciona un vehículo…</option>
-              {vehiculos
-                .filter((v) => v.estado === 'activo')
-                .map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.placa} · {v.tipo} · {v.capacidad_carga_kg} kg
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="campo-etiqueta">
-            Fecha
-            <input className="campo" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
-          </label>
-          <label className="campo-etiqueta">
-            Hora de salida del almacén
-            <input className="campo" type="time" value={horaSalida} onChange={(e) => setHoraSalida(e.target.value)} required />
-          </label>
-        </div>
-
-        <div className="campo-etiqueta">
-          <span>Pedidos a entregar</span>
-          {pedidosDisponibles.length === 0 && <p className="detalle-suave">No hay pedidos disponibles.</p>}
-          <div className="lista-seleccion">
-            {pedidosDisponibles.map((p) => (
-              <label key={p.id} className="opcion-seleccion">
-                <input type="checkbox" checked={pedidoIds.includes(p.id)} onChange={() => togglePedido(p.id)} />
-                {p.cliente_nombre} ({p.peso_kg} kg · {p.ventana_entrega_inicio}–{p.ventana_entrega_fin})
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {pedidosSeleccionados.length > 0 && vehiculoSel && (
-          <div className={excedeCapacidad ? 'aviso aviso-error' : 'tarjeta-detalle'}>
-            Pedidos: {pedidosSeleccionados.length} · Peso total: {Number(pesoTotal.toFixed(2))} kg de {vehiculoSel.capacidad_carga_kg} kg
-            {excedeCapacidad && ' — supera la capacidad del vehículo'}
-          </div>
-        )}
-
-        {error && (
-          <div className="aviso aviso-error" role="alert">
-            {error}
-          </div>
-        )}
-
-        <div className="acciones-formulario">
-          <button className="boton boton-primario" type="submit" disabled={cargando}>
-            {cargando ? 'Optimizando…' : 'Generar ruta optimizada'}
-          </button>
-          <button className="boton boton-secundario" type="button" onClick={onVolver}>
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </section>
-  )
-}
-
-export function RutaDetalle({ ruta: resumen, pedidos, vehiculos, onCambiarEstado, onVolver }) {
-  const [ruta, setRuta] = useState(resumen)
-  const [estadoNuevo, setEstadoNuevo] = useState(resumen.estado)
-  const [error, setError] = useState('')
-
-  // El listado no trae el trazado del mapa: se pide el detalle completo
-  useEffect(() => {
-    let activo = true
-    api
-      .obtenerRuta(resumen.id)
-      .then((r) => activo && setRuta(r))
-      .catch((e) => activo && setError(e.message))
-    return () => {
-      activo = false
-    }
-  }, [resumen.id])
-
-  const vehiculo = vehiculos.find((v) => v.id === ruta.vehiculo_id)
-  const pedidoPorId = Object.fromEntries(pedidos.map((p) => [p.id, p]))
-  const paradas = (ruta.paradas ?? []).map((p) => ({ ...p, ...pedidoPorId[p.pedido_id], orden: p.orden }))
-  const paradasConUbicacion = paradas.filter((p) => p.latitud !== undefined)
-  // El trazado empieza en el almacén: sirve de origen y destino en Google Maps
-  const enlacesGoogle =
-    paradasConUbicacion.length === paradas.length ? enlacesGoogleMaps(ruta.geometria?.[0], paradasConUbicacion) : []
-
-  return (
-    <section className="panel">
-      <div className="panel-cabecera">
-        <h2>Detalle de la ruta</h2>
-        <button className="boton boton-secundario" type="button" onClick={onVolver}>
-          ← Volver al listado
-        </button>
-      </div>
-
-      {error && (
-        <div className="aviso aviso-error" role="alert">
-          {error}
-        </div>
-      )}
-
-      <div className="detalle-mallas">
-        <div className="resumen-ruta">
-          <div className="tarjeta-detalle">
-            <h3>Vehículo</h3>
-            <p className="detalle-fuerte">{vehiculo ? `${vehiculo.placa} · ${vehiculo.tipo}` : ruta.vehiculo_id}</p>
-            <p className="detalle-suave">
-              {ruta.fecha} · salida {ruta.hora_salida}
-            </p>
-          </div>
-          <div className="tarjeta-detalle">
-            <h3>Distancia</h3>
-            <p className="detalle-fuerte">{ruta.distancia_estimada_km ?? '—'} km</p>
-          </div>
-          <div className="tarjeta-detalle">
-            <h3>Tiempo estimado</h3>
-            <p className="detalle-fuerte">{formatearDuracion(ruta.tiempo_estimado_min)}</p>
-            <p className="detalle-suave">Factor de tráfico: {ruta.factor_trafico_aplicado ?? '—'}</p>
-          </div>
-          <div className="tarjeta-detalle">
-            <h3>Estado</h3>
-            <p>
-              <BadgeEstadoRuta estado={ruta.estado} />
-            </p>
-            <p className="detalle-suave">Creada: {formatearFecha(ruta.created_at)}</p>
-          </div>
-        </div>
-
-        {ruta.geometria !== undefined && <MapaRuta geometria={ruta.geometria} paradas={paradasConUbicacion} />}
-
-        {enlacesGoogle.length > 0 && (
-          <div className="tarjeta-detalle google-maps">
-            <h3>Ver en Google Maps</h3>
-            <div className="acciones">
-              {enlacesGoogle.map((e) => (
-                <a key={e.url} className="boton boton-secundario" href={e.url} target="_blank" rel="noopener noreferrer">
-                  {e.etiqueta} ↗
-                </a>
+    <form className="tarjeta" onSubmit={enviar}>
+      <div className="tarjeta-cuerpo formulario">
+        <fieldset className="seccion-form">
+          <legend>
+            1. Vehículo y horario
+            <small>El vehículo sale del almacén y regresa al terminar. Si algún cliente abre más tarde, el sistema retrasa la salida para no esperar en la calle.</small>
+          </legend>
+          {vehiculos.length === 0 ? (
+            <Aviso tipo="alerta">No hay vehículos activos. Registra o reactiva un vehículo para generar rutas.</Aviso>
+          ) : (
+            <div className="opciones-tarjeta" role="group" aria-label="Vehículo">
+              {vehiculos.map((v) => (
+                <button key={v.id} type="button" className="opcion-tarjeta" aria-pressed={vehiculoId === v.id} onClick={() => elegirVehiculo(v)}>
+                  <strong className="num">
+                    <IconoVehiculo tipo={v.tipo} /> {v.placa}
+                  </strong>
+                  <span>
+                    {ETIQUETAS_TIPO_VEHICULO[v.tipo]} · {formatearKg(v.capacidad_carga_kg)}
+                  </span>
+                </button>
               ))}
             </div>
-            <p className="detalle-suave">
-              Abre la ruta con el mismo orden de entrega en Google Maps; en el celular del conductor abre la app con navegación paso a paso.
-              Google calcula su propio camino entre paradas, por lo que la distancia puede variar un poco.
-              {enlacesGoogle.length > 1 && ' Google Maps admite 9 paradas por enlace, por eso la ruta se divide en tramos.'}
-            </p>
-          </div>
-        )}
-
-        <div className="tarjeta-detalle">
-          <h3>Orden de entrega</h3>
-          {paradas.length > 0 ? (
-            <ol className="lista-paradas">
-              {paradas.map((p) => (
-                <li key={p.orden}>
-                  <strong>{p.hora_estimada_llegada ?? '—'}</strong> · {p.cliente_nombre ?? p.pedido_id}
-                  {p.direccion && <span className="detalle-suave"> — {p.direccion}</span>}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="detalle-suave">Sin pedidos asignados</p>
           )}
-          <p className="detalle-suave">
-            Horas estimadas de entrega: si el vehículo llega antes de que abra la ventana del cliente, espera. Los tiempos incluyen el
-            factor de tráfico y son estimaciones.
-          </p>
-        </div>
+          <div className="campos">
+            <CampoGrupo etiqueta="Fecha" requerido htmlFor="fecha">
+              <input id="fecha" className="campo" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
+            </CampoGrupo>
+            <CampoGrupo
+              etiqueta={salidaFija ? 'Hora de salida' : 'Disponible desde'}
+              requerido
+              htmlFor="salida"
+              ayuda={salidaFija ? 'El vehículo saldrá exactamente a esta hora.' : 'Hora más temprana a la que puede salir; se calculará la salida óptima.'}
+            >
+              <input id="salida" className="campo" type="time" value={horaSalida} onChange={(e) => setHoraSalida(e.target.value)} required />
+            </CampoGrupo>
+            <label className="campo-grupo" style={{ alignContent: 'center' }}>
+              <span className="acciones">
+                <input type="checkbox" checked={salidaFija} onChange={(e) => setSalidaFija(e.target.checked)} />
+                <span className="campo-etiqueta">Salir exactamente a esta hora</span>
+              </span>
+              <span className="ayuda">Úsalo si el turno del conductor fija la salida.</span>
+            </label>
+          </div>
+        </fieldset>
 
-        <div className="acciones-detalle">
-          <label className="campo-etiqueta">
-            Cambiar estado
-            <select className="campo" value={estadoNuevo} onChange={(e) => setEstadoNuevo(e.target.value)}>
-              {Object.entries(ETIQUETAS_ESTADO_RUTA).map(([valor, etiqueta]) => (
-                <option key={valor} value={valor}>
-                  {etiqueta}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="boton boton-primario" type="button" onClick={() => onCambiarEstado(ruta.id, estadoNuevo)}>
-            Aplicar estado
-          </button>
-        </div>
+        <fieldset className="seccion-form">
+          <legend>
+            2. Pedidos a entregar
+            <small>El sistema calculará el mejor orden respetando las ventanas de entrega.</small>
+          </legend>
+
+          {opciones.length === 0 ? (
+            <Aviso tipo="info">No hay pedidos disponibles para esta ruta. Los pedidos entregados, cancelados o ya incluidos en otra ruta activa no aparecen.</Aviso>
+          ) : (
+            <>
+              <div className="barra-filtros" style={{ padding: 0, border: 0 }}>
+                <div className="buscador">
+                  <Search size={16} aria-hidden />
+                  <input className="campo" type="search" placeholder="Filtrar pedidos…" aria-label="Filtrar pedidos" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+                </div>
+                <button type="button" className="boton boton-secundario boton-sm" onClick={alternarTodos} disabled={visibles.length === 0}>
+                  {todosVisibles ? 'Quitar todos' : 'Seleccionar todos'}
+                </button>
+              </div>
+              <div className="tabla-envoltorio tarjeta">
+                <table className="tabla">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 36 }}>
+                        <span className="sr-only">Incluir</span>
+                      </th>
+                      <th>Cliente</th>
+                      <th>Peso</th>
+                      <th>Ventana</th>
+                      <th>Prioridad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibles.map((p) => (
+                      <tr key={p.id} className="fila-clic" onClick={() => alternar(p.id)}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={seleccion.has(p.id)}
+                            onChange={() => alternar(p.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Incluir pedido de ${p.cliente_nombre}`}
+                          />
+                        </td>
+                        <td>
+                          <div className="texto-principal">{p.cliente_nombre}</div>
+                          <div className="texto-secundario">
+                            {p.direccion}
+                            {asignacionPorPedido[p.id] === vehiculoId && vehiculoId && ' · asignado a este vehículo'}
+                          </div>
+                        </td>
+                        <td className="num">{formatearKg(p.peso_kg)}</td>
+                        <td className="num">{formatearVentana(p)}</td>
+                        <td>
+                          <BadgePrioridad prioridad={p.prioridad} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </fieldset>
       </div>
-    </section>
+
+      <div className="barra-acciones" style={{ alignItems: 'center' }}>
+        <div style={{ flex: '1 1 260px' }}>
+          {vehiculo ? (
+            <MedidorCapacidad usado={peso} capacidad={vehiculo.capacidad_carga_kg} />
+          ) : (
+            <span className="ayuda">{seleccionados.length} pedido(s) seleccionado(s)</span>
+          )}
+        </div>
+        <button type="button" className="boton boton-secundario" onClick={onCancelar} disabled={generando}>
+          Cancelar
+        </button>
+        <button type="submit" className="boton boton-primario" disabled={generando || Boolean(motivoBloqueo)} title={motivoBloqueo ?? undefined}>
+          {generando ? <Cargando texto="Optimizando ruta" /> : `Generar ruta (${seleccionados.length})`}
+        </button>
+      </div>
+    </form>
   )
 }

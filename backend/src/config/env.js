@@ -18,4 +18,8 @@ export const config = {
     longitud: numero(process.env.ALMACEN_LONGITUD, -75.2104),
   },
   zonaHoraria: "America/Lima",
+  // Factores de tráfico por franja horaria: preparados, pero deshabilitados hasta su implementación
+  traficoHabilitado: process.env.TRAFICO_HABILITADO === "true",
+  // Minutos antes del cierre de cada ventana que se reservan como margen al ajustar la salida
+  margenVentanaMin: numero(process.env.MARGEN_VENTANA_MIN, 15),
 };

@@ -42,6 +42,8 @@ export function crearRouterApi(c) {
   const factores = Router();
   factores.get("/", c.factoresTrafico.listar);
 
+  api.get("/geocodificar", validar(e.busquedaDireccion, "query"), c.geocodificar);
+
   api.use("/vehiculos", vehiculos);
   api.use("/pedidos", pedidos);
   api.use("/asignaciones", asignaciones);

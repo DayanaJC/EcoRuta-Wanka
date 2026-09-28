@@ -12,13 +12,23 @@ import { crearPedidoService } from "./services/pedido.service.js";
 import { crearRutaService } from "./services/ruta.service.js";
 import { crearVehiculoService } from "./services/vehiculo.service.js";
 
-export function crearApp({ repos, optimizador, almacen, zonaHoraria = "America/Lima", origenesCors = [] }) {
+export function crearApp({
+  repos,
+  optimizador,
+  geocodificador,
+  almacen,
+  zonaHoraria = "America/Lima",
+  traficoHabilitado = false,
+  margenVentanaMin = 15,
+  origenesCors = [],
+}) {
   const servicios = {
     vehiculos: crearVehiculoService(repos),
     pedidos: crearPedidoService(repos),
     asignaciones: crearAsignacionService(repos),
-    rutas: crearRutaService(repos, { optimizador, almacen, zonaHoraria }),
+    rutas: crearRutaService(repos, { optimizador, almacen, zonaHoraria, traficoHabilitado, margenVentanaMin }),
     factoresTrafico: { listar: () => repos.factoresTrafico.listar() },
+    geocodificador,
     salud: {
       async verificar() {
         let db = { connected: true };
@@ -30,7 +40,7 @@ export function crearApp({ repos, optimizador, almacen, zonaHoraria = "America/L
         return {
           status: db.connected ? "ok" : "error",
           database: db,
-          optimizacion: { configurada: optimizador.configurado },
+          optimizacion: { configurada: optimizador.configurado, trafico_habilitado: traficoHabilitado },
         };
       },
     },

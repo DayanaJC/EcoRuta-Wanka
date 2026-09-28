@@ -1,8 +1,15 @@
+// Etiquetas en español, tonos de color y formatos de presentación.
+
 export const ETIQUETAS_ESTADO = {
   pendiente: 'Pendiente',
   en_ruta: 'En ruta',
   entregado: 'Entregado',
   cancelado: 'Cancelado',
+}
+
+export const ETIQUETAS_ESTADO_VEHICULO = {
+  activo: 'Activo',
+  inactivo: 'Inactivo',
 }
 
 export const ETIQUETAS_ESTADO_ASIGNACION = {
@@ -34,48 +41,74 @@ export const ETIQUETAS_TIPO = {
   no_perecedero: 'No perecedero',
 }
 
-export const COLORES_ESTADO = {
-  pendiente: '#2563eb',
-  en_ruta: '#d97706',
-  entregado: '#16a34a',
-  cancelado: '#b91c1c',
+// Tonos definidos en globals.css (.tono-*)
+export const TONOS = {
+  pedido: { pendiente: 'azul', en_ruta: 'ambar', entregado: 'verde', cancelado: 'gris' },
+  vehiculo: { activo: 'verde', inactivo: 'gris' },
+  asignacion: { asignada: 'verde', cancelada: 'gris' },
+  ruta: { generada: 'azul', en_reparto: 'ambar', completada: 'verde', cancelada: 'gris' },
+  prioridad: { express: 'rojo', estandar: 'violeta', economico: 'gris' },
 }
 
-export const COLORES_ESTADO_ASIGNACION = {
-  asignada: '#16a34a',
-  cancelada: '#b91c1c',
-}
+export const ESTADOS_TERMINALES_PEDIDO = ['entregado', 'cancelado']
 
-export const COLORES_ESTADO_RUTA = {
-  generada: '#2563eb',
-  en_reparto: '#d97706',
-  completada: '#16a34a',
-  cancelada: '#b91c1c',
-}
+const numero = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 2 })
 
-export const COLORES_PRIORIDAD = {
-  express: '#b91c1c',
-  estandar: '#d97706',
-  economico: '#2563eb',
-}
+export const formatearNumero = (n) => (n == null ? '—' : numero.format(n))
+export const formatearKg = (n) => (n == null ? '—' : `${numero.format(n)} kg`)
+export const formatearKm = (n) => (n == null ? '—' : `${numero.format(n)} km`)
 
 export function formatearFecha(iso) {
   if (!iso) return '—'
   const fecha = new Date(iso)
   if (Number.isNaN(fecha.getTime())) return '—'
-  return fecha.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })
+  return fecha.toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+// "2026-09-28" -> "lun. 28 sept. 2026"
+export function formatearFechaCorta(yyyymmdd) {
+  if (!yyyymmdd) return '—'
+  return new Date(`${yyyymmdd}T12:00:00`).toLocaleDateString('es-PE', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 export function formatearVentana(pedido) {
   return `${pedido.ventana_entrega_inicio} – ${pedido.ventana_entrega_fin}`
 }
+
 // 95 -> "1 h 35 min"
 export function formatearDuracion(minutos) {
   if (minutos == null) return '—'
   return minutos < 60 ? `${minutos} min` : `${Math.floor(minutos / 60)} h ${minutos % 60} min`
 }
 
+// "08:00" + 95 min -> "09:35"
+export function sumarMinutos(hhmm, minutos) {
+  if (!hhmm || minutos == null) return '—'
+  const [h, m] = hhmm.split(':').map(Number)
+  const total = h * 60 + m + minutos
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
+// "08:00", "11:43" -> 223
+export function minutosEntre(desde, hasta) {
+  const aMin = (hhmm) => hhmm.split(':').map(Number).reduce((h, m) => h * 60 + m)
+  return aMin(hasta) - aMin(desde)
+}
+
 // Fecha de hoy en Huancayo (America/Lima) como "YYYY-MM-DD"
 export function hoyEnLima() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date())
 }
+
+// Búsqueda sin tildes ni mayúsculas
+export const normalizar = (texto) =>
+  (texto ?? '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()

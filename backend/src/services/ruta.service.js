@@ -1,4 +1,4 @@
-// Servicio de rutas (RF-03): valida los datos, aplica el factor de tráfico,
+// Servicio de rutas (RF-03): valida los datos, aplica el factor de tráfico (si está habilitado),
 // solicita el orden óptimo a la API de optimización y guarda la ruta.
 
 import {
@@ -11,13 +11,17 @@ import {
   VehiculoNoDisponibleError,
   VehiculoNotFoundError,
 } from "../errors/errores.js";
-import { hoyEn, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { horaASegundos, hoyEn, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { programarHorario } from "./optimizacion/horario.js";
 import { ESTADOS_TERMINALES } from "./pedido.service.js";
 
 export const HORA_SALIDA_POR_DEFECTO = "08:00";
 export const FACTOR_SIN_TRAFICO = 1;
 
-export function crearRutaService({ rutas, vehiculos, pedidos, factoresTrafico }, { optimizador, almacen, zonaHoraria }) {
+export function crearRutaService(
+  { rutas, vehiculos, pedidos, factoresTrafico },
+  { optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15 },
+) {
   const obtener = async (id) => {
     const ruta = await rutas.getById(id);
     if (!ruta) throw new RutaNotFoundError(`No existe una ruta con id ${id}.`);
@@ -37,7 +41,7 @@ export function crearRutaService({ rutas, vehiculos, pedidos, factoresTrafico },
     listar: () => rutas.listar(),
     listarPorVehiculo: (vehiculoId) => rutas.listarPorVehiculo(vehiculoId),
 
-    async generar({ vehiculo_id, pedido_ids, fecha, hora_salida }) {
+    async generar({ vehiculo_id, pedido_ids, fecha, hora_salida, ajustar_salida = true }) {
       const vehiculo = await vehiculos.getById(vehiculo_id);
       if (!vehiculo) throw new VehiculoNotFoundError(`No existe un vehículo con id ${vehiculo_id}.`);
       if (vehiculo.estado !== "activo") throw new VehiculoNoDisponibleError(`El vehículo ${vehiculo.placa} no está activo.`);
@@ -68,7 +72,11 @@ export function crearRutaService({ rutas, vehiculos, pedidos, factoresTrafico },
 
       const dia = fecha ?? hoyEn(zonaHoraria);
       const salida = hora_salida ?? HORA_SALIDA_POR_DEFECTO;
-      const factor = (await factoresTrafico.buscar(tipoDia(dia), salida))?.factor ?? FACTOR_SIN_TRAFICO;
+      // Factores de tráfico: implementación futura. Mientras estén deshabilitados, la API
+      // calcula los tiempos con las velocidades promedio de las vías (factor 1).
+      const factor = traficoHabilitado
+        ? ((await factoresTrafico.buscar(tipoDia(dia), salida))?.factor ?? FACTOR_SIN_TRAFICO)
+        : FACTOR_SIN_TRAFICO;
 
       const resultado = await optimizador.optimizarRuta({
         almacen,
@@ -86,19 +94,40 @@ export function crearRutaService({ rutas, vehiculos, pedidos, factoresTrafico },
         );
       }
 
+      // hora_salida del operador = hora DISPONIBLE; se calcula la salida óptima
+      const pedidoPorId = Object.fromEntries(lista.map((p) => [p.id, p]));
+      const horario = programarHorario({
+        disponible_s: horaASegundos(salida),
+        regreso_s: resultado.regreso_s,
+        margen_s: margenVentanaMin * 60,
+        ajustarSalida: ajustar_salida,
+        paradas: resultado.paradas.map((p) => {
+          const pedido = pedidoPorId[p.pedido_id];
+          return {
+            id: p.pedido_id,
+            viaje_s: p.viaje_s,
+            servicio_s: (pedido.tiempo_servicio_min ?? 5) * 60,
+            ventana_inicio_s: horaASegundos(pedido.ventana_entrega_inicio),
+            ventana_fin_s: horaASegundos(pedido.ventana_entrega_fin),
+          };
+        }),
+      });
+
       return rutas.crearConParadas({
         vehiculo_id,
         fecha: dia,
-        hora_salida: salida,
+        hora_disponible: salida,
+        hora_salida: segundosAHora(horario.salida_s),
         distancia_estimada_km: Number((resultado.distancia_m / 1000).toFixed(2)),
-        tiempo_estimado_min: Math.round(resultado.duracion_total_s / 60),
-        factor_trafico_aplicado: factor,
+        tiempo_estimado_min: Math.round((horario.fin_s - horario.salida_s) / 60),
+        factor_trafico_aplicado: traficoHabilitado ? factor : null,
         geometria: resultado.geometria,
         estado: "generada",
-        paradas: resultado.paradas.map((p, i) => ({
+        paradas: horario.paradas.map((p, i) => ({
           orden: i + 1,
-          pedido_id: p.pedido_id,
-          hora_estimada_llegada: segundosAHora(p.llegada_seg),
+          pedido_id: p.id,
+          hora_estimada_llegada: segundosAHora(p.entrega_s),
+          espera_min: Math.round(p.espera_s / 60),
         })),
       });
     },

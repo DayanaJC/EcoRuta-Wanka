@@ -2,7 +2,7 @@
 // Express 5 envía automáticamente al manejador de errores las promesas rechazadas.
 
 export function crearControladores(servicios) {
-  const { vehiculos, pedidos, asignaciones, rutas, factoresTrafico, salud } = servicios;
+  const { vehiculos, pedidos, asignaciones, rutas, factoresTrafico, geocodificador, salud } = servicios;
   const creado = (res, datos) => res.status(201).json(datos);
 
   return {
@@ -45,6 +45,8 @@ export function crearControladores(servicios) {
     factoresTrafico: {
       listar: async (req, res) => res.json(await factoresTrafico.listar()),
     },
+
+    geocodificar: async (req, res) => res.json(await geocodificador.buscar(req.valido.q)),
 
     salud: async (req, res) => {
       const estado = await salud.verificar();

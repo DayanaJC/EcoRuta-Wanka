@@ -83,6 +83,7 @@ export const api = {
   cancelarAsignacion: (id) =>
     pedir(`/asignaciones/${id}`, { method: 'DELETE' }),
   listarFactoresTrafico: () => pedir('/factores-trafico'),
+  geocodificar: (texto) => pedir(`/geocodificar${aQueryParams({ q: texto })}`),
   listarRutas: () => pedir('/rutas'),
   obtenerRuta: (id) => pedir(`/rutas/${id}`),
   generarRuta: (datos) =>

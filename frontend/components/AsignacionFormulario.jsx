@@ -1,127 +1,82 @@
 import { useState } from 'react'
-import { ETIQUETAS_TIPO_VEHICULO } from '../utils/formatos.js'
+import { ETIQUETAS_TIPO_VEHICULO, formatearKg, formatearVentana } from '../utils/formatos.js'
+import { Aviso, Cargando, CampoGrupo, MedidorCapacidad } from './ui.jsx'
+import { IconoVehiculo } from './VehiculoLista.jsx'
 
-export function AsignacionFormulario({
-  pedidosDisponibles,
-  vehiculosActivos,
-  onAsignar,
-  onVolver,
-  asignando,
-}) {
+export function AsignacionFormulario({ pedidosDisponibles, vehiculosActivos, cargaAsignada, onAsignar, onCancelar, asignando }) {
   const [pedidoId, setPedidoId] = useState('')
   const [vehiculoId, setVehiculoId] = useState('')
-
-  const pedidoSel = pedidosDisponibles.find((p) => p.id === pedidoId)
-  const vehiculoSel = vehiculosActivos.find((v) => v.id === vehiculoId)
-  const excede =
-    pedidoSel && vehiculoSel && pedidoSel.peso_kg > vehiculoSel.capacidad_carga_kg
+  const pedido = pedidosDisponibles.find((p) => p.id === pedidoId)
+  const vehiculo = vehiculosActivos.find((v) => v.id === vehiculoId)
+  const cargaActual = vehiculo ? (cargaAsignada[vehiculo.id] ?? 0) : 0
 
   const enviar = (e) => {
     e.preventDefault()
     onAsignar({ pedido_id: pedidoId, vehiculo_id: vehiculoId })
   }
 
-  return (
-    <section className="panel">
-      <div className="panel-cabecera">
-        <h2>Nueva asignación</h2>
-        <button className="boton boton-secundario" type="button" onClick={onVolver}>
-          ← Volver
-        </button>
-      </div>
+  if (pedidosDisponibles.length === 0) {
+    return <Aviso tipo="info">No hay pedidos pendientes sin asignar. Registra un pedido nuevo o libera una asignación existente.</Aviso>
+  }
 
-      <form className="formulario" onSubmit={enviar}>
-        <div className="grupo-campos">
-          <label className="campo-etiqueta">
-            Pedido
-            <select
-              className="campo"
-              value={pedidoId}
-              onChange={(e) => setPedidoId(e.target.value)}
-              required
-            >
+  return (
+    <form className="tarjeta" onSubmit={enviar}>
+      <div className="tarjeta-cuerpo formulario">
+        <fieldset className="seccion-form">
+          <legend>Pedido</legend>
+          <CampoGrupo etiqueta="Pedido pendiente" requerido htmlFor="pedido">
+            <select id="pedido" className="campo" value={pedidoId} onChange={(e) => setPedidoId(e.target.value)} required>
               <option value="">Selecciona un pedido…</option>
               {pedidosDisponibles.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.cliente_nombre} · {p.peso_kg} kg
+                  {p.cliente_nombre} · {formatearKg(p.peso_kg)} · {formatearVentana(p)}
                 </option>
               ))}
             </select>
-          </label>
-          <label className="campo-etiqueta">
+          </CampoGrupo>
+          {pedido && (
+            <p className="ayuda">
+              {pedido.direccion} {pedido.punto_referencia && `· ${pedido.punto_referencia}`}
+            </p>
+          )}
+        </fieldset>
+
+        <fieldset className="seccion-form">
+          <legend>
             Vehículo
-            <select
-              className="campo"
-              value={vehiculoId}
-              onChange={(e) => setVehiculoId(e.target.value)}
-              required
-            >
-              <option value="">Selecciona un vehículo…</option>
-              {vehiculosActivos.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.placa} · {ETIQUETAS_TIPO_VEHICULO[v.tipo] || v.tipo}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="fila-dos-columnas">
-          <div className="tarjeta-detalle">
-            <h3>Pedido</h3>
-            {pedidoSel ? (
-              <>
-                <p className="detalle-fuerte">{pedidoSel.cliente_nombre}</p>
-                <p className="detalle-suave">
-                  Peso: {pedidoSel.peso_kg} kg · Volumen: {pedidoSel.volumen_m3} m³
-                </p>
-                <p className="detalle-suave">
-                  Ventana: {pedidoSel.ventana_entrega_inicio}–{pedidoSel.ventana_entrega_fin}
-                </p>
-              </>
-            ) : (
-              <p className="detalle-suave">Selecciona un pedido disponible.</p>
-            )}
+            <small>Solo se muestran vehículos activos.</small>
+          </legend>
+          <div className="opciones-tarjeta" role="group" aria-label="Vehículo">
+            {vehiculosActivos.map((v) => (
+              <button key={v.id} type="button" className="opcion-tarjeta" aria-pressed={vehiculoId === v.id} onClick={() => setVehiculoId(v.id)}>
+                <strong className="num">
+                  <IconoVehiculo tipo={v.tipo} /> {v.placa}
+                </strong>
+                <span>
+                  {ETIQUETAS_TIPO_VEHICULO[v.tipo]} · {formatearKg(v.capacidad_carga_kg)}
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="tarjeta-detalle">
-            <h3>Vehículo</h3>
-            {vehiculoSel ? (
-              <>
-                <p className="detalle-fuerte">{vehiculoSel.placa}</p>
-                <p className="detalle-suave">
-                  Capacidad: {vehiculoSel.capacidad_carga_kg} kg
-                </p>
-                <p className="detalle-suave">
-                  Tipo: {ETIQUETAS_TIPO_VEHICULO[vehiculoSel.tipo] || vehiculoSel.tipo}
-                </p>
-              </>
-            ) : (
-              <p className="detalle-suave">Selecciona un vehículo activo.</p>
-            )}
-          </div>
-        </div>
-
-        {excede && (
-          <p className="aviso aviso-error" role="alert">
-            El pedido pesa {pedidoSel.peso_kg} kg y el vehículo solo soporta{' '}
-            {vehiculoSel.capacidad_carga_kg} kg. La asignación será rechazada.
-          </p>
-        )}
-
-        <div className="acciones-formulario">
-          <button className="boton boton-primario" type="submit" disabled={asignando}>
-            {asignando ? 'Asignando…' : 'Asignar pedido'}
-          </button>
-          <button
-            className="boton boton-secundario"
-            type="button"
-            onClick={onVolver}
-            disabled={asignando}
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </section>
+          {pedido && vehiculo && (
+            <>
+              <MedidorCapacidad usado={cargaActual + pedido.peso_kg} capacidad={vehiculo.capacidad_carga_kg} />
+              <span className="ayuda">
+                Incluye {formatearKg(cargaActual)} ya asignados a este vehículo.
+                {pedido.peso_kg > vehiculo.capacidad_carga_kg && ' El pedido por sí solo supera la capacidad: la asignación será rechazada.'}
+              </span>
+            </>
+          )}
+        </fieldset>
+      </div>
+      <div className="barra-acciones">
+        <button type="button" className="boton boton-secundario" onClick={onCancelar} disabled={asignando}>
+          Cancelar
+        </button>
+        <button type="submit" className="boton boton-primario" disabled={asignando || !pedidoId || !vehiculoId}>
+          {asignando ? <Cargando texto="Asignando" /> : 'Asignar pedido'}
+        </button>
+      </div>
+    </form>
   )
 }

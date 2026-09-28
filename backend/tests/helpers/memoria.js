@@ -73,7 +73,8 @@ export function crearRepositoriosMemoria() {
   };
 }
 
-// Optimizador simulado: visita los pedidos en orden inverso y registra la última llamada
+// Optimizador simulado: visita los pedidos en orden inverso, con 10 min de manejo
+// por tramo (incluido el regreso), y registra la última llamada
 export function crearOptimizadorFalso({ noAsignar = [] } = {}) {
   return {
     configurado: true,
@@ -82,10 +83,10 @@ export function crearOptimizadorFalso({ noAsignar = [] } = {}) {
       this.ultimaLlamada = datos;
       const asignables = datos.pedidos.filter((p) => !noAsignar.includes(p.id)).reverse();
       return {
-        paradas: asignables.map((p, i) => ({ pedido_id: p.id, llegada_seg: 8 * 3600 + (i + 1) * 600 })),
+        paradas: asignables.map((p) => ({ pedido_id: p.id, viaje_s: 600 })),
+        regreso_s: 600,
         no_asignados: datos.pedidos.filter((p) => noAsignar.includes(p.id)).map((p) => p.id),
         distancia_m: 12345,
-        duracion_total_s: 3600,
         geometria: [[-12.06, -75.2], [-12.07, -75.21]],
       };
     },
