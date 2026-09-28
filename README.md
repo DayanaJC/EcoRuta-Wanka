@@ -14,9 +14,10 @@
 6. [Estructura del proyecto](#estructura-del-proyecto)
 7. [Configuración de servicios](#configuración-de-servicios)
 8. [Variables de entorno](#variables-de-entorno)
-9. [Estrategia Git](#estrategia-git)
-10. [Versionamiento](#versionamiento)
-11. [Documentación](#documentación)
+9. [Ejecución local](#ejecución-local)
+10. [Estrategia Git](#estrategia-git)
+11. [Versionamiento](#versionamiento)
+12. [Documentación](#documentación)
 
 ---
 
@@ -55,7 +56,7 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 
 ## Tecnologías
 
-> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migra de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El código actual de `backend/` y `frontend/` corresponde al **prototipo inicial** y se migrará por módulos. Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md).
+> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migró de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El prototipo inicial puede consultarse en el historial de Git (commit `846a165` de `main`). Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md).
 
 | Componente               | Tecnología                                   |
 | ------------------------ | -------------------------------------------- |
@@ -119,8 +120,6 @@ Esta organización permite separar responsabilidades y facilita el mantenimiento
 
 ## Estructura del proyecto
 
-Estructura objetivo después de la migración (CC-01):
-
 ```text
 EcoRuta-Wanka/
 │
@@ -131,17 +130,24 @@ EcoRuta-Wanka/
 │   │   ├── services/        # Modelo: reglas de negocio y APIs externas
 │   │   ├── repositories/    # Modelo: acceso a datos con Prisma
 │   │   ├── schemas/         # Validación con Zod
-│   │   └── config/
+│   │   ├── middlewares/     # Validación y manejo de errores
+│   │   ├── errors/          # Errores de dominio
+│   │   ├── app.js           # Ensamblaje de la aplicación
+│   │   └── server.js
 │   ├── prisma/
-│   │   └── schema.prisma    # Modelo de datos de Neon
+│   │   ├── schema.prisma    # Modelo de datos de Neon
+│   │   ├── migrations/
+│   │   └── seed.js          # Datos iniciales
 │   ├── tests/
 │   ├── .env.example
 │   └── package.json
 │
 ├── frontend/                # Vista con Next.js
-│   ├── app/
-│   ├── components/
-│   ├── services/
+│   ├── app/                 # Layout y página (App Router)
+│   ├── components/          # Pantallas, formularios y mapa
+│   ├── services/            # Cliente de la API
+│   ├── utils/
+│   ├── .env.example
 │   └── package.json
 │
 ├── database/
@@ -159,15 +165,13 @@ EcoRuta-Wanka/
 └── README.md
 ```
 
-> Mientras dure la migración, `backend/app/` (FastAPI) y `frontend/src/` (Vite) contienen el prototipo inicial.
-
 ### Descripción de las principales carpetas
 
 * **backend/**: contiene la API REST desarrollada con Node.js + Express.
 * **frontend/**: contiene la interfaz web desarrollada con Next.js.
 * **database/**: contiene documentación relacionada con el modelo de datos.
 * **docs/**: contiene la documentación académica del proyecto.
-* **tests/**: contiene las pruebas del backend.
+* **backend/tests/**: contiene las pruebas del backend.
 
 ---
 
@@ -195,13 +199,16 @@ Las credenciales reales deben mantenerse fuera del repositorio.
 Copiar `backend/.env.example` como `backend/.env` y completar los valores:
 
 ```env
-DATABASE_URL=postgresql://usuario:contraseña@host.neon.tech/ecoruta?sslmode=require
+DATABASE_URL=postgresql://usuario:contraseña@host.neon.tech/neondb?sslmode=require
 ORS_API_KEY=
-JWT_SECRET=
+PORT=4000
 FRONTEND_URL=http://localhost:3000
+# Opcional: almacén de salida (por defecto, Plaza de la Constitución de Huancayo)
+ALMACEN_LATITUD=-12.0681
+ALMACEN_LONGITUD=-75.2104
 ```
 
-En el frontend, crear `frontend/.env.local`:
+En el frontend, copiar `frontend/.env.example` como `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
@@ -210,6 +217,52 @@ NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 Los archivos `.env` deben permanecer excluidos mediante `.gitignore`.
 
 **Nunca se deben publicar credenciales privadas en GitHub.**
+
+---
+
+## Ejecución local
+
+Requisitos: Node.js 20 o superior.
+
+### Backend (API REST)
+
+```bash
+cd backend
+npm install                 # instala dependencias y genera el cliente de Prisma
+npm run db:deploy           # crea las tablas en Neon (migraciones de Prisma)
+npm run db:seed             # factores de tráfico y datos de prueba de Huancayo
+npm run dev                 # http://localhost:4000
+npm test                    # pruebas con Vitest + Supertest
+```
+
+### Frontend (Next.js)
+
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:3000
+```
+
+### Endpoints principales
+
+| Método | Endpoint                          | Descripción                                        |
+| ------ | --------------------------------- | -------------------------------------------------- |
+| GET    | `/health`                         | Estado de la base de datos y de la optimización    |
+| CRUD   | `/api/v1/vehiculos`               | Gestión de flota (RF-01)                           |
+| CRUD   | `/api/v1/pedidos`                 | Gestión de pedidos (RF-02)                         |
+| CRUD   | `/api/v1/asignaciones`            | Asignación de pedidos a vehículos                  |
+| POST   | `/api/v1/rutas`                   | Genera una ruta optimizada (RF-03)                 |
+| GET    | `/api/v1/rutas/:id`               | Detalle con orden de entrega, horarios y trazado   |
+| GET    | `/api/v1/factores-trafico`        | Factores de tráfico por franja horaria             |
+
+Ejemplo de generación de ruta:
+
+```json
+POST /api/v1/rutas
+{ "vehiculo_id": "…", "pedido_ids": ["…", "…"], "fecha": "2026-09-28", "hora_salida": "08:00" }
+```
+
+La respuesta incluye el orden de entrega (`paradas`), la hora estimada de cada entrega, la distancia, el tiempo total, el factor de tráfico aplicado y la geometría para el mapa.
 
 ---
 
