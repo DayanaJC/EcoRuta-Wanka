@@ -7,7 +7,11 @@ const numero = (valor, porDefecto) => {
 
 export const config = {
   puerto: numero(process.env.PORT, 4000),
-  frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+  // Orígenes permitidos por CORS (varias URLs separadas por comas)
+  frontendUrls: (process.env.FRONTEND_URL || "http://localhost:3000")
+    .split(",")
+    .map((u) => u.trim().replace(/\/$/, ""))
+    .filter(Boolean),
   databaseUrl: process.env.DATABASE_URL,
   orsApiKey: process.env.ORS_API_KEY?.trim() || null,
   // Punto de salida y regreso de los vehículos (almacén de WankaLogística S.A.C.).

@@ -2,7 +2,7 @@
 
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
-import { crearApp } from "../src/app.js";
+import { crearApp } from "../src/aplicacion.js";
 import { crearOptimizadorFalso, crearRepositoriosMemoria, pedidoValido, vehiculoValido } from "./helpers/memoria.js";
 
 const ALMACEN = { nombre: "Almacén", latitud: -12.0681, longitud: -75.2104 };
