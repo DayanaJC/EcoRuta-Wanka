@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { api } from '../services/api.js'
 import { ETIQUETAS_PRIORIDAD, ETIQUETAS_TIPO } from '../utils/formatos.js'
-import { bultoVacio, EditorBultos } from './EditorBultos.jsx'
+import { bultoVacio, convertirMedidas, EditorBultos } from './EditorBultos.jsx'
 import { Cargando, CampoGrupo } from './ui.jsx'
 
 const MapaSelector = dynamic(() => import('./MapaSelector.jsx'), {
@@ -37,6 +37,8 @@ const desdePedido = (p) =>
 
 export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardando }) {
   const [form, setForm] = useState(() => desdePedido(pedidoInicial))
+  // Unidad en la que el operador escribe las medidas de los bultos (se guardan en cm)
+  const [unidadMedida, setUnidadMedida] = useState('cm')
   const [intentoEnviar, setIntentoEnviar] = useState(false)
   const [busqueda, setBusqueda] = useState('')
   const [sugerencias, setSugerencias] = useState(null)
@@ -75,7 +77,7 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
       punto_referencia: form.punto_referencia.trim(),
       latitud: form.latitud,
       longitud: form.longitud,
-      bultos: form.bultos.map((b) => ({
+      bultos: convertirMedidas(form.bultos, unidadMedida, 'cm').map((b) => ({
         descripcion: b.descripcion.trim(),
         cantidad: Number(b.cantidad),
         largo_cm: Number(b.largo_cm),
@@ -182,7 +184,15 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
             Carga
             <small>Registra cada tipo de bulto con sus medidas: el mismo peso puede ocupar volúmenes muy distintos.</small>
           </legend>
-          <EditorBultos bultos={form.bultos} onChange={(bultos) => setForm((f) => ({ ...f, bultos }))} />
+          <EditorBultos
+            bultos={form.bultos}
+            unidad={unidadMedida}
+            onChange={(bultos) => setForm((f) => ({ ...f, bultos }))}
+            onCambiarUnidad={(nueva) => {
+              setForm((f) => ({ ...f, bultos: convertirMedidas(f.bultos, unidadMedida, nueva) }))
+              setUnidadMedida(nueva)
+            }}
+          />
           <div className="campos">
             <CampoGrupo etiqueta="Tipo de producto" htmlFor="tipo_producto">
               <select id="tipo_producto" className="campo" value={form.tipo_producto} onChange={cambiar('tipo_producto')}>

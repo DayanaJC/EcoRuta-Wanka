@@ -892,6 +892,17 @@ textarea {
   min-width: 64px;
 }
 
+/* Unidad dentro del campo: cm, m, kg, und. */
+.tabla-bultos .campo-unidad .campo {
+  min-width: 92px;
+  padding-right: 42px;
+}
+
+.tabla-bultos .campo-unidad span {
+  right: 10px;
+  font-size: 0.78rem;
+}
+
 .tabla-bultos td:first-child .campo {
   min-width: 160px;
 }
