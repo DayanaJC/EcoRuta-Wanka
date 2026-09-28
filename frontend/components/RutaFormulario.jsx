@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../services/api.js'
 import { BadgeEstadoRuta } from './Badges.jsx'
 import { ETIQUETAS_ESTADO_RUTA, formatearDuracion, formatearFecha, hoyEnLima } from '../utils/formatos.js'
+import { enlacesGoogleMaps } from '../utils/googleMaps.js'
 
 const MapaRuta = dynamic(() => import('./MapaRuta.jsx'), {
   ssr: false,
@@ -135,6 +136,10 @@ export function RutaDetalle({ ruta: resumen, pedidos, vehiculos, onCambiarEstado
   const vehiculo = vehiculos.find((v) => v.id === ruta.vehiculo_id)
   const pedidoPorId = Object.fromEntries(pedidos.map((p) => [p.id, p]))
   const paradas = (ruta.paradas ?? []).map((p) => ({ ...p, ...pedidoPorId[p.pedido_id], orden: p.orden }))
+  const paradasConUbicacion = paradas.filter((p) => p.latitud !== undefined)
+  // El trazado empieza en el almacén: sirve de origen y destino en Google Maps
+  const enlacesGoogle =
+    paradasConUbicacion.length === paradas.length ? enlacesGoogleMaps(ruta.geometria?.[0], paradasConUbicacion) : []
 
   return (
     <section className="panel">
@@ -178,7 +183,25 @@ export function RutaDetalle({ ruta: resumen, pedidos, vehiculos, onCambiarEstado
           </div>
         </div>
 
-        {ruta.geometria !== undefined && <MapaRuta geometria={ruta.geometria} paradas={paradas.filter((p) => p.latitud !== undefined)} />}
+        {ruta.geometria !== undefined && <MapaRuta geometria={ruta.geometria} paradas={paradasConUbicacion} />}
+
+        {enlacesGoogle.length > 0 && (
+          <div className="tarjeta-detalle google-maps">
+            <h3>Ver en Google Maps</h3>
+            <div className="acciones">
+              {enlacesGoogle.map((e) => (
+                <a key={e.url} className="boton boton-secundario" href={e.url} target="_blank" rel="noopener noreferrer">
+                  {e.etiqueta} ↗
+                </a>
+              ))}
+            </div>
+            <p className="detalle-suave">
+              Abre la ruta con el mismo orden de entrega en Google Maps; en el celular del conductor abre la app con navegación paso a paso.
+              Google calcula su propio camino entre paradas, por lo que la distancia puede variar un poco.
+              {enlacesGoogle.length > 1 && ' Google Maps admite 9 paradas por enlace, por eso la ruta se divide en tramos.'}
+            </p>
+          </div>
+        )}
 
         <div className="tarjeta-detalle">
           <h3>Orden de entrega</h3>

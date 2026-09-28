@@ -415,3 +415,10 @@ h3 {
   display: grid;
   gap: 6px;
 }
+.google-maps .acciones {
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.google-maps a.boton {
+  text-decoration: none;
+}
