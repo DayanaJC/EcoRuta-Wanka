@@ -4,7 +4,7 @@
 
 # 01. Transformando a ágil
 
-**Versión:** V_1_0_0 | **Fecha:** 11/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Versión anterior:** V_1_0_0 (11/09/2026) – cambio CC-01 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -19,7 +19,7 @@ La transformación considera:
 * **Requisitos funcionales (RF-01 a RF-10):** se organizan en seis épicas y diez Historias de Usuario.
 * **Requisitos no funcionales (RNF-01 a RNF-09):** se convierten en Enablers, criterios de aceptación o criterios transversales del Definition of Done.
 * **Reglas de negocio:** se utilizan como condiciones de aceptación de las historias relacionadas.
-* **Arquitectura:** las historias técnicas consideran la **Arquitectura por Capas** definida para el proyecto.
+* **Arquitectura:** las historias técnicas consideran la **arquitectura cliente-servidor** con el patrón **MVC con capa de servicios** definida para el proyecto (CC-01).
 * **Restricciones:** se consideran para establecer prioridades, dependencias y esfuerzo.
 
 La transformación mantiene la trazabilidad entre los requisitos iniciales y los elementos utilizados para la planificación en Jira.
@@ -677,27 +677,26 @@ Escenario: Recuperar el servicio después de una interrupción
 
 ---
 
-## EN-006 – Arquitectura por capas y mantenibilidad
+## EN-006 – Arquitectura cliente-servidor (MVC) y mantenibilidad
 
 **Requisito fuente:** RNF-08
 **Tipo:** Enabler / Historia técnica
 **Story Points:** 8
 
 **Objetivo:**
-Mantener organizada la solución mediante la **Arquitectura por Capas**.
+Mantener organizada la solución mediante la **arquitectura cliente-servidor** y el patrón **MVC con capa de servicios**.
 
 La estructura principal es:
 
 ```text
-Frontend
-   ↓
-Capa de Presentación
-   ↓
-Capa de Negocio
-   ↓
-Capa de Datos
-   ↓
-Firebase Cloud Firestore
+CLIENTE                                  SERVIDOR
+Vista (Next.js)  ── API REST (JSON) ──►  Controlador (Express)
+                                            ↓
+                                         Modelo: Servicios ──► API de OpenRouteService
+                                            ↓
+                                         Modelo: Repositorios (Prisma)
+                                            ↓
+                                         Neon (PostgreSQL)
 ```
 
 ### Criterios de aceptación
@@ -706,7 +705,7 @@ Firebase Cloud Firestore
 Escenario: Mantener separación de responsabilidades
   Dado una nueva funcionalidad del Backend
   Cuando se incorpora al sistema
-  Entonces sus responsabilidades se mantienen separadas entre presentación, negocio y datos
+  Entonces sus responsabilidades se mantienen separadas entre controlador, servicios y repositorios
 
 Escenario: Verificar las pruebas de calidad
   Dado un cambio incorporado al proyecto
@@ -825,29 +824,29 @@ Estas tres historias conforman **23 Story Points** para el Sprint 1.
 
 ---
 
-# 12. Relación con la Arquitectura por Capas
+# 12. Relación con la arquitectura cliente-servidor y el patrón MVC
 
 Las historias técnicas y funcionales se desarrollan considerando la arquitectura seleccionada para el proyecto.
 
 ```text
-Frontend
-   ↓
-Capa de Presentación
-   ↓
-Capa de Negocio
-   ↓
-Capa de Datos
-   ↓
-Firebase Cloud Firestore
+CLIENTE                                  SERVIDOR
+Vista (Next.js)  ── API REST (JSON) ──►  Controlador (Express)
+                                            ↓
+                                         Modelo: Servicios ──► API de OpenRouteService
+                                            ↓
+                                         Modelo: Repositorios (Prisma)
+                                            ↓
+                                         Neon (PostgreSQL)
 ```
 
 La separación de responsabilidades permite organizar el desarrollo de la siguiente manera:
 
-| Capa             | Responsabilidad                                        |
-| ---------------- | ------------------------------------------------------ |
-| **Presentación** | Recibir solicitudes y validar información de entrada.  |
-| **Negocio**      | Aplicar reglas y procesar las operaciones del sistema. |
-| **Datos**        | Consultar y almacenar información en Firestore.        |
+| Parte del MVC               | Responsabilidad                                                              |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| **Vista**                   | Pantallas del frontend (Next.js) que consumen la API REST.                   |
+| **Controlador**             | Recibir solicitudes de la API y validar información de entrada.              |
+| **Modelo – Servicios**      | Aplicar reglas, procesar operaciones y llamar a la API de optimización.      |
+| **Modelo – Repositorios**   | Consultar y almacenar información en Neon (PostgreSQL).                      |
 
 Esta estructura se considera especialmente en **EN-006**, relacionado con RNF-08.
 
@@ -862,7 +861,7 @@ Las principales restricciones consideradas durante la transformación ágil son:
 | Tiempo académico               | Se priorizan las funcionalidades principales.                           |
 | Equipo de dos integrantes      | Se distribuye el trabajo según prioridad y complejidad.                 |
 | Presupuesto académico limitado | Se priorizan tecnologías y servicios de bajo costo.                     |
-| Dependencia de Firebase        | Las funcionalidades de datos consideran la disponibilidad del servicio. |
+| Dependencia de servicios cloud | Las funcionalidades consideran la disponibilidad de Neon y de la API de optimización. |
 | Calidad de los datos           | Las historias relacionadas con pedidos y rutas incluyen validaciones.   |
 | Alcance geográfico en Huancayo | La planificación se orienta al escenario definido para el proyecto.     |
 | Cambios en requisitos          | Las modificaciones deben evaluarse antes de incorporarse al Sprint.     |
@@ -875,7 +874,7 @@ La transformación ágil permite pasar de los requisitos definidos en la etapa i
 
 Los diez requisitos funcionales se relacionan con seis épicas y diez Historias de Usuario. Los requisitos no funcionales se incorporan mediante Enablers, criterios de aceptación y criterios transversales del Definition of Done.
 
-La planificación mantiene la trazabilidad con las reglas de negocio, objetivos del proyecto, arquitectura por capas y restricciones identificadas.
+La planificación mantiene la trazabilidad con las reglas de negocio, objetivos del proyecto, arquitectura cliente-servidor (MVC) y restricciones identificadas.
 
 Los elementos resultantes sirven como base para la configuración de **Jira Software**, donde las Historias de Usuario son priorizadas y estimadas mediante Story Points de Fibonacci.
 

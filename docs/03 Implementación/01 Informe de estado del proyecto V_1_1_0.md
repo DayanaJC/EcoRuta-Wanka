@@ -2,9 +2,9 @@
 
 **Optimizador de rutas sostenibles de última milla — Huancayo, Junín**
 
-# 01. Informe de estado del proyecto V_1_0_0
+# 01. Informe de estado del proyecto V_1_1_0
 
-**Versión:** V_1_0_0 | **Fecha:** 25/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Versión anterior:** V_1_0_0 (25/09/2026) – cambio CC-01 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -16,7 +16,9 @@
 
 ## 1. Introducción
 
-El presente documento reporta el estado del proyecto **EcoRuta Wanka** al cierre del **Sprint 1**, correspondiente a la primera entrega incremental del MVP v1.0.0.
+El presente documento reporta el estado del proyecto **EcoRuta Wanka** durante el **Sprint 1**, correspondiente a la primera entrega incremental del MVP v1.0.0.
+
+> **Actualización 27/09/2026 – CC-01:** el Sprint 1 continúa en curso. Durante el sprint el equipo cambió el stack tecnológico (de Python + FastAPI, React + Vite y Firestore a Node.js + Express, Next.js y Neon) y adoptó la arquitectura cliente-servidor con el patrón MVC con capa de servicios. Lo descrito en este documento corresponde al **prototipo inicial** construido con el stack anterior, que permitió validar las reglas de negocio. Además, la revisión del código mostró que la generación de rutas aún no calcula el orden óptimo de visita. Por ello, el estado de las historias se actualiza a **En progreso**. Ver `docs/04 Seguimiento_control/01 Registro de control de cambios V_1_1_0.md`.
 
 El sprint contempló la implementación de tres historias de usuario seleccionadas del backlog, con un total de **23 Story Points**:
 
@@ -31,13 +33,13 @@ El sprint contempló la implementación de tres historias de usuario seleccionad
 
 ## 2. Revisión del sprint
 
-### 2.1 Historias de Usuario completadas en este Sprint
+### 2.1 Avance de las Historias de Usuario (prototipo inicial)
 
-#### US-002 – Gestión de pedidos de reparto — **COMPLETADA**
+#### US-002 – Gestión de pedidos de reparto — **EN PROGRESO**
 
-La gestión de pedidos de reparto se encuentra completamente implementada.
+La gestión de pedidos de reparto se implementó en el prototipo inicial. Queda pendiente su migración al stack vigente (Node.js + Express, Next.js y Neon) según CC-01.
 
-**Backend (100 %):**
+**Backend (prototipo):**
 
 * El controlador `pedidos.py` expone endpoints REST para crear, listar, obtener, actualizar, cambiar estado y cancelar pedidos.
 * El servicio `pedido_service.py` aplica reglas de negocio como la validación de ventana de entrega y la prohibición de modificar pedidos en estados terminales (entregado o cancelado).
@@ -45,7 +47,7 @@ La gestión de pedidos de reparto se encuentra completamente implementada.
 * Los esquemas Pydantic (`PedidoCreate`, `PedidoUpdate`, `PedidoResponse`, `CambiarEstadoPedidoRequest`) validan la entrada de datos.
 * Las pruebas unitarias y de integración cubren esquemas, servicio y repositorio.
 
-**Frontend (100 %):**
+**Frontend (prototipo):**
 
 * `PedidoLista.jsx` muestra el listado con filtros por estado, prioridad y búsqueda de texto.
 * `PedidoFormulario.jsx` permite registrar y editar pedidos con todos los campos obligatorios.
@@ -53,11 +55,11 @@ La gestión de pedidos de reparto se encuentra completamente implementada.
 * El servicio `api.js` consume los endpoints del backend con métodos CRUD completos.
 * Los componentes de interfaz utilizan badges de estado y prioridad, formateo de fechas y ventanas de entrega.
 
-#### US-001 – Gestión de flota vehicular — **COMPLETADA**
+#### US-001 – Gestión de flota vehicular — **EN PROGRESO**
 
-La gestión de flota vehicular se encuentra completamente implementada.
+La gestión de flota vehicular se implementó en el prototipo inicial. Queda pendiente su migración al stack vigente (Node.js + Express, Next.js y Neon) según CC-01.
 
-**Backend (100 %):**
+**Backend (prototipo):**
 
 * El controlador `vehiculos.py` expone endpoints REST para registrar, listar, obtener, actualizar, cambiar estado y desactivar vehículos.
 * El servicio `vehiculo_service.py` aplica reglas de negocio como la validación de placa peruana (formato ABC-123), detección de vehículos duplicados y la lógica de desactivación.
@@ -66,7 +68,7 @@ La gestión de flota vehicular se encuentra completamente implementada.
 * El modelo de dominio `Vehiculo` incluye validación de placa y enumeraciones de tipo y estado.
 * Las pruebas unitarias y de integración cubren esquemas, servicio y repositorio (13 pruebas unitarias pasando).
 
-**Frontend (100 %):**
+**Frontend (prototipo):**
 
 * `VehiculoLista.jsx` muestra el listado de vehículos con placa, tipo, capacidad y estado.
 * `VehiculoFormulario.jsx` permite registrar y editar vehículos con todos los campos requeridos.
@@ -74,11 +76,11 @@ La gestión de flota vehicular se encuentra completamente implementada.
 * El módulo de **Vehículos** está accesible desde la navegación principal de `App.jsx`.
 * El servicio `api.js` consume los endpoints `/vehiculos` del backend.
 
-#### US-003 – Generación de rutas optimizadas por vehículo — **COMPLETADA**
+#### US-003 – Generación de rutas optimizadas por vehículo — **EN PROGRESO**
 
-La generación de rutas optimizadas por vehículo se encuentra completamente implementada.
+El prototipo inicial permite registrar y consultar rutas con el vehículo y los pedidos seleccionados. Sin embargo, **aún no calcula el orden óptimo de visita** ni la distancia o el tiempo estimados: `ruta_service.py` guarda los pedidos en el orden en que el operador los selecciona. El cálculo se implementará con la API de OpenRouteService y los factores de tráfico definidos en CC-01.
 
-**Backend (100 %):**
+**Backend (prototipo):**
 
 * Se creó el modelo de dominio `Ruta` con enumeración `EstadoRuta` (generada, en_reparto, completada, cancelada).
 * El controlador `rutas.py` expone endpoints REST para generar, listar, obtener, cambiar estado y cancelar rutas.
@@ -90,7 +92,7 @@ La generación de rutas optimizadas por vehículo se encuentra completamente imp
 * Se registraron **10 pruebas unitarias** para el servicio de rutas.
 * El router de rutas se integró en `main.py`.
 
-**Frontend (100 %):**
+**Frontend (prototipo):**
 
 * `RutaLista.jsx` muestra el listado de rutas generadas con ID, vehículo, pedidos, estado y fecha.
 * `RutaFormulario.jsx` permite generar nuevas rutas seleccionando un vehículo activo y pedidos disponibles, incluye `RutaDetalle` para consultar el estado de una ruta.
@@ -100,7 +102,7 @@ La generación de rutas optimizadas por vehículo se encuentra completamente imp
 
 ---
 
-## 3. Demostración del trabajo completado
+## 3. Demostración del prototipo inicial
 
 Durante la revisión del Sprint 1 se puede demostrar lo siguiente:
 
@@ -144,10 +146,11 @@ El sistema permite a un operador:
 * Consultar el detalle de cada ruta incluyendo los pedidos incluidos y el vehículo asignado.
 * Cambiar el estado de una ruta (generada → en reparto → completada → cancelada).
 * Cancelar una ruta generada.
+* **Limitación:** el orden de las paradas corresponde al orden de selección; la ruta aún no se optimiza.
 
-### Arquitectura backend robusta
+### Arquitectura del backend del prototipo
 
-Se puede demostrar que el backend cuenta con una arquitectura por capas bien definida:
+El prototipo organiza el backend en capas (presentación, negocio y datos). Esta separación se conserva en el stack vigente como el Controlador y el Modelo (servicios y repositorios) del patrón MVC:
 
 * Capa de presentación con controladores REST para cuatro módulos (vehículos, pedidos, asignaciones, rutas).
 * Capa de negocio con servicios que aplican reglas de negocio validadas.
@@ -165,7 +168,14 @@ Se puede mostrar la aplicación web con navegación entre los módulos de Pedido
 
 ## 4. Pendientes
 
-Los siguientes items permanecen pendientes al cierre del Sprint 1:
+Los siguientes ítems permanecen pendientes:
+
+### Pendientes para cerrar el Sprint 1 (CC-01)
+
+* Migrar los módulos de vehículos, pedidos y asignaciones (US-001, US-002) a Node.js + Express + Neon y el frontend a Next.js.
+* Implementar el cálculo del orden óptimo de visita en US-003 con la API de OpenRouteService, incluyendo distancia, tiempo estimado y factores de tráfico.
+* Migrar las pruebas de Pytest a Vitest y Supertest.
+* Configurar la base de datos en Neon y la API key de OpenRouteService en cada entorno, sin incorporarlas al repositorio.
 
 ### Funcionalidades futuras (fuera del alcance del Sprint 1)
 
@@ -184,16 +194,18 @@ Estas funcionalidades forman parte de entregas futuras del proyecto y no afectan
 
 | Historia | Descripción | Estado |
 | --- | --- | --- |
-| US-001 | Gestión de flota vehicular | **Completada** |
-| US-002 | Gestión de pedidos de reparto | **Completada** |
-| US-003 | Generación de rutas optimizadas por vehículo | **Completada** |
+| US-001 | Gestión de flota vehicular | **En progreso** – validada en el prototipo; pendiente de migración |
+| US-002 | Gestión de pedidos de reparto | **En progreso** – validada en el prototipo; pendiente de migración |
+| US-003 | Generación de rutas optimizadas por vehículo | **En progreso** – registra rutas; pendiente el cálculo del orden óptimo |
 
-**Story Points completados:** 23 de 23  
-**Sprint Goal:** Cumple parcialmente. La gestión de vehículos y pedidos está completamente implementada y disponible para generar rutas. La generación de rutas optimizadas está implementada como primera versión funcional y demostrable.
+**Story Points completados:** 0 de 23 (ninguna historia cumple todavía la Definición de Hecho con el stack vigente)  
+**Sprint Goal:** En progreso. El prototipo permitió validar las reglas de negocio de vehículos, pedidos y asignaciones. Para cumplir el objetivo falta migrar los módulos al stack vigente e implementar el cálculo de rutas optimizadas.
 
 ---
 
-## 6. Verificación técnica
+## 6. Verificación técnica del prototipo inicial
+
+Verificación realizada el 25/09/2026 sobre el stack anterior (FastAPI + Firestore + React/Vite). Se repetirá con Vitest y Supertest después de la migración.
 
 ### Backend
 

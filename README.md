@@ -12,7 +12,7 @@
 4. [Tecnologías](#tecnologías)
 5. [Arquitectura](#arquitectura)
 6. [Estructura del proyecto](#estructura-del-proyecto)
-7. [Configuración de Firebase](#configuración-de-firebase)
+7. [Configuración de servicios](#configuración-de-servicios)
 8. [Variables de entorno](#variables-de-entorno)
 9. [Estrategia Git](#estrategia-git)
 10. [Versionamiento](#versionamiento)
@@ -24,7 +24,7 @@
 
 **EcoRuta Wanka** es un proyecto académico del Proyecto de Fin de Asignatura (PFA) que busca apoyar la gestión logística de **WankaLogística S.A.C.**
 
-El sistema permitirá organizar información relacionada con vehículos, pedidos, conductores, asignaciones y rutas de reparto. También contempla indicadores relacionados con distancia, consumo estimado y sostenibilidad.
+El sistema permitirá organizar información relacionada con vehículos, pedidos, conductores, asignaciones y rutas de reparto optimizadas mediante una API de optimización de rutas. También contempla indicadores relacionados con distancia, consumo estimado y sostenibilidad.
 
 El proyecto está orientado al contexto de distribución de **Huancayo, El Tambo, Chilca, Pilcomayo y zonas del valle del Mantaro**.
 
@@ -55,29 +55,35 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 
 ## Tecnologías
 
-| Componente           | Tecnología               |
-| -------------------- | ------------------------ |
-| Frontend             | React 19 + Vite          |
-| Backend              | Python 3.13 + FastAPI    |
-| Validación de datos  | Pydantic                 |
-| Base de datos        | Firebase Cloud Firestore |
-| Servicios Firebase   | Firebase Admin SDK       |
-| Autenticación        | Firebase Authentication  |
-| Pruebas              | Pytest                   |
-| Control de versiones | Git + GitHub             |
-| Gestión del proyecto | Jira Software            |
-| Documentación de API | OpenAPI / Swagger        |
+> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migra de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El código actual de `backend/` y `frontend/` corresponde al **prototipo inicial** y se migrará por módulos. Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md).
+
+| Componente               | Tecnología                                   |
+| ------------------------ | -------------------------------------------- |
+| Arquitectura             | Cliente-servidor + patrón MVC con capa de servicios |
+| Comunicación             | API REST (JSON)                              |
+| Frontend (Vista)         | Next.js (React) + JavaScript                 |
+| Mapas                    | Leaflet + OpenStreetMap                      |
+| Backend (Controlador y Modelo) | Node.js + Express                      |
+| Validación de datos      | Zod                                          |
+| Acceso a datos           | Prisma ORM                                   |
+| Base de datos            | Neon (PostgreSQL)                            |
+| Optimización de rutas    | API de OpenRouteService (VROOM) + factores de tráfico |
+| Geocodificación          | Nominatim (OpenStreetMap)                    |
+| Autenticación            | JWT + bcrypt                                 |
+| Pruebas                  | Vitest + Supertest                           |
+| Control de versiones     | Git + GitHub                                 |
+| Gestión del proyecto     | Jira Software                                |
+| Documentación de API     | OpenAPI                                      |
 
 ### Justificación
 
-* **Python:** permite desarrollar el backend con una sintaxis clara y cuenta con herramientas para procesamiento de datos y futuras funcionalidades de optimización.
-* **FastAPI:** permite construir la API REST del sistema y facilita la validación de datos y documentación mediante OpenAPI/Swagger.
-* **Pydantic:** permite validar los datos utilizados por los servicios del sistema.
-* **Firebase Firestore:** proporciona una base de datos en la nube adecuada para el proyecto.
-* **Firebase Authentication:** permite gestionar el acceso de los usuarios.
-* **React:** permite construir una interfaz mediante componentes reutilizables.
-* **Vite:** proporciona un entorno rápido para el desarrollo del frontend.
-* **Pytest:** permite realizar pruebas sobre las funcionalidades y reglas del sistema.
+* **API de optimización en lugar de un algoritmo propio:** OpenRouteService calcula el orden óptimo de visita sobre calles reales (capacidad, ventanas de entrega y tiempos). El backend prepara los datos, llama a la API e interpreta la respuesta.
+* **Factores de tráfico:** la API no considera el tráfico en tiempo real; EcoRuta Wanka ajusta los tiempos con factores configurables por franja horaria.
+* **Node.js + Express:** adecuado para orquestar llamadas HTTP asíncronas con JSON y permite usar un solo lenguaje (JavaScript) en todo el sistema.
+* **Next.js:** construido sobre React, permite reutilizar los componentes del prototipo.
+* **Neon (PostgreSQL):** base de datos relacional con plan gratuito; garantiza las relaciones entre pedidos, vehículos, asignaciones y rutas mediante claves foráneas.
+* **Zod y Prisma:** validación de datos y acceso tipado a la base de datos con migraciones.
+* **Vitest + Supertest:** pruebas de reglas de negocio y de los endpoints de la API.
 * **Git y GitHub:** permiten controlar las versiones del código y trabajar mediante ramas y Pull Requests.
 * **Jira Software:** permite organizar épicas, historias de usuario, tareas, sprints y releases.
 
@@ -85,32 +91,27 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 
 ## Arquitectura
 
-EcoRuta Wanka utiliza **Arquitectura por Capas** para organizar las responsabilidades del sistema.
-
-La solución está formada por un frontend y un backend. El backend se organiza en las capas de presentación, negocio y datos.
+EcoRuta Wanka utiliza una **arquitectura cliente-servidor**: el frontend (cliente) consume la **API REST** del backend (servidor). Internamente se aplica el patrón **MVC con capa de servicios**.
 
 ```text
-Frontend React
-      ↓
-API REST / FastAPI
-      ↓
-Capa de Presentación
-      ↓
-Capa de Negocio
-      ↓
-Capa de Datos
-      ↓
-Firebase Cloud Firestore
+CLIENTE                                   SERVIDOR
+Vista (Next.js)  ── API REST (JSON) ──►   Controlador (Express)
+                                             ↓
+                                          Modelo: Servicios ──► API de OpenRouteService
+                                             ↓                  (orden óptimo + factores de tráfico)
+                                          Modelo: Repositorios (Prisma)
+                                             ↓
+                                          Neon (PostgreSQL)
 ```
 
-### Capas del sistema
+### Partes del sistema
 
-| Capa          | Responsabilidad                                                                |
-| ------------- | ------------------------------------------------------------------------------ |
-| Presentación  | Recibe las solicitudes y comunica las operaciones del sistema mediante la API. |
-| Negocio       | Contiene las reglas y procesos principales del proyecto.                       |
-| Datos         | Gestiona el acceso y almacenamiento de información.                            |
-| Base de datos | Firestore almacena la información del sistema.                                 |
+| Parte del MVC            | Responsabilidad                                                              |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| Vista                    | Pantallas y mapa con los que interactúa el usuario (Next.js).                |
+| Controlador              | Recibe las solicitudes de la API, valida la entrada y devuelve la respuesta. |
+| Modelo – Servicios       | Reglas de negocio e integración con la API de optimización de rutas.         |
+| Modelo – Repositorios    | Acceso a la información almacenada en Neon.                                  |
 
 Esta organización permite separar responsabilidades y facilita el mantenimiento y evolución del proyecto.
 
@@ -118,33 +119,37 @@ Esta organización permite separar responsabilidades y facilita el mantenimiento
 
 ## Estructura del proyecto
 
+Estructura objetivo después de la migración (CC-01):
+
 ```text
 EcoRuta-Wanka/
 │
-├── backend/
-│   ├── app/
-│   │   ├── presentation/
-│   │   ├── business/
-│   │   ├── data/
-│   │   ├── schemas/
+├── backend/                 # API REST con Node.js + Express
+│   ├── src/
+│   │   ├── routes/          # Definición de endpoints /api/v1/...
+│   │   ├── controllers/     # Controlador (MVC)
+│   │   ├── services/        # Modelo: reglas de negocio y APIs externas
+│   │   ├── repositories/    # Modelo: acceso a datos con Prisma
+│   │   ├── schemas/         # Validación con Zod
 │   │   └── config/
-│   │
-│   ├── credentials/
+│   ├── prisma/
+│   │   └── schema.prisma    # Modelo de datos de Neon
 │   ├── tests/
 │   ├── .env.example
-│   ├── requirements.txt
-│   └── pytest.ini
+│   └── package.json
 │
-├── frontend/
-│   ├── src/
-│   └── ...
+├── frontend/                # Vista con Next.js
+│   ├── app/
+│   ├── components/
+│   ├── services/
+│   └── package.json
 │
 ├── database/
 │
 ├── docs/
 │   ├── 01 Inicio/
 │   ├── 02 Planificacion/
-│   ├── 03 Ejecucion/
+│   ├── 03 Implementación/
 │   ├── 04 Seguimiento_control/
 │   ├── 05 Cierre/
 │   └── 06 Otros/
@@ -154,32 +159,32 @@ EcoRuta-Wanka/
 └── README.md
 ```
 
+> Mientras dure la migración, `backend/app/` (FastAPI) y `frontend/src/` (Vite) contienen el prototipo inicial.
+
 ### Descripción de las principales carpetas
 
-* **backend/**: contiene la API REST desarrollada con FastAPI.
-* **frontend/**: contiene la interfaz web desarrollada con React y Vite.
+* **backend/**: contiene la API REST desarrollada con Node.js + Express.
+* **frontend/**: contiene la interfaz web desarrollada con Next.js.
 * **database/**: contiene documentación relacionada con el modelo de datos.
 * **docs/**: contiene la documentación académica del proyecto.
-* **credentials/**: contiene archivos locales de credenciales que no deben ser publicados.
 * **tests/**: contiene las pruebas del backend.
 
 ---
 
-## Configuración de Firebase
+## Configuración de servicios
 
-Para configurar Firebase en el backend:
+### Base de datos (Neon)
 
-1. Crear o seleccionar el proyecto de Firebase.
-2. Configurar **Cloud Firestore**.
-3. Configurar **Firebase Authentication** según los roles definidos para el sistema.
-4. Generar las credenciales necesarias para el Firebase Admin SDK.
-5. Guardar las credenciales en:
+1. Crear un proyecto en [Neon](https://neon.tech) (plan gratuito).
+2. Crear una rama de base de datos para desarrollo y otra para pruebas.
+3. Copiar la cadena de conexión en la variable `DATABASE_URL` del backend.
+4. Aplicar el modelo de datos con las migraciones de Prisma.
 
-```text
-backend/credentials/serviceAccountKey.json
-```
+### Optimización de rutas (OpenRouteService)
 
-6. Configurar la ruta de las credenciales mediante el archivo `.env`.
+1. Crear una cuenta en [account.heigit.org](https://account.heigit.org) (sin tarjeta).
+2. Solicitar un token del plan *Standard* (o el plan *Collaborative* con el correo institucional).
+3. Copiar el token en la variable `ORS_API_KEY` del backend.
 
 Las credenciales reales deben mantenerse fuera del repositorio.
 
@@ -187,27 +192,22 @@ Las credenciales reales deben mantenerse fuera del repositorio.
 
 ## Variables de entorno
 
-Copiar:
-
-```text
-backend/.env.example
-```
-
-como:
-
-```text
-backend/.env
-```
-
-y completar los valores necesarios.
-
-Ejemplo:
+Copiar `backend/.env.example` como `backend/.env` y completar los valores:
 
 ```env
-FIREBASE_CREDENTIALS_PATH=credentials/serviceAccountKey.json
+DATABASE_URL=postgresql://usuario:contraseña@host.neon.tech/ecoruta?sslmode=require
+ORS_API_KEY=
+JWT_SECRET=
+FRONTEND_URL=http://localhost:3000
 ```
 
-El archivo `backend/.env` y las credenciales de Firebase deben permanecer excluidos mediante `.gitignore`.
+En el frontend, crear `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+```
+
+Los archivos `.env` deben permanecer excluidos mediante `.gitignore`.
 
 **Nunca se deben publicar credenciales privadas en GitHub.**
 
@@ -279,7 +279,9 @@ Contiene la documentación relacionada con el inicio y definición del proyecto:
 * usuarios;
 * reglas de negocio;
 * stack tecnológico;
-* base de datos.
+* base de datos;
+* modelo C4;
+* restricciones.
 
 ### Planificación
 
@@ -298,10 +300,10 @@ Contiene la planificación del proyecto y los artefactos relacionados con Jira:
 
 Contiene los documentos de seguimiento y cierre del Sprint 1:
 
-* [01 Informe de estado del proyecto V_1_0_0.md](docs/03 Implementación/01 Informe de estado del proyecto V_1_0_0.md)
-* [02 Registro de Impedimentos V_1_0_0.md](docs/03 Implementación/02 Registro de Impedimentos V_1_0_0.md)
-* [03 Revisión del Sprint V_1_0_0.md](docs/03 Implementación/03 Revisión del Sprint V_1_0_0.md)
-* [04 Retrospectiva del Sprint V_1_0_0.md](docs/03 Implementación/04 Retrospectiva del Sprint V_1_0_0.md)
+* [01 Informe de estado del proyecto V_1_1_0.md](docs/03 Implementación/01 Informe de estado del proyecto V_1_1_0.md)
+* [02 Registro de Impedimentos V_1_1_0.md](docs/03 Implementación/02 Registro de Impedimentos V_1_1_0.md)
+* [03 Revisión del Sprint V_1_1_0.md](docs/03 Implementación/03 Revisión del Sprint V_1_1_0.md)
+* [04 Retrospectiva del Sprint V_1_1_0.md](docs/03 Implementación/04 Retrospectiva del Sprint V_1_1_0.md)
 
 > **Volver al [README](../README.md)**
 
@@ -310,6 +312,8 @@ Contiene los documentos de seguimiento y cierre del Sprint 1:
 `docs/04 Seguimiento_control/`
 
 Contiene información relacionada con el seguimiento del proyecto, control de cambios, commits, ramas y Pull Requests.
+
+* [01 Registro de control de cambios V_1_1_0.md](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md)
 
 ### Cierre
 
@@ -345,7 +349,7 @@ El proyecto tiene como objetivo alcanzar el **MVP v1.0.0**, de acuerdo con los r
 **Organización:** WankaLogística S.A.C.
 **Ubicación:** Huancayo, Junín, Perú
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
-**Arquitectura:** Arquitectura por Capas
+**Arquitectura:** Cliente-servidor + MVC con capa de servicios
 **Tipo:** Proyecto académico — PFA
 
 ---
