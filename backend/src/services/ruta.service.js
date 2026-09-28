@@ -111,6 +111,15 @@ export function crearRutaService(
         );
       }
 
+      // "Antes": el mismo recorrido en el orden elegido por el operador (almacén → pedidos → almacén).
+      // Sirve para comparar km y CO₂; si la consulta falla no se bloquea la ruta.
+      let distanciaSinOptimizar = null;
+      try {
+        distanciaSinOptimizar = await optimizador.distanciaRecorrido([almacen, ...lista, almacen]);
+      } catch {
+        distanciaSinOptimizar = null;
+      }
+
       // hora_salida del operador = hora DISPONIBLE; se calcula la salida óptima
       const pedidoPorId = Object.fromEntries(lista.map((p) => [p.id, p]));
       const horario = programarHorario({
@@ -136,6 +145,7 @@ export function crearRutaService(
         hora_disponible: salida,
         hora_salida: segundosAHora(horario.salida_s),
         distancia_estimada_km: Number((resultado.distancia_m / 1000).toFixed(2)),
+        distancia_sin_optimizar_km: distanciaSinOptimizar == null ? null : Number((distanciaSinOptimizar / 1000).toFixed(2)),
         tiempo_estimado_min: Math.round((horario.fin_s - horario.salida_s) / 60),
         factor_trafico_aplicado: traficoHabilitado ? factor : null,
         geometria: resultado.geometria,

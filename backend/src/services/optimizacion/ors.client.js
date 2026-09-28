@@ -7,6 +7,7 @@ import { horaASegundos } from "../../utils/tiempo.js";
 import { capacidadVolumenM3 } from "../carga.js";
 
 const URL_ORS = "https://api.openrouteservice.org/optimization";
+const URL_DIRECCIONES = "https://api.openrouteservice.org/v2/directions/driving-car";
 
 // VROOM solo acepta cantidades enteras y admite varias capacidades a la vez:
 // [peso en gramos, volumen en litros]. La demanda se redondea hacia arriba y la
@@ -45,6 +46,24 @@ export function decodificarPolilinea(texto) {
 export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
   return {
     configurado: Boolean(apiKey),
+
+    /**
+     * Distancia en metros de recorrer los puntos en el orden dado (sin optimizar).
+     * @param {{ latitud: number, longitud: number }[]} puntos
+     */
+    async distanciaRecorrido(puntos) {
+      if (!apiKey) throw new OptimizacionNoConfiguradaError("El servicio de rutas no está configurado (falta ORS_API_KEY).");
+      const respuesta = await fetchImpl(URL_DIRECCIONES, {
+        method: "POST",
+        headers: { Authorization: apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ coordinates: puntos.map((p) => [p.longitud, p.latitud]), instructions: false }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const datos = await respuesta.json().catch(() => null);
+      const distancia = datos?.routes?.[0]?.summary?.distance;
+      if (!respuesta.ok || distancia == null) throw new OptimizacionExternaError(`No se pudo calcular el recorrido (HTTP ${respuesta.status}).`);
+      return distancia;
+    },
 
     /**
      * @param {{ almacen: {latitud:number, longitud:number}, vehiculo: object, pedidos: object[],

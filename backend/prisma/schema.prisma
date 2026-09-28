@@ -172,6 +172,8 @@ model Ruta {
   // Hora desde la que el vehículo está disponible (la salida real puede ser posterior)
   hora_disponible         DateTime?  @db.Time(0)
   distancia_estimada_km   Decimal?   @db.Decimal(7, 2)
+  // Distancia recorriendo los pedidos en el orden elegido por el operador (antes de optimizar)
+  distancia_sin_optimizar_km Decimal? @db.Decimal(7, 2)
   tiempo_estimado_min     Int?
   factor_trafico_aplicado Decimal?   @db.Decimal(4, 2)
   geometria               Json?

@@ -215,6 +215,7 @@ describe("rutas optimizadas (RF-03)", () => {
     expect(ruta.paradas.map((x) => x.orden)).toEqual([1, 2]);
     expect(ruta.paradas[0].hora_estimada_llegada).toBe("08:10");
     expect(ruta.paradas[1].hora_estimada_llegada).toBe("08:25");
+    expect(ruta.distancia_sin_optimizar_km).toBe(20);
     expect(ruta).toMatchObject({ estado: "generada", distancia_estimada_km: 12.35, tiempo_estimado_min: 40, hora_salida: "08:00", hora_disponible: "08:00" });
     expect(optimizador.ultimaLlamada.almacen).toEqual(ALMACEN);
   });
@@ -313,6 +314,16 @@ describe("rutas optimizadas (RF-03)", () => {
     api = request(crearApp({ repos, optimizador: crearOptimizadorFalso({ noAsignar: [p.id] }), almacen: ALMACEN }));
     const res = await api.post("/api/v1/rutas").send({ vehiculo_id: v.id, pedido_ids: [p.id], hora_salida: "15:00" }).expect(422);
     expect(res.body.detail).toMatch(/Restaurante La Huancaína/);
+  });
+
+  it("genera la ruta aunque falle el cálculo del recorrido sin optimizar", async () => {
+    const v = await crearVehiculo();
+    const p = await crearPedido();
+    optimizador.distanciaRecorrido = async () => {
+      throw new Error("sin conexión");
+    };
+    const ruta = (await api.post("/api/v1/rutas").send({ vehiculo_id: v.id, pedido_ids: [p.id] }).expect(201)).body;
+    expect(ruta.distancia_sin_optimizar_km).toBeNull();
   });
 
   it("cambia el estado y cancela la ruta", async () => {

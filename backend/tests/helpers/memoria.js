@@ -82,6 +82,10 @@ export function crearOptimizadorFalso({ noAsignar = [] } = {}) {
   return {
     configurado: true,
     ultimaLlamada: null,
+    // Recorrido sin optimizar: 20 km (la ruta optimizada del falso mide 12,345 km)
+    async distanciaRecorrido() {
+      return 20000;
+    },
     async optimizarRuta(datos) {
       this.ultimaLlamada = datos;
       const asignables = datos.pedidos.filter((p) => !noAsignar.includes(p.id)).reverse();

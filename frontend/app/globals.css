@@ -1424,3 +1424,8 @@ textarea {
   background: var(--gris-50);
   color: var(--gris-500);
 }
+
+.texto-ahorro {
+  color: var(--verde);
+  font-weight: 600;
+}

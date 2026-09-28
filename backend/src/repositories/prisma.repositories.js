@@ -98,6 +98,7 @@ const aRuta = (r, { conGeometria = true } = {}) => {
     hora_disponible: dateAHora(r.hora_disponible),
     hora_salida: dateAHora(r.hora_salida),
     distancia_estimada_km: num(r.distancia_estimada_km),
+    distancia_sin_optimizar_km: num(r.distancia_sin_optimizar_km),
     tiempo_estimado_min: r.tiempo_estimado_min,
     factor_trafico_aplicado: num(r.factor_trafico_aplicado),
     ...(conGeometria ? { geometria: r.geometria ?? null } : {}),

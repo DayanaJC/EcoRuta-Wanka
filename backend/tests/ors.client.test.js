@@ -71,6 +71,18 @@ describe("crearClienteOrs", () => {
     expect(r).toMatchObject({ distancia_m: 8000, no_asignados: [], geometria: [[38.5, -120.2]] });
   });
 
+  it("calcula la distancia de un recorrido en el orden dado", async () => {
+    let enviado;
+    const fetchImpl = async (url, opciones) => {
+      enviado = { url, cuerpo: JSON.parse(opciones.body) };
+      return { ok: true, status: 200, json: async () => ({ routes: [{ summary: { distance: 15432 } }] }) };
+    };
+    const d = await crearClienteOrs({ apiKey: "k", fetchImpl }).distanciaRecorrido([almacen, pedidos[1], pedidos[0], almacen]);
+    expect(d).toBe(15432);
+    expect(enviado.url).toMatch(/directions\/driving-car/);
+    expect(enviado.cuerpo.coordinates).toEqual([[-75.2104, -12.0681], [-75.21, -12.05], [-75.2, -12.06], [-75.2104, -12.0681]]);
+  });
+
   it("devuelve los pedidos no asignados", async () => {
     const fetchImpl = respuestaJson({ routes: [], unassigned: [{ id: 2 }] });
     const r = await crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 1 });

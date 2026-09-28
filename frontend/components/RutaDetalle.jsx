@@ -1,6 +1,7 @@
 import { CircleCheck, Clock, ExternalLink, Gauge, MapPin, Play, Printer, Route, XCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { BadgeEstadoRuta } from './Badges.jsx'
+import { AntesDespues } from './AntesDespues.jsx'
 import { Aviso } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import { capacidadVolumenM3 } from '../utils/carga.js'
@@ -116,6 +117,8 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
       </section>
 
       {ruta.estado === 'cancelada' && <Aviso tipo="info">Esta ruta fue cancelada.</Aviso>}
+
+      <AntesDespues ruta={ruta} vehiculo={vehiculo} />
 
       {ajustada && (
         <Aviso tipo="info">
