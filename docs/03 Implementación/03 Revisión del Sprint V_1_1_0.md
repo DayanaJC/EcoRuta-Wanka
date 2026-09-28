@@ -2,9 +2,9 @@
 
 **Optimizador de rutas sostenibles de última milla — Huancayo, Junín**
 
-# 03. Revisión del Sprint V_1_0_0
+# 03. Revisión del Sprint V_1_1_0
 
-**Versión:** V_1_0_0 | **Fecha:** 25/09/2026 | **Actualizado:** 27/09/2026 (CC-01 – Cambio de stack y arquitectura) | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Versión anterior:** V_1_0_0 (25/09/2026) – cambio CC-01 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -18,7 +18,7 @@
 
 La presente revisión constata el avance realizado durante el **Sprint 1** del proyecto **EcoRuta Wanka** y permite verificar el cumplimiento del **Sprint Goal** en función del estado real del código fuente.
 
-> **Actualización 27/09/2026 – CC-01:** el Sprint 1 continúa en curso. Durante el sprint el equipo cambió el stack tecnológico (de Python + FastAPI, React + Vite y Firestore a Node.js + Express, Next.js y Neon) y adoptó la arquitectura cliente-servidor con el patrón MVC con capa de servicios. Lo descrito en este documento corresponde al **prototipo inicial** construido con el stack anterior, que permitió validar las reglas de negocio. Además, la revisión del código mostró que la generación de rutas aún no calcula el orden óptimo de visita. Por ello, el estado de las historias se actualiza a **En progreso**. Ver `docs/04 Seguimiento_control/01 Registro de control de cambios V_1_0_0.md`.
+> **Actualización 27/09/2026 – CC-01:** el Sprint 1 continúa en curso. Durante el sprint el equipo cambió el stack tecnológico (de Python + FastAPI, React + Vite y Firestore a Node.js + Express, Next.js y Neon) y adoptó la arquitectura cliente-servidor con el patrón MVC con capa de servicios. Lo descrito en este documento corresponde al **prototipo inicial** construido con el stack anterior, que permitió validar las reglas de negocio. Además, la revisión del código mostró que la generación de rutas aún no calcula el orden óptimo de visita. Por ello, el estado de las historias se actualiza a **En progreso**. Ver `docs/04 Seguimiento_control/01 Registro de control de cambios V_1_1_0.md`.
 
 ---
 

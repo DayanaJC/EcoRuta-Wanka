@@ -55,7 +55,7 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 
 ## Tecnologías
 
-> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migra de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El código actual de `backend/` y `frontend/` corresponde al **prototipo inicial** y se migrará por módulos. Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_0_0.md).
+> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migra de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El código actual de `backend/` y `frontend/` corresponde al **prototipo inicial** y se migrará por módulos. Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md).
 
 | Componente               | Tecnología                                   |
 | ------------------------ | -------------------------------------------- |
@@ -300,10 +300,10 @@ Contiene la planificación del proyecto y los artefactos relacionados con Jira:
 
 Contiene los documentos de seguimiento y cierre del Sprint 1:
 
-* [01 Informe de estado del proyecto V_1_0_0.md](docs/03 Implementación/01 Informe de estado del proyecto V_1_0_0.md)
-* [02 Registro de Impedimentos V_1_0_0.md](docs/03 Implementación/02 Registro de Impedimentos V_1_0_0.md)
-* [03 Revisión del Sprint V_1_0_0.md](docs/03 Implementación/03 Revisión del Sprint V_1_0_0.md)
-* [04 Retrospectiva del Sprint V_1_0_0.md](docs/03 Implementación/04 Retrospectiva del Sprint V_1_0_0.md)
+* [01 Informe de estado del proyecto V_1_1_0.md](docs/03 Implementación/01 Informe de estado del proyecto V_1_1_0.md)
+* [02 Registro de Impedimentos V_1_1_0.md](docs/03 Implementación/02 Registro de Impedimentos V_1_1_0.md)
+* [03 Revisión del Sprint V_1_1_0.md](docs/03 Implementación/03 Revisión del Sprint V_1_1_0.md)
+* [04 Retrospectiva del Sprint V_1_1_0.md](docs/03 Implementación/04 Retrospectiva del Sprint V_1_1_0.md)
 
 > **Volver al [README](../README.md)**
 
@@ -313,7 +313,7 @@ Contiene los documentos de seguimiento y cierre del Sprint 1:
 
 Contiene información relacionada con el seguimiento del proyecto, control de cambios, commits, ramas y Pull Requests.
 
-* [01 Registro de control de cambios V_1_0_0.md](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_0_0.md)
+* [01 Registro de control de cambios V_1_1_0.md](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md)
 
 ### Cierre
 

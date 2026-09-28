@@ -4,7 +4,7 @@
 
 # 01. Registro de control de cambios
 
-**Versión:** V_1_0_0 | **Fecha:** 27/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -24,9 +24,20 @@ Este documento registra los cambios que afectan el alcance, la tecnología, la a
 
 ---
 
-## 3. CC-01 – Cambio de stack tecnológico y de arquitectura
+## 3. Historial de versiones de la documentación
 
-### 3.1 Descripción del cambio
+| Versión | Fecha      | Descripción                                                                                                   |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
+| V_1_0_0 | 28/08/2026 – 25/09/2026 | Documentación inicial (Inicio, Planificación e Implementación del Sprint 1) con el stack Python + FastAPI, React + Vite y Firebase. |
+| V_1_1_0 | 27/09/2026 | Cambio CC-01: stack Node.js + Express, Next.js y Neon; arquitectura cliente-servidor con MVC; estado real del Sprint 1. Solo los documentos afectados pasan a V_1_1_0; los demás se mantienen en V_1_0_0. |
+
+La versión anterior de cada documento puede consultarse en el historial de Git del repositorio.
+
+---
+
+## 4. CC-01 – Cambio de stack tecnológico y de arquitectura
+
+### 4.1 Descripción del cambio
 
 | Elemento                | Antes                                          | Después                                                     |
 | ----------------------- | ---------------------------------------------- | ----------------------------------------------------------- |
@@ -41,7 +52,7 @@ Este documento registra los cambios que afectan el alcance, la tecnología, la a
 | Autenticación           | Firebase Authentication (no implementada)      | JWT + bcrypt                                                |
 | Pruebas                 | Pytest                                         | Vitest + Supertest                                          |
 
-### 3.2 Motivo
+### 4.2 Motivo
 
 1. **Uso de APIs de optimización en lugar de un algoritmo propio.** Desarrollar un motor de optimización de rutas excede el plazo del PFA. OpenRouteService calcula el orden óptimo de visita sobre calles reales considerando capacidad, ventanas de entrega y tiempos. El backend pasa a orquestar llamadas HTTP con JSON, un tipo de trabajo para el que Node.js está diseñado.
 2. **Mejora propia sobre la API: factores de tráfico.** La API no considera el tráfico en tiempo real. EcoRuta Wanka añade factores configurables por franja horaria que ajustan los tiempos estimados.
@@ -49,7 +60,7 @@ Este documento registra los cambios que afectan el alcance, la tecnología, la a
 4. **Un solo lenguaje.** JavaScript en el frontend y el backend reduce la curva de aprendizaje de un equipo de dos integrantes.
 5. **Momento del proyecto.** El Sprint 1 no ha concluido; realizar el cambio ahora evita un retrabajo mayor en sprints posteriores.
 
-### 3.3 Evaluación del impacto
+### 4.3 Evaluación del impacto
 
 | Dimensión     | Impacto                                                                                                                                  |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
@@ -60,7 +71,7 @@ Este documento registra los cambios que afectan el alcance, la tecnología, la a
 | Riesgos       | Nuevos riesgos RSK-15 (dependencia y límites de la API de optimización) y RSK-16 (retrabajo por la migración).                           |
 | Reutilización | Se conservan los requisitos, las reglas de negocio, el diseño de las pantallas, el contrato de la API y la separación de responsabilidades. |
 
-### 3.4 Documentos actualizados
+### 4.4 Documentos actualizados
 
 | Documento                                                        | Cambio principal                                                           |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -76,7 +87,7 @@ Este documento registra los cambios que afectan el alcance, la tecnología, la a
 | `02 Planificacion/04 Presupuesto del proyecto`                   | Servicios cloud (Neon, Vercel, OpenRouteService)                           |
 | `03 Implementación/01 a 04`                                      | Estado real del Sprint 1 (en curso) y acciones de migración                |
 
-### 3.5 Plan de implementación
+### 4.5 Plan de implementación
 
 1. Crear el backend en Node.js + Express con la estructura MVC (`controllers`, `services`, `repositories`) y el esquema de Prisma en Neon.
 2. Migrar los módulos en orden: vehículos (US-001), pedidos (US-002), asignaciones y rutas (US-003), reutilizando las reglas de negocio del prototipo.
