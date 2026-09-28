@@ -81,6 +81,12 @@ model Vehiculo {
   consumo_combustible_l100km Decimal        @db.Decimal(5, 2)
   factor_emision_co2_kg_l    Decimal        @db.Decimal(5, 3)
   anio_fabricacion           Int            @db.SmallInt
+  // Medidas internas útiles de la tolva o caja de carga
+  largo_util_cm              Decimal        @db.Decimal(6, 1)
+  ancho_util_cm              Decimal        @db.Decimal(6, 1)
+  alto_util_cm               Decimal        @db.Decimal(6, 1)
+  // Porcentaje del volumen que se puede aprovechar (los bultos no llenan el 100 %)
+  aprovechamiento_pct        Int            @default(80) @db.SmallInt
   estado                     EstadoVehiculo @default(activo)
   created_at                 DateTime       @default(now()) @db.Timestamptz(3)
   updated_at                 DateTime       @updatedAt @db.Timestamptz(3)
@@ -113,10 +119,30 @@ model Pedido {
 
   asignaciones Asignacion[]
   paradas      RutaParada[]
+  bultos       PedidoBulto[]
 
   @@index([estado])
   @@index([prioridad])
   @@map("pedidos")
+}
+
+// Bultos de un pedido: el peso y el volumen del pedido se calculan a partir de ellos
+model PedidoBulto {
+  id          String  @id @default(uuid()) @db.Uuid
+  pedido_id   String  @db.Uuid
+  descripcion String  @db.VarChar(100)
+  cantidad    Int     @default(1) @db.SmallInt
+  largo_cm    Decimal @db.Decimal(6, 1)
+  ancho_cm    Decimal @db.Decimal(6, 1)
+  alto_cm     Decimal @db.Decimal(6, 1)
+  // Peso de CADA bulto
+  peso_kg     Decimal @db.Decimal(8, 2)
+  apilable    Boolean @default(true)
+
+  pedido Pedido @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+
+  @@index([pedido_id])
+  @@map("pedido_bultos")
 }
 
 model Asignacion {

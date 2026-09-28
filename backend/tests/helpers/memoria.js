@@ -2,6 +2,7 @@
 // Permiten probar servicios y endpoints sin conexión a Neon.
 
 import { randomUUID } from "node:crypto";
+import { capacidadVolumenM3 } from "../../src/services/carga.js";
 
 const ahora = () => new Date().toISOString();
 
@@ -34,6 +35,8 @@ export function crearRepositoriosMemoria() {
   return {
     vehiculos: {
       ...v,
+      // Igual que el repositorio real: expone el volumen útil calculado
+      crear: async (datos) => v.crear({ aprovechamiento_pct: 80, ...datos, capacidad_volumen_m3: capacidadVolumenM3({ aprovechamiento_pct: 80, ...datos }) }),
       getByPlaca: async (placa) => v.todas().find((x) => x.placa === placa) ?? null,
       listar: async ({ estado } = {}) => v.todas().filter((x) => !estado || x.estado === estado),
     },
@@ -100,6 +103,9 @@ export const vehiculoValido = (extra = {}) => ({
   consumo_combustible_l100km: 12,
   factor_emision_co2_kg_l: 2.31,
   anio_fabricacion: 2020,
+  largo_util_cm: 220,
+  ancho_util_cm: 150,
+  alto_util_cm: 120,
   ...extra,
 });
 
@@ -109,8 +115,7 @@ export const pedidoValido = (extra = {}) => ({
   direccion: "Jr. Puno 450, Huancayo",
   latitud: -12.0668,
   longitud: -75.206,
-  peso_kg: 120,
-  volumen_m3: 0.5,
+  bultos: [{ descripcion: "Caja", cantidad: 1, largo_cm: 50, ancho_cm: 40, alto_cm: 30, peso_kg: 120 }],
   ventana_entrega_inicio: "08:00",
   ventana_entrega_fin: "12:00",
   prioridad: "estandar",

@@ -18,15 +18,21 @@ const FACTORES = [
 ];
 
 const VEHICULOS = [
-  { placa: "ABC-123", tipo: "camioneta", capacidad_carga_kg: 1000, consumo_combustible_l100km: 12, factor_emision_co2_kg_l: 2.31, anio_fabricacion: 2020 },
-  { placa: "DEF-456", tipo: "furgon", capacidad_carga_kg: 1500, consumo_combustible_l100km: 14, factor_emision_co2_kg_l: 2.68, anio_fabricacion: 2019 },
-  { placa: "GHI-789", tipo: "moto", capacidad_carga_kg: 40, consumo_combustible_l100km: 3, factor_emision_co2_kg_l: 2.31, anio_fabricacion: 2022 },
+  { placa: "ABC-123", tipo: "camioneta", capacidad_carga_kg: 1000, consumo_combustible_l100km: 12, factor_emision_co2_kg_l: 2.31, anio_fabricacion: 2020, largo_util_cm: 220, ancho_util_cm: 150, alto_util_cm: 120 },
+  { placa: "DEF-456", tipo: "furgon", capacidad_carga_kg: 1500, consumo_combustible_l100km: 14, factor_emision_co2_kg_l: 2.68, anio_fabricacion: 2019, largo_util_cm: 300, ancho_util_cm: 170, alto_util_cm: 170 },
+  { placa: "GHI-789", tipo: "moto", capacidad_carga_kg: 40, consumo_combustible_l100km: 3, factor_emision_co2_kg_l: 2.31, anio_fabricacion: 2022, largo_util_cm: 45, ancho_util_cm: 45, alto_util_cm: 40 },
 ];
 
-const pedido = (cliente_id, cliente_nombre, direccion, latitud, longitud, peso_kg, inicio, fin, prioridad, tipo_producto) => ({
-  cliente_id, cliente_nombre, direccion, latitud, longitud, peso_kg, volumen_m3: Number((peso_kg / 250).toFixed(3)),
-  ventana_entrega_inicio: horaADate(inicio), ventana_entrega_fin: horaADate(fin), prioridad, tipo_producto,
-});
+// Cada pedido de prueba lleva un bulto; peso y volumen se calculan a partir de él
+const pedido = (cliente_id, cliente_nombre, direccion, latitud, longitud, peso_kg, inicio, fin, prioridad, tipo_producto, bulto = [60, 40, 40]) => {
+  const [largo_cm, ancho_cm, alto_cm] = bulto;
+  return {
+    cliente_id, cliente_nombre, direccion, latitud, longitud, peso_kg,
+    volumen_m3: Number(((largo_cm * ancho_cm * alto_cm) / 1_000_000).toFixed(3)),
+    ventana_entrega_inicio: horaADate(inicio), ventana_entrega_fin: horaADate(fin), prioridad, tipo_producto,
+    bultos: { create: [{ descripcion: "Carga general", cantidad: 1, largo_cm, ancho_cm, alto_cm, peso_kg }] },
+  };
+};
 
 const PEDIDOS = [
   pedido("CLI-0001", "Bodega San Carlos", "Jr. Puno 450, Huancayo", -12.0668, -75.206, 120, "08:00", "12:00", "estandar", "no_perecedero"),
@@ -49,5 +55,10 @@ await sembrar(
   FACTORES.map((f) => ({ ...f, hora_inicio: horaADate(f.hora_inicio), hora_fin: horaADate(f.hora_fin) })),
 );
 await sembrar("vehiculos", prisma.vehiculo, VEHICULOS);
-await sembrar("pedidos", prisma.pedido, PEDIDOS);
+// createMany no admite relaciones anidadas: los pedidos (con su bulto) se crean uno a uno
+if ((await prisma.pedido.count()) > 0) console.log("- pedidos: ya tiene datos, se omite");
+else {
+  for (const p of PEDIDOS) await prisma.pedido.create({ data: p });
+  console.log(`- pedidos: ${PEDIDOS.length} registros con sus bultos`);
+}
 await prisma.$disconnect();

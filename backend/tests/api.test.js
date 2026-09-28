@@ -62,6 +62,12 @@ describe("vehículos (RF-01)", () => {
     await api.post("/api/v1/vehiculos").send(vehiculoValido()).expect(409);
   });
 
+  it("expone el volumen útil calculado con las medidas y el aprovechamiento", async () => {
+    const v = await crearVehiculo();
+    expect(v).toMatchObject({ aprovechamiento_pct: 80, capacidad_volumen_m3: 3.168 });
+    await api.post("/api/v1/vehiculos").send(vehiculoValido({ placa: "XYZ-999", largo_util_cm: undefined })).expect(422);
+  });
+
   it("valida capacidad y año de fabricación", async () => {
     await api.post("/api/v1/vehiculos").send(vehiculoValido({ capacidad_carga_kg: 0 })).expect(422);
     await api.post("/api/v1/vehiculos").send(vehiculoValido({ anio_fabricacion: 1970 })).expect(422);
@@ -89,6 +95,37 @@ describe("pedidos (RF-02)", () => {
   it("registra con valores por defecto", async () => {
     const p = await crearPedido();
     expect(p).toMatchObject({ estado: "pendiente", punto_referencia: "", tiempo_servicio_min: 5 });
+  });
+
+  it("calcula peso y volumen a partir de los bultos", async () => {
+    const p = await crearPedido({
+      bultos: [
+        { descripcion: "Caja de clavos", cantidad: 5, largo_cm: 30, ancho_cm: 20, alto_cm: 15, peso_kg: 40 },
+        { descripcion: "Colchón 2 plazas", cantidad: 1, largo_cm: 190, ancho_cm: 135, alto_cm: 25, peso_kg: 40 },
+      ],
+    });
+    expect(p).toMatchObject({ peso_kg: 240, volumen_m3: 0.686 });
+    expect(p.bultos[0]).toMatchObject({ apilable: true });
+  });
+
+  it("exige al menos un bulto con medidas positivas (422)", async () => {
+    await api.post("/api/v1/pedidos").send(pedidoValido({ bultos: [] })).expect(422);
+    const res = await api
+      .post("/api/v1/pedidos")
+      .send(pedidoValido({ bultos: [{ descripcion: "Caja", cantidad: 1, largo_cm: 0, ancho_cm: 10, alto_cm: 10, peso_kg: 5 }] }))
+      .expect(422);
+    expect(res.body.detail).toMatch(/bultos\.0\.largo_cm/);
+  });
+
+  it("al editar los bultos recalcula los totales", async () => {
+    const p = await crearPedido();
+    const editado = (
+      await api
+        .put(`/api/v1/pedidos/${p.id}`)
+        .send({ bultos: [{ descripcion: "Saco de arroz", cantidad: 2, largo_cm: 80, ancho_cm: 50, alto_cm: 20, peso_kg: 50 }] })
+        .expect(200)
+    ).body;
+    expect(editado).toMatchObject({ peso_kg: 100, volumen_m3: 0.16 });
   });
 
   it("rechaza hora con formato inválido y ventana invertida (422)", async () => {
@@ -241,6 +278,25 @@ describe("rutas optimizadas (RF-03)", () => {
     await api.post("/api/v1/rutas").send({ vehiculo_id: v.id, pedido_ids: ["no-existe"] }).expect(404);
     const res = await api.post("/api/v1/rutas").send({ vehiculo_id: v.id, pedido_ids: [p.id] }).expect(409);
     expect(res.body.detail).toMatch(/suman 120 kg/);
+    expect(optimizador.ultimaLlamada).toBeNull();
+  });
+
+  it("rechaza la ruta si el volumen supera el del vehículo aunque el peso alcance", async () => {
+    const moto = await crearVehiculo({ placa: "MOT-001", tipo: "moto", capacidad_carga_kg: 40, largo_util_cm: 45, ancho_util_cm: 45, alto_util_cm: 40 });
+    // 3 cajas de 40×40×35 = 0,168 m³ (> 0,065 m³ útiles) con solo 9 kg
+    const p = await crearPedido({ bultos: [{ descripcion: "Caja de pan", cantidad: 3, largo_cm: 40, ancho_cm: 40, alto_cm: 35, peso_kg: 3 }] });
+    const res = await api.post("/api/v1/rutas").send({ vehiculo_id: moto.id, pedido_ids: [p.id] }).expect(409);
+    expect(res.body.detail).toMatch(/ocupan 0.168 m³.*admite 0.065 m³/);
+  });
+
+  it("rechaza la ruta si un bulto no cabe físicamente (colchón en moto)", async () => {
+    const moto = await crearVehiculo({ placa: "MOT-001", tipo: "moto", capacidad_carga_kg: 40, largo_util_cm: 45, ancho_util_cm: 45, alto_util_cm: 40, aprovechamiento_pct: 100 });
+    const p = await crearPedido({
+      cliente_nombre: "Hogar Wanka",
+      bultos: [{ descripcion: "Colchón 1 plaza", cantidad: 1, largo_cm: 190, ancho_cm: 10, alto_cm: 3, peso_kg: 8 }],
+    });
+    const res = await api.post("/api/v1/rutas").send({ vehiculo_id: moto.id, pedido_ids: [p.id] }).expect(409);
+    expect(res.body.detail).toMatch(/No caben en el vehículo MOT-001: Colchón 1 plaza \(190×10×3 cm\) de Hogar Wanka/);
     expect(optimizador.ultimaLlamada).toBeNull();
   });
 

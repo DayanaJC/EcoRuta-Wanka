@@ -877,6 +877,35 @@ textarea {
   color: var(--texto-suave);
 }
 
+/* Editor de bultos */
+.tabla-bultos td {
+  padding: 6px 6px;
+}
+
+.tabla-bultos th {
+  padding: 8px 6px;
+}
+
+.tabla-bultos .campo {
+  min-height: 36px;
+  padding: 6px 8px;
+  min-width: 64px;
+}
+
+.tabla-bultos td:first-child .campo {
+  min-width: 160px;
+}
+
+.totales-bultos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding: 10px 14px;
+  border-radius: var(--radio);
+  background: var(--marca-50);
+  font-size: 0.9rem;
+}
+
 /* Medidor de capacidad */
 .medidor {
   display: grid;
@@ -1378,4 +1407,9 @@ textarea {
     animation: none !important;
     transition: none !important;
   }
+}
+
+.fila-bloqueada td {
+  background: var(--gris-50);
+  color: var(--gris-500);
 }

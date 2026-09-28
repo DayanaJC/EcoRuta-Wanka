@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 import { BadgeEstadoRuta } from './Badges.jsx'
 import { Aviso } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
+import { capacidadVolumenM3 } from '../utils/carga.js'
 import { enlacesGoogleMaps } from '../utils/googleMaps.js'
 import {
   ETIQUETAS_TIPO_VEHICULO,
@@ -51,7 +52,9 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
   const regreso = sumarMinutos(ruta.hora_salida, ruta.tiempo_estimado_min)
   const carga = paradas.reduce((s, p) => s + (p.peso_kg ?? 0), 0)
   const siguiente = SIGUIENTE[ruta.estado]
-  const usoCapacidad = vehiculo?.capacidad_carga_kg ? Math.round((carga / vehiculo.capacidad_carga_kg) * 100) : null
+  const volumen = paradas.reduce((s, p) => s + (p.volumen_m3 ?? 0), 0)
+  const usoPeso = vehiculo?.capacidad_carga_kg ? Math.round((carga / vehiculo.capacidad_carga_kg) * 100) : null
+  const usoVolumen = vehiculo ? Math.round((volumen / capacidadVolumenM3(vehiculo)) * 100) : null
   const finalizada = ruta.estado === 'completada' || ruta.estado === 'cancelada'
   const ajustada = ruta.hora_disponible && ruta.hora_disponible !== ruta.hora_salida
   const esperaTotal = paradas.reduce((s, p) => s + (p.espera_min ?? 0), 0)
@@ -107,8 +110,8 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
         <Kpi
           icono={Gauge}
           etiqueta="Uso de capacidad"
-          valor={usoCapacidad != null ? `${usoCapacidad} %` : '—'}
-          extra={vehiculo ? `de ${formatearKg(vehiculo.capacidad_carga_kg)}` : undefined}
+          valor={usoPeso != null ? `${usoPeso} % · ${usoVolumen} %` : '—'}
+          extra={vehiculo ? `peso de ${formatearKg(vehiculo.capacidad_carga_kg)} · volumen de ${Number(capacidadVolumenM3(vehiculo).toFixed(2)).toLocaleString('es-PE')} m³` : undefined}
         />
       </section>
 
@@ -150,7 +153,8 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
                     <div className="hito-detalle">{p.direccion}</div>
                     {p.peso_kg !== undefined && (
                       <div className="hito-detalle num">
-                        {formatearKg(p.peso_kg)} · ventana {formatearVentana(p)}
+                        {formatearKg(p.peso_kg)} · {Number((p.volumen_m3 ?? 0).toFixed(3)).toLocaleString('es-PE')} m³ ·{' '}
+                        {(p.bultos ?? []).reduce((s, b) => s + b.cantidad, 0)} bulto(s) · ventana {formatearVentana(p)}
                         {p.punto_referencia && ` · ${p.punto_referencia}`}
                       </div>
                     )}

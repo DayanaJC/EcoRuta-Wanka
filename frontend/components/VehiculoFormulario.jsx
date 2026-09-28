@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ETIQUETAS_TIPO_VEHICULO } from '../utils/formatos.js'
+import { capacidadVolumenM3, MEDIDAS_REFERENCIA } from '../utils/carga.js'
+import { ETIQUETAS_TIPO_VEHICULO, formatearNumero } from '../utils/formatos.js'
 import { Cargando, CampoGrupo } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 
@@ -20,14 +21,32 @@ const desdeVehiculo = (v) => ({
   consumo_combustible_l100km: v?.consumo_combustible_l100km?.toString() ?? '',
   factor_emision_co2_kg_l: v?.factor_emision_co2_kg_l?.toString() ?? '2.31',
   anio_fabricacion: v?.anio_fabricacion?.toString() ?? '',
+  largo_util_cm: v?.largo_util_cm?.toString() ?? String(MEDIDAS_REFERENCIA.camioneta.largo_util_cm),
+  ancho_util_cm: v?.ancho_util_cm?.toString() ?? String(MEDIDAS_REFERENCIA.camioneta.ancho_util_cm),
+  alto_util_cm: v?.alto_util_cm?.toString() ?? String(MEDIDAS_REFERENCIA.camioneta.alto_util_cm),
+  aprovechamiento_pct: v?.aprovechamiento_pct?.toString() ?? '80',
 })
 
 export function VehiculoFormulario({ vehiculoInicial, onGuardar, onCancelar, guardando }) {
   const [form, setForm] = useState(() => desdeVehiculo(vehiculoInicial))
+  // En un vehículo nuevo, las medidas siguen al tipo elegido hasta que el operador las edite
+  const [medidasEditadas, setMedidasEditadas] = useState(Boolean(vehiculoInicial))
   const [tocado, setTocado] = useState(false)
   const cambiar = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
 
   const placa = form.placa.trim().toUpperCase()
+  const volumenUtil = capacidadVolumenM3(form) || 0
+
+  const elegirTipo = (tipo) =>
+    setForm((f) => ({ ...f, tipo, ...(medidasEditadas ? {} : Object.fromEntries(Object.entries(MEDIDAS_REFERENCIA[tipo]).map(([k, v]) => [k, String(v)]))) }))
+  const cambiarMedida = (campo) => (e) => {
+    setMedidasEditadas(true)
+    cambiar(campo)(e)
+  }
+  const usarReferencia = () => {
+    setMedidasEditadas(false)
+    setForm((f) => ({ ...f, ...Object.fromEntries(Object.entries(MEDIDAS_REFERENCIA[f.tipo]).map(([k, v]) => [k, String(v)])) }))
+  }
   const errorPlaca = tocado && placa && !PATRON_PLACA.test(placa) ? 'Usa tres letras, guion y tres dígitos (ABC-123).' : null
   const sugerencia = SUGERENCIAS[form.tipo]
 
@@ -42,6 +61,10 @@ export function VehiculoFormulario({ vehiculoInicial, onGuardar, onCancelar, gua
       consumo_combustible_l100km: Number(form.consumo_combustible_l100km),
       factor_emision_co2_kg_l: Number(form.factor_emision_co2_kg_l),
       anio_fabricacion: Number(form.anio_fabricacion),
+      largo_util_cm: Number(form.largo_util_cm),
+      ancho_util_cm: Number(form.ancho_util_cm),
+      alto_util_cm: Number(form.alto_util_cm),
+      aprovechamiento_pct: Number(form.aprovechamiento_pct),
     })
   }
 
@@ -75,7 +98,7 @@ export function VehiculoFormulario({ vehiculoInicial, onGuardar, onCancelar, gua
             </span>
             <div className="opciones-tarjeta" role="group" aria-label="Tipo de vehículo">
               {Object.entries(ETIQUETAS_TIPO_VEHICULO).map(([valor, etiqueta]) => (
-                <button key={valor} type="button" className="opcion-tarjeta" aria-pressed={form.tipo === valor} onClick={() => setForm((f) => ({ ...f, tipo: valor }))}>
+                <button key={valor} type="button" className="opcion-tarjeta" aria-pressed={form.tipo === valor} onClick={() => elegirTipo(valor)}>
                   <strong>
                     <IconoVehiculo tipo={valor} /> {etiqueta}
                   </strong>
@@ -110,6 +133,41 @@ export function VehiculoFormulario({ vehiculoInicial, onGuardar, onCancelar, gua
                 <span>kg/L</span>
               </div>
             </CampoGrupo>
+          </div>
+        </fieldset>
+
+        <fieldset className="seccion-form">
+          <legend>
+            Espacio de carga
+            <small>Medidas internas útiles de la tolva o caja. Se usan para comprobar que los bultos caben y para calcular el volumen disponible.</small>
+          </legend>
+          <div className="campos">
+            {[
+              ['largo_util_cm', 'Largo útil'],
+              ['ancho_util_cm', 'Ancho útil'],
+              ['alto_util_cm', 'Alto útil'],
+            ].map(([campo, etiqueta]) => (
+              <CampoGrupo key={campo} etiqueta={etiqueta} requerido htmlFor={campo}>
+                <div className="campo-unidad">
+                  <input id={campo} className="campo" type="number" step="any" min="1" max="2000" value={form[campo]} onChange={cambiarMedida(campo)} required />
+                  <span>cm</span>
+                </div>
+              </CampoGrupo>
+            ))}
+            <CampoGrupo etiqueta="Aprovechamiento" requerido htmlFor="aprovechamiento" ayuda="Los bultos no llenan el 100 % del espacio (80 % es un valor habitual).">
+              <div className="campo-unidad">
+                <input id="aprovechamiento" className="campo" type="number" min="30" max="100" value={form.aprovechamiento_pct} onChange={cambiar('aprovechamiento_pct')} required />
+                <span>%</span>
+              </div>
+            </CampoGrupo>
+          </div>
+          <div className="totales-bultos num">
+            <span>
+              Volumen útil <strong>{formatearNumero(Number(volumenUtil.toFixed(3)))} m³</strong>
+            </span>
+            <button type="button" className="boton boton-fantasma boton-sm" onClick={usarReferencia}>
+              Usar medidas de referencia para {ETIQUETAS_TIPO_VEHICULO[form.tipo].toLowerCase()}
+            </button>
           </div>
         </fieldset>
       </div>

@@ -7,6 +7,7 @@ import {
   ETIQUETAS_ESTADO,
   ETIQUETAS_PRIORIDAD,
   formatearKg,
+  formatearNumero,
   formatearVentana,
   normalizar,
 } from '../utils/formatos.js'
@@ -96,7 +97,7 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
               <tr>
                 <th>Cliente</th>
                 <th>Dirección</th>
-                <th>Peso</th>
+                <th>Carga</th>
                 <th>Ventana</th>
                 <th>Prioridad</th>
                 <th>Estado</th>
@@ -125,8 +126,13 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
                           {p.punto_referencia && <div className="texto-secundario">{p.punto_referencia}</div>}
                         </div>
                       </td>
-                      <td data-etiqueta="Peso" className="num">
-                        {formatearKg(p.peso_kg)}
+                      <td data-etiqueta="Carga" className="num">
+                        <div>
+                          {formatearKg(p.peso_kg)}
+                          <div className="texto-secundario">
+                            {formatearNumero(p.volumen_m3)} m³ · {(p.bultos ?? []).reduce((s, b) => s + b.cantidad, 0)} bulto(s)
+                          </div>
+                        </div>
                       </td>
                       <td data-etiqueta="Ventana" className="num">
                         {formatearVentana(p)}

@@ -2,6 +2,7 @@
 
 import {
   AsignacionNotFoundError,
+  BultoNoCabeError,
   CapacidadInsuficienteError,
   PedidoNoDisponibleError,
   PedidoNotFoundError,
@@ -9,6 +10,7 @@ import {
   VehiculoNoDisponibleError,
   VehiculoNotFoundError,
 } from "../errors/errores.js";
+import { bultosQueNoCaben, capacidadVolumenM3, describirBulto } from "./carga.js";
 import { ESTADOS_TERMINALES } from "./pedido.service.js";
 
 export function crearAsignacionService({ asignaciones, pedidos, vehiculos }) {
@@ -44,6 +46,17 @@ export function crearAsignacionService({ asignaciones, pedidos, vehiculos }) {
         throw new CapacidadInsuficienteError(
           `El pedido de ${pedido.cliente_nombre} pesa ${pedido.peso_kg} kg y el vehículo ${vehiculo.placa} soporta ${vehiculo.capacidad_carga_kg} kg.`,
         );
+      }
+
+      const volumenMax = capacidadVolumenM3(vehiculo);
+      if (pedido.volumen_m3 > volumenMax) {
+        throw new CapacidadInsuficienteError(
+          `El pedido de ${pedido.cliente_nombre} ocupa ${pedido.volumen_m3} m³ y el vehículo ${vehiculo.placa} admite ${volumenMax} m³.`,
+        );
+      }
+      const noCaben = bultosQueNoCaben(pedido, vehiculo);
+      if (noCaben.length) {
+        throw new BultoNoCabeError(`No caben en el vehículo ${vehiculo.placa}: ${noCaben.map(describirBulto).join(", ")}.`);
       }
 
       return asignaciones.crear({ pedido_id, vehiculo_id, estado: "asignada" });

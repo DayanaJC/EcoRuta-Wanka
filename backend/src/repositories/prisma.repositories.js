@@ -3,6 +3,7 @@
 // números en lugar de Decimal, horas "HH:MM" y fechas ISO).
 
 import { PedidoYaAsignadoError } from "../errors/errores.js";
+import { capacidadVolumenM3 } from "../services/carga.js";
 import { dateAFecha, dateAHora, fechaADate, horaADate } from "../utils/tiempo.js";
 
 const PATRON_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,6 +24,16 @@ const aVehiculo = (v) =>
     consumo_combustible_l100km: num(v.consumo_combustible_l100km),
     factor_emision_co2_kg_l: num(v.factor_emision_co2_kg_l),
     anio_fabricacion: v.anio_fabricacion,
+    largo_util_cm: num(v.largo_util_cm),
+    ancho_util_cm: num(v.ancho_util_cm),
+    alto_util_cm: num(v.alto_util_cm),
+    aprovechamiento_pct: v.aprovechamiento_pct,
+    capacidad_volumen_m3: capacidadVolumenM3({
+      largo_util_cm: num(v.largo_util_cm),
+      ancho_util_cm: num(v.ancho_util_cm),
+      alto_util_cm: num(v.alto_util_cm),
+      aprovechamiento_pct: v.aprovechamiento_pct,
+    }),
     estado: v.estado,
     created_at: iso(v.created_at),
     updated_at: iso(v.updated_at),
@@ -39,6 +50,16 @@ const aPedido = (p) =>
     longitud: num(p.longitud),
     peso_kg: num(p.peso_kg),
     volumen_m3: num(p.volumen_m3),
+    bultos: (p.bultos ?? []).map((b) => ({
+      id: b.id,
+      descripcion: b.descripcion,
+      cantidad: b.cantidad,
+      largo_cm: num(b.largo_cm),
+      ancho_cm: num(b.ancho_cm),
+      alto_cm: num(b.alto_cm),
+      peso_kg: num(b.peso_kg),
+      apilable: b.apilable,
+    })),
     ventana_entrega_inicio: dateAHora(p.ventana_entrega_inicio),
     ventana_entrega_fin: dateAHora(p.ventana_entrega_fin),
     tiempo_servicio_min: p.tiempo_servicio_min,
@@ -96,9 +117,9 @@ const aFactor = (f) =>
     descripcion: f.descripcion,
   };
 
-// Campos de la API -> columnas de Prisma (solo convierte las horas)
+// Campos de la API -> columnas de Prisma (convierte las horas; los bultos se tratan aparte)
 const aFilaPedido = (campos) => {
-  const fila = { ...campos };
+  const { bultos, ...fila } = campos;
   for (const c of ["ventana_entrega_inicio", "ventana_entrega_fin"]) {
     if (fila[c] !== undefined) fila[c] = horaADate(fila[c]);
   }
@@ -106,6 +127,8 @@ const aFilaPedido = (campos) => {
 };
 
 // ---------- Repositorios ----------
+
+const conBultos = { bultos: { orderBy: { descripcion: "asc" } } };
 
 export function crearRepositorios(prisma) {
   const vehiculos = {
@@ -118,9 +141,9 @@ export function crearRepositorios(prisma) {
   };
 
   const pedidos = {
-    getById: async (id) => (esUuid(id) ? aPedido(await prisma.pedido.findUnique({ where: { id } })) : null),
+    getById: async (id) => (esUuid(id) ? aPedido(await prisma.pedido.findUnique({ where: { id }, include: conBultos })) : null),
     getMuchos: async (ids) =>
-      (await prisma.pedido.findMany({ where: { id: { in: ids.filter(esUuid) } } })).map(aPedido),
+      (await prisma.pedido.findMany({ where: { id: { in: ids.filter(esUuid) } }, include: conBultos })).map(aPedido),
     listar: async ({ estado, prioridad, busqueda } = {}) => {
       const texto = busqueda?.trim();
       const where = {
@@ -134,10 +157,24 @@ export function crearRepositorios(prisma) {
             }
           : {}),
       };
-      return (await prisma.pedido.findMany({ where, orderBy: { created_at: "desc" } })).map(aPedido);
+      return (await prisma.pedido.findMany({ where, include: conBultos, orderBy: { created_at: "desc" } })).map(aPedido);
     },
-    crear: async (datos) => aPedido(await prisma.pedido.create({ data: aFilaPedido(datos) })),
-    actualizar: async (id, campos) => aPedido(await prisma.pedido.update({ where: { id }, data: aFilaPedido(campos) })),
+    crear: async (datos) =>
+      aPedido(
+        await prisma.pedido.create({
+          data: { ...aFilaPedido(datos), bultos: { create: datos.bultos } },
+          include: conBultos,
+        }),
+      ),
+    // Si llegan bultos, reemplazan a los anteriores en la misma operación
+    actualizar: async (id, campos) =>
+      aPedido(
+        await prisma.pedido.update({
+          where: { id },
+          data: { ...aFilaPedido(campos), ...(campos.bultos ? { bultos: { deleteMany: {}, create: campos.bultos } } : {}) },
+          include: conBultos,
+        }),
+      ),
   };
 
   const asignaciones = {

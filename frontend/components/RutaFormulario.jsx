@@ -2,6 +2,7 @@ import { Search } from 'lucide-react'
 import { useState } from 'react'
 import { BadgePrioridad } from './Badges.jsx'
 import { Aviso, Cargando, CampoGrupo, MedidorCapacidad } from './ui.jsx'
+import { bultosQueNoCaben, capacidadVolumenM3, medidasBulto } from '../utils/carga.js'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import { ETIQUETAS_TIPO_VEHICULO, formatearKg, formatearVentana, hoyEnLima, normalizar } from '../utils/formatos.js'
 
@@ -24,26 +25,35 @@ export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPed
   const visibles = opciones.filter((p) => !texto || normalizar(`${p.cliente_nombre} ${p.direccion}`).includes(texto))
   const seleccionados = opciones.filter((p) => seleccion.has(p.id))
   const peso = seleccionados.reduce((s, p) => s + p.peso_kg, 0)
-  const excede = vehiculo && peso > vehiculo.capacidad_carga_kg
+  const volumen = seleccionados.reduce((s, p) => s + p.volumen_m3, 0)
+  const volumenMax = vehiculo ? capacidadVolumenM3(vehiculo) : 0
+  const excede = vehiculo && (peso > vehiculo.capacidad_carga_kg || volumen > volumenMax)
+  // Pedidos con algún bulto que no entra físicamente en el vehículo elegido
+  const noCaben = vehiculo ? Object.fromEntries(opciones.map((p) => [p.id, bultosQueNoCaben(p, vehiculo)]).filter(([, b]) => b.length)) : {}
 
   const elegirVehiculo = (v) => {
     setVehiculoId(v.id)
-    // Preseleccionar los pedidos ya asignados a este vehículo
-    setSeleccion(new Set(pedidosDisponibles.filter((p) => asignacionPorPedido[p.id] === v.id).map((p) => p.id)))
+    // Preseleccionar los pedidos ya asignados a este vehículo; quitar los que no caben en él
+    setSeleccion((prev) => {
+      const s = new Set([...prev, ...pedidosDisponibles.filter((p) => asignacionPorPedido[p.id] === v.id).map((p) => p.id)])
+      pedidosDisponibles.forEach((p) => bultosQueNoCaben(p, v).length && s.delete(p.id))
+      return s
+    })
   }
 
   const alternar = (id) =>
+    !noCaben[id] &&
     setSeleccion((prev) => {
       const s = new Set(prev)
       s.has(id) ? s.delete(id) : s.add(id)
       return s
     })
 
-  const todosVisibles = visibles.length > 0 && visibles.every((p) => seleccion.has(p.id))
+  const todosVisibles = visibles.some((p) => !noCaben[p.id]) && visibles.filter((p) => !noCaben[p.id]).every((p) => seleccion.has(p.id))
   const alternarTodos = () =>
     setSeleccion((prev) => {
       const s = new Set(prev)
-      visibles.forEach((p) => (todosVisibles ? s.delete(p.id) : s.add(p.id)))
+      visibles.filter((p) => !noCaben[p.id]).forEach((p) => (todosVisibles ? s.delete(p.id) : s.add(p.id)))
       return s
     })
 
@@ -128,17 +138,18 @@ export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPed
                         <span className="sr-only">Incluir</span>
                       </th>
                       <th>Cliente</th>
-                      <th>Peso</th>
+                      <th>Carga</th>
                       <th>Ventana</th>
                       <th>Prioridad</th>
                     </tr>
                   </thead>
                   <tbody>
                     {visibles.map((p) => (
-                      <tr key={p.id} className="fila-clic" onClick={() => alternar(p.id)}>
+                      <tr key={p.id} className={noCaben[p.id] ? 'fila-bloqueada' : 'fila-clic'} onClick={() => alternar(p.id)}>
                         <td>
                           <input
                             type="checkbox"
+                            disabled={Boolean(noCaben[p.id])}
                             checked={seleccion.has(p.id)}
                             onChange={() => alternar(p.id)}
                             onClick={(e) => e.stopPropagation()}
@@ -151,8 +162,16 @@ export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPed
                             {p.direccion}
                             {asignacionPorPedido[p.id] === vehiculoId && vehiculoId && ' · asignado a este vehículo'}
                           </div>
+                          {noCaben[p.id] && (
+                            <div className="error-campo">
+                              No cabe en {vehiculo.placa}: {noCaben[p.id].map((b) => `${b.descripcion} (${medidasBulto(b)})`).join(', ')}
+                            </div>
+                          )}
                         </td>
-                        <td className="num">{formatearKg(p.peso_kg)}</td>
+                        <td className="num">
+                          {formatearKg(p.peso_kg)}
+                          <div className="texto-secundario">{Number(p.volumen_m3.toFixed(3)).toLocaleString('es-PE')} m³</div>
+                        </td>
                         <td className="num">{formatearVentana(p)}</td>
                         <td>
                           <BadgePrioridad prioridad={p.prioridad} />
@@ -170,7 +189,10 @@ export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPed
       <div className="barra-acciones" style={{ alignItems: 'center' }}>
         <div style={{ flex: '1 1 260px' }}>
           {vehiculo ? (
-            <MedidorCapacidad usado={peso} capacidad={vehiculo.capacidad_carga_kg} />
+            <div className="pila" style={{ gap: 8 }}>
+              <MedidorCapacidad usado={peso} capacidad={vehiculo.capacidad_carga_kg} />
+              <MedidorCapacidad usado={volumen} capacidad={volumenMax} etiqueta="Volumen" unidad="m³" decimales={3} />
+            </div>
           ) : (
             <span className="ayuda">{seleccionados.length} pedido(s) seleccionado(s)</span>
           )}

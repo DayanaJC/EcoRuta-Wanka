@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { api } from '../services/api.js'
 import { ETIQUETAS_PRIORIDAD, ETIQUETAS_TIPO } from '../utils/formatos.js'
+import { bultoVacio, EditorBultos } from './EditorBultos.jsx'
 import { Cargando, CampoGrupo } from './ui.jsx'
 
 const MapaSelector = dynamic(() => import('./MapaSelector.jsx'), {
@@ -17,8 +18,6 @@ const VACIO = {
   punto_referencia: '',
   latitud: null,
   longitud: null,
-  peso_kg: '',
-  volumen_m3: '',
   ventana_entrega_inicio: '08:00',
   ventana_entrega_fin: '12:00',
   tiempo_servicio_min: '5',
@@ -31,11 +30,10 @@ const desdePedido = (p) =>
     ? {
         ...VACIO,
         ...p,
-        peso_kg: String(p.peso_kg),
-        volumen_m3: String(p.volumen_m3),
+        bultos: p.bultos?.length ? p.bultos.map(({ id, ...b }) => ({ ...b })) : [bultoVacio()],
         tiempo_servicio_min: String(p.tiempo_servicio_min ?? 5),
       }
-    : VACIO
+    : { ...VACIO, bultos: [bultoVacio()] }
 
 export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardando }) {
   const [form, setForm] = useState(() => desdePedido(pedidoInicial))
@@ -77,8 +75,15 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
       punto_referencia: form.punto_referencia.trim(),
       latitud: form.latitud,
       longitud: form.longitud,
-      peso_kg: Number(form.peso_kg),
-      volumen_m3: Number(form.volumen_m3),
+      bultos: form.bultos.map((b) => ({
+        descripcion: b.descripcion.trim(),
+        cantidad: Number(b.cantidad),
+        largo_cm: Number(b.largo_cm),
+        ancho_cm: Number(b.ancho_cm),
+        alto_cm: Number(b.alto_cm),
+        peso_kg: Number(b.peso_kg),
+        apilable: Boolean(b.apilable),
+      })),
       ventana_entrega_inicio: form.ventana_entrega_inicio,
       ventana_entrega_fin: form.ventana_entrega_fin,
       tiempo_servicio_min: Number(form.tiempo_servicio_min),
@@ -173,20 +178,12 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
         </fieldset>
 
         <fieldset className="seccion-form">
-          <legend>Carga</legend>
+          <legend>
+            Carga
+            <small>Registra cada tipo de bulto con sus medidas: el mismo peso puede ocupar volúmenes muy distintos.</small>
+          </legend>
+          <EditorBultos bultos={form.bultos} onChange={(bultos) => setForm((f) => ({ ...f, bultos }))} />
           <div className="campos">
-            <CampoGrupo etiqueta="Peso" requerido htmlFor="peso">
-              <div className="campo-unidad">
-                <input id="peso" className="campo" type="number" step="any" min="0.01" max="10000" placeholder="25" value={form.peso_kg} onChange={cambiar('peso_kg')} required />
-                <span>kg</span>
-              </div>
-            </CampoGrupo>
-            <CampoGrupo etiqueta="Volumen" requerido htmlFor="volumen">
-              <div className="campo-unidad">
-                <input id="volumen" className="campo" type="number" step="any" min="0.001" max="100" placeholder="0.4" value={form.volumen_m3} onChange={cambiar('volumen_m3')} required />
-                <span>m³</span>
-              </div>
-            </CampoGrupo>
             <CampoGrupo etiqueta="Tipo de producto" htmlFor="tipo_producto">
               <select id="tipo_producto" className="campo" value={form.tipo_producto} onChange={cambiar('tipo_producto')}>
                 {Object.entries(ETIQUETAS_TIPO).map(([v, e]) => (

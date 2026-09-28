@@ -34,6 +34,19 @@ export function VehiculoDetalle({ vehiculo, rutas, onCambiarEstado, gestionando 
                 <dd className="num">{formatearKg(vehiculo.capacidad_carga_kg)}</dd>
               </div>
               <div>
+                <dt>Volumen útil</dt>
+                <dd className="num">
+                  {formatearNumero(vehiculo.capacidad_volumen_m3)} m³
+                  <div className="texto-secundario">al {vehiculo.aprovechamiento_pct} % de aprovechamiento</div>
+                </dd>
+              </div>
+              <div>
+                <dt>Espacio de carga</dt>
+                <dd className="num">
+                  {vehiculo.largo_util_cm} × {vehiculo.ancho_util_cm} × {vehiculo.alto_util_cm} cm
+                </dd>
+              </div>
+              <div>
                 <dt>Consumo</dt>
                 <dd className="num">{formatearNumero(vehiculo.consumo_combustible_l100km)} L/100 km</dd>
               </div>

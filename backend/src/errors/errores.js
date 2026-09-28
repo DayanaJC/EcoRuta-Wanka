@@ -43,6 +43,7 @@ export class PedidoNoDisponibleError extends Conflicto {}
 export class VehiculoNoDisponibleError extends Conflicto {}
 export class CapacidadInsuficienteError extends Conflicto {}
 export class PedidoYaAsignadoError extends Conflicto {}
+export class BultoNoCabeError extends Conflicto {}
 
 // Rutas (RF-03)
 export class RutaNotFoundError extends NoEncontrado {}

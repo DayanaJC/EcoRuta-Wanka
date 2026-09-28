@@ -2,6 +2,7 @@ import { CheckCircle2, Truck, XCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { BadgeEstado, BadgePrioridad } from './Badges.jsx'
 import { Aviso } from './ui.jsx'
+import { medidasBulto, volumenBultoM3 } from '../utils/carga.js'
 import {
   ESTADOS_TERMINALES_PEDIDO,
   ETIQUETAS_TIPO,
@@ -113,6 +114,51 @@ export function PedidoDetalle({ pedido, onCambiarEstado, onCancelar, gestionando
           </div>
         </section>
       </div>
+
+      <section className="tarjeta">
+        <div className="tarjeta-titulo">
+          <h2>Bultos</h2>
+          <span className="texto-secundario num">
+            {formatearKg(pedido.peso_kg)} · {formatearNumero(pedido.volumen_m3)} m³
+          </span>
+        </div>
+        <div className="tabla-envoltorio">
+          <table className="tabla tabla-responsiva">
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th>Cantidad</th>
+                <th>Medidas</th>
+                <th>Peso c/u</th>
+                <th>Volumen</th>
+                <th>Apilable</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(pedido.bultos ?? []).map((b) => (
+                <tr key={b.id}>
+                  <td data-etiqueta="Descripción" className="texto-principal">
+                    {b.descripcion}
+                  </td>
+                  <td data-etiqueta="Cantidad" className="num">
+                    {b.cantidad}
+                  </td>
+                  <td data-etiqueta="Medidas" className="num">
+                    {medidasBulto(b)}
+                  </td>
+                  <td data-etiqueta="Peso c/u" className="num">
+                    {formatearKg(b.peso_kg)}
+                  </td>
+                  <td data-etiqueta="Volumen" className="num">
+                    {formatearNumero(Number((volumenBultoM3(b) * b.cantidad).toFixed(3)))} m³
+                  </td>
+                  <td data-etiqueta="Apilable">{b.apilable ? 'Sí' : 'No'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   )
 }

@@ -13,6 +13,9 @@ export function obtenerPrisma() {
   if (!cliente) {
     if (!config.databaseUrl) throw new Error("Falta DATABASE_URL en backend/.env");
     const pool = new pg.Pool({ connectionString: config.databaseUrl });
+    // Neon cierra las conexiones inactivas al suspenderse; sin este manejador,
+    // el error de una conexión ociosa detendría el proceso. El pool se reconecta solo.
+    pool.on("error", (e) => console.warn("[db] conexión inactiva cerrada por el servidor:", e.message));
     cliente = new PrismaClient({ adapter: new PrismaPg(pool) });
   }
   return cliente;

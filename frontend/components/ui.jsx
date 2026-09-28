@@ -83,29 +83,29 @@ export function CampoGrupo({ etiqueta, requerido, ayuda, error, htmlFor, childre
   )
 }
 
-export function MedidorCapacidad({ usado, capacidad }) {
+export function MedidorCapacidad({ usado, capacidad, etiqueta = 'Peso', unidad = 'kg', decimales = 2 }) {
   const porcentaje = capacidad ? (usado / capacidad) * 100 : 0
   const clase = porcentaje > 100 ? 'excedido' : porcentaje > 85 ? 'alto' : ''
-  const fmt = (n) => Number(n.toFixed(2)).toLocaleString('es-PE')
+  const fmt = (n) => Number(n.toFixed(decimales)).toLocaleString('es-PE')
   return (
     <div className={`medidor ${clase}`}>
       <div className="medidor-texto">
-        <span>Carga</span>
+        <span>{etiqueta}</span>
         <strong className="num">
-          {fmt(usado)} / {fmt(capacidad)} kg ({Math.round(porcentaje)} %)
+          {fmt(usado)} / {fmt(capacidad)} {unidad} ({Math.round(porcentaje)} %)
         </strong>
       </div>
       <div
         className="medidor-barra"
         role="progressbar"
-        aria-label="Uso de la capacidad del vehículo"
+        aria-label={`Uso de ${etiqueta.toLowerCase()} del vehículo`}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.min(100, Math.round(porcentaje))}
       >
         <div className="medidor-relleno" style={{ width: `${Math.min(100, porcentaje)}%` }} />
       </div>
-      {porcentaje > 100 && <span className="error-campo">La carga supera la capacidad del vehículo.</span>}
+      {porcentaje > 100 && <span className="error-campo">Supera {etiqueta === 'Peso' ? 'el peso máximo' : 'el volumen útil'} del vehículo.</span>}
     </div>
   )
 }

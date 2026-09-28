@@ -1,6 +1,7 @@
 // Servicio de pedidos (RF-02): ventana de entrega y estados terminales.
 
 import { PedidoEstadoInvalidoError, PedidoNotFoundError, VentanaEntregaInvalidaError } from "../errors/errores.js";
+import { totalesBultos } from "./carga.js";
 
 export const ESTADOS_TERMINALES = ["entregado", "cancelado"];
 
@@ -31,7 +32,7 @@ export function crearPedidoService({ pedidos }) {
 
     async registrar(datos) {
       validarVentanaEntrega(datos.ventana_entrega_inicio, datos.ventana_entrega_fin);
-      return pedidos.crear(datos);
+      return pedidos.crear({ ...datos, ...totalesBultos(datos.bultos) });
     },
 
     async actualizar(id, campos) {
@@ -43,7 +44,7 @@ export function crearPedidoService({ pedidos }) {
           campos.ventana_entrega_fin ?? actual.ventana_entrega_fin,
         );
       }
-      return pedidos.actualizar(id, campos);
+      return pedidos.actualizar(id, campos.bultos ? { ...campos, ...totalesBultos(campos.bultos) } : campos);
     },
 
     async cambiarEstado(id, estado) {

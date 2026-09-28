@@ -4,11 +4,16 @@
 
 import { OptimizacionExternaError, OptimizacionNoConfiguradaError } from "../../errors/errores.js";
 import { horaASegundos } from "../../utils/tiempo.js";
+import { capacidadVolumenM3 } from "../carga.js";
 
 const URL_ORS = "https://api.openrouteservice.org/optimization";
 
-// VROOM solo acepta cantidades enteras: el peso se envía en gramos
+// VROOM solo acepta cantidades enteras y admite varias capacidades a la vez:
+// [peso en gramos, volumen en litros]. La demanda se redondea hacia arriba y la
+// capacidad hacia abajo, para no aceptar nunca una carga que no entra.
 const aGramos = (kg) => Math.round(kg * 1000);
+const litrosDemanda = (m3) => Math.ceil(m3 * 1000);
+const litrosCapacidad = (m3) => Math.floor(m3 * 1000);
 const PRIORIDAD_VROOM = { express: 100, estandar: 50, economico: 10 };
 const FIN_DEL_DIA = 24 * 3600 - 1;
 
@@ -56,7 +61,7 @@ export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
           id: i + 1,
           location: [p.longitud, p.latitud],
           service: (p.tiempo_servicio_min ?? 5) * 60,
-          delivery: [aGramos(p.peso_kg)],
+          delivery: [aGramos(p.peso_kg), litrosDemanda(p.volumen_m3 ?? 0)],
           priority: PRIORIDAD_VROOM[p.prioridad] ?? 0,
           time_windows: [[horaASegundos(p.ventana_entrega_inicio), horaASegundos(p.ventana_entrega_fin)]],
         })),
@@ -66,7 +71,7 @@ export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
             profile: "driving-car",
             start: deposito,
             end: deposito,
-            capacity: [aGramos(vehiculo.capacidad_carga_kg)],
+            capacity: [aGramos(vehiculo.capacidad_carga_kg), litrosCapacidad(capacidadVolumenM3(vehiculo))],
             time_window: [horaASegundos(horaSalida), FIN_DEL_DIA],
             // Factor de tráfico: < 1 hace que el vehículo avance más lento que en vías libres
             speed_factor: factorVelocidad,

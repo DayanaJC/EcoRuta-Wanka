@@ -69,7 +69,10 @@ export function VehiculoLista({ vehiculos, cargando, onNuevo, onVer, onEditar })
                     </span>
                   </td>
                   <td data-etiqueta="Capacidad" className="num">
-                    {formatearKg(v.capacidad_carga_kg)}
+                    <div>
+                      {formatearKg(v.capacidad_carga_kg)}
+                      <div className="texto-secundario">{formatearNumero(v.capacidad_volumen_m3)} m³ útiles</div>
+                    </div>
                   </td>
                   <td data-etiqueta="Consumo" className="num">
                     {formatearNumero(v.consumo_combustible_l100km)} L/100 km

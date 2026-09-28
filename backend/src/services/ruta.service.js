@@ -2,6 +2,7 @@
 // solicita el orden óptimo a la API de optimización y guarda la ruta.
 
 import {
+  BultoNoCabeError,
   CapacidadInsuficienteError,
   PedidoNoDisponibleError,
   PedidoNotFoundError,
@@ -12,6 +13,7 @@ import {
   VehiculoNotFoundError,
 } from "../errors/errores.js";
 import { horaASegundos, hoyEn, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { bultosQueNoCaben, capacidadVolumenM3, describirBulto } from "./carga.js";
 import { programarHorario } from "./optimizacion/horario.js";
 import { ESTADOS_TERMINALES } from "./pedido.service.js";
 
@@ -68,6 +70,21 @@ export function crearRutaService(
         throw new CapacidadInsuficienteError(
           `Los pedidos suman ${Number(pesoTotal.toFixed(2))} kg y el vehículo ${vehiculo.placa} soporta ${vehiculo.capacidad_carga_kg} kg.`,
         );
+      }
+
+      // Volumen: la carga total no puede superar el volumen útil del vehículo
+      const volumenTotal = lista.reduce((suma, p) => suma + p.volumen_m3, 0);
+      const volumenMax = capacidadVolumenM3(vehiculo);
+      if (volumenTotal > volumenMax) {
+        throw new CapacidadInsuficienteError(
+          `Los pedidos ocupan ${Number(volumenTotal.toFixed(3))} m³ y el vehículo ${vehiculo.placa} admite ${volumenMax} m³.`,
+        );
+      }
+
+      // Dimensiones: cada bulto debe caber físicamente en la caja de carga
+      const noCaben = lista.flatMap((p) => bultosQueNoCaben(p, vehiculo).map((b) => `${describirBulto(b)} de ${p.cliente_nombre}`));
+      if (noCaben.length) {
+        throw new BultoNoCabeError(`No caben en el vehículo ${vehiculo.placa}: ${noCaben.join(", ")}.`);
       }
 
       const dia = fecha ?? hoyEn(zonaHoraria);

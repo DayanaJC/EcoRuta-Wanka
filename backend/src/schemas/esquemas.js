@@ -35,10 +35,19 @@ const camposVehiculo = {
   consumo_combustible_l100km: positivo(100),
   factor_emision_co2_kg_l: positivo(100),
   anio_fabricacion: z.number().int().gte(1980, "Debe ser 1980 o posterior."),
+  // Medidas internas útiles de la caja de carga (cm)
+  largo_util_cm: positivo(2000),
+  ancho_util_cm: positivo(2000),
+  alto_util_cm: positivo(2000),
+  aprovechamiento_pct: z.number().int().gte(30, "Debe ser al menos 30 %.").lte(100, "Debe ser como máximo 100 %."),
   estado: z.enum(ESTADOS_VEHICULO),
 };
 
-export const vehiculoCrear = z.object({ ...camposVehiculo, estado: camposVehiculo.estado.default("activo") });
+export const vehiculoCrear = z.object({
+  ...camposVehiculo,
+  aprovechamiento_pct: camposVehiculo.aprovechamiento_pct.default(80),
+  estado: camposVehiculo.estado.default("activo"),
+});
 export const vehiculoActualizar = z.object(camposVehiculo).partial();
 export const cambiarEstadoVehiculo = z.object({ estado: z.enum(ESTADOS_VEHICULO) });
 export const filtroVehiculos = z.object({ estado: z.enum(ESTADOS_VEHICULO).optional() });
@@ -52,8 +61,21 @@ const camposPedido = {
   punto_referencia: z.string().trim().max(200),
   latitud: z.number().gte(-90).lte(90),
   longitud: z.number().gte(-180).lte(180),
-  peso_kg: positivo(10_000),
-  volumen_m3: positivo(100),
+  // El peso y el volumen del pedido se calculan a partir de sus bultos
+  bultos: z
+    .array(
+      z.object({
+        descripcion: texto(2, 100),
+        cantidad: z.number().int().gte(1, "Debe ser al menos 1.").lte(999),
+        largo_cm: positivo(2000),
+        ancho_cm: positivo(2000),
+        alto_cm: positivo(2000),
+        peso_kg: positivo(5000),
+        apilable: z.boolean().default(true),
+      }),
+    )
+    .min(1, "Agrega al menos un bulto.")
+    .max(50, "Un pedido admite como máximo 50 tipos de bulto."),
   ventana_entrega_inicio: hora,
   ventana_entrega_fin: hora,
   tiempo_servicio_min: z.number().int().gte(0).lte(240),

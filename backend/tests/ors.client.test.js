@@ -5,9 +5,9 @@ import { OptimizacionExternaError, OptimizacionNoConfiguradaError } from "../src
 import { crearClienteOrs, decodificarPolilinea } from "../src/services/optimizacion/ors.client.js";
 
 const almacen = { latitud: -12.0681, longitud: -75.2104 };
-const vehiculo = { capacidad_carga_kg: 1000 };
+const vehiculo = { capacidad_carga_kg: 1000, largo_util_cm: 220, ancho_util_cm: 150, alto_util_cm: 120, aprovechamiento_pct: 80 };
 const pedidos = [
-  { id: "a", latitud: -12.06, longitud: -75.2, peso_kg: 120.5, tiempo_servicio_min: 10, prioridad: "express", ventana_entrega_inicio: "08:00", ventana_entrega_fin: "12:00" },
+  { id: "a", latitud: -12.06, longitud: -75.2, peso_kg: 120.5, volumen_m3: 0.0505, tiempo_servicio_min: 10, prioridad: "express", ventana_entrega_inicio: "08:00", ventana_entrega_fin: "12:00" },
   { id: "b", latitud: -12.05, longitud: -75.21, peso_kg: 30, tiempo_servicio_min: 5, prioridad: "economico", ventana_entrega_inicio: "10:00", ventana_entrega_fin: "12:00" },
 ];
 
@@ -30,7 +30,7 @@ describe("crearClienteOrs", () => {
     );
   });
 
-  it("envía gramos, ventanas en segundos, prioridad y factor de velocidad", async () => {
+  it("envía peso (g) y volumen (L) como dos capacidades, ventanas en segundos, prioridad y factor de velocidad", async () => {
     let enviado;
     const fetchImpl = async (url, opciones) => {
       enviado = JSON.parse(opciones.body);
@@ -38,8 +38,10 @@ describe("crearClienteOrs", () => {
     };
     await crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 0.7 });
 
-    expect(enviado.jobs[0]).toMatchObject({ delivery: [120500], service: 600, priority: 100, time_windows: [[28800, 43200]], location: [-75.2, -12.06] });
-    expect(enviado.vehicles[0]).toMatchObject({ capacity: [1000000], speed_factor: 0.7, start: [-75.2104, -12.0681], time_window: [28800, 86399] });
+    // 0,0505 m³ = 50,5 L -> la demanda se redondea hacia arriba
+    expect(enviado.jobs[0]).toMatchObject({ delivery: [120500, 51], service: 600, priority: 100, time_windows: [[28800, 43200]], location: [-75.2, -12.06] });
+    // 220×150×120 cm × 80 % = 3,168 m³ = 3168 L
+    expect(enviado.vehicles[0]).toMatchObject({ capacity: [1000000, 3168], speed_factor: 0.7, start: [-75.2104, -12.0681], time_window: [28800, 86399] });
   });
 
   it("devuelve el orden y el manejo de cada tramo (step.duration es acumulado)", async () => {
