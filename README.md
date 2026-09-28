@@ -181,7 +181,8 @@ EcoRuta-Wanka/
 
 1. Crear un proyecto en [Neon](https://neon.tech) (plan gratuito).
 2. Crear una rama de base de datos para desarrollo y otra para pruebas.
-3. Copiar la cadena de conexión en la variable `DATABASE_URL` del backend.
+3. En **Connect**, copiar la cadena con pooling en `DATABASE_URL` y la directa en `DATABASE_URL_UNPOOLED` (backend).
+   Con Prisma 7 la conexión se configura en `backend/prisma.config.ts`, no en `schema.prisma`.
 4. Aplicar el modelo de datos con las migraciones de Prisma.
 
 ### Optimización de rutas (OpenRouteService)
@@ -199,7 +200,10 @@ Las credenciales reales deben mantenerse fuera del repositorio.
 Copiar `backend/.env.example` como `backend/.env` y completar los valores:
 
 ```env
-DATABASE_URL=postgresql://usuario:contraseña@host.neon.tech/neondb?sslmode=require
+# Con pooling (host "-pooler"): la usa la aplicación
+DATABASE_URL="postgresql://usuario:contraseña@ep-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
+# Directa (sin "-pooler"): la usa Prisma para las migraciones
+DATABASE_URL_UNPOOLED="postgresql://usuario:contraseña@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require"
 ORS_API_KEY=
 PORT=4000
 FRONTEND_URL=http://localhost:3000
