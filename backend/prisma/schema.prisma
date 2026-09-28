@@ -1,0 +1,219 @@
+// Modelo de datos de EcoRuta Wanka en Neon (PostgreSQL).
+// Documentación: docs/01 Inicio/11. Base de datos V_1_1_0.md
+// Los nombres de campos usan snake_case para coincidir con la API REST.
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TipoVehiculo {
+  camioneta
+  furgon
+  moto
+
+  @@map("tipo_vehiculo")
+}
+
+enum EstadoVehiculo {
+  activo
+  inactivo
+
+  @@map("estado_vehiculo")
+}
+
+enum PrioridadPedido {
+  express
+  estandar
+  economico
+
+  @@map("prioridad_pedido")
+}
+
+enum TipoProducto {
+  perecedero
+  no_perecedero
+
+  @@map("tipo_producto")
+}
+
+enum EstadoPedido {
+  pendiente
+  en_ruta
+  entregado
+  cancelado
+
+  @@map("estado_pedido")
+}
+
+enum EstadoAsignacion {
+  asignada
+  cancelada
+
+  @@map("estado_asignacion")
+}
+
+enum EstadoRuta {
+  generada
+  en_reparto
+  completada
+  cancelada
+
+  @@map("estado_ruta")
+}
+
+enum TipoDia {
+  laborable
+  fin_semana
+
+  @@map("tipo_dia")
+}
+
+model Vehiculo {
+  id                         String         @id @default(uuid()) @db.Uuid
+  placa                      String         @unique @db.VarChar(7)
+  tipo                       TipoVehiculo
+  capacidad_carga_kg         Decimal        @db.Decimal(8, 2)
+  consumo_combustible_l100km Decimal        @db.Decimal(5, 2)
+  factor_emision_co2_kg_l    Decimal        @db.Decimal(5, 3)
+  anio_fabricacion           Int            @db.SmallInt
+  // Medidas internas útiles de la tolva o caja de carga
+  largo_util_cm              Decimal        @db.Decimal(6, 1)
+  ancho_util_cm              Decimal        @db.Decimal(6, 1)
+  alto_util_cm               Decimal        @db.Decimal(6, 1)
+  // Porcentaje del volumen que se puede aprovechar (los bultos no llenan el 100 %)
+  aprovechamiento_pct        Int            @default(80) @db.SmallInt
+  estado                     EstadoVehiculo @default(activo)
+  created_at                 DateTime       @default(now()) @db.Timestamptz(3)
+  updated_at                 DateTime       @updatedAt @db.Timestamptz(3)
+
+  asignaciones Asignacion[]
+  rutas        Ruta[]
+
+  @@index([estado])
+  @@map("vehiculos")
+}
+
+model Pedido {
+  id                     String          @id @default(uuid()) @db.Uuid
+  cliente_id             String          @db.VarChar(50)
+  cliente_nombre         String          @db.VarChar(100)
+  direccion              String          @db.VarChar(200)
+  punto_referencia       String          @default("") @db.VarChar(200)
+  latitud                Decimal         @db.Decimal(9, 6)
+  longitud               Decimal         @db.Decimal(9, 6)
+  peso_kg                Decimal         @db.Decimal(8, 2)
+  volumen_m3             Decimal         @db.Decimal(6, 3)
+  ventana_entrega_inicio DateTime        @db.Time(0)
+  ventana_entrega_fin    DateTime        @db.Time(0)
+  tiempo_servicio_min    Int             @default(5) @db.SmallInt
+  prioridad              PrioridadPedido
+  tipo_producto          TipoProducto
+  estado                 EstadoPedido    @default(pendiente)
+  created_at             DateTime        @default(now()) @db.Timestamptz(3)
+  updated_at             DateTime        @updatedAt @db.Timestamptz(3)
+
+  asignaciones Asignacion[]
+  paradas      RutaParada[]
+  bultos       PedidoBulto[]
+
+  @@index([estado])
+  @@index([prioridad])
+  @@map("pedidos")
+}
+
+// Bultos de un pedido: el peso y el volumen del pedido se calculan a partir de ellos
+model PedidoBulto {
+  id          String  @id @default(uuid()) @db.Uuid
+  pedido_id   String  @db.Uuid
+  descripcion String  @db.VarChar(100)
+  cantidad    Int     @default(1) @db.SmallInt
+  largo_cm    Decimal @db.Decimal(6, 1)
+  ancho_cm    Decimal @db.Decimal(6, 1)
+  alto_cm     Decimal @db.Decimal(6, 1)
+  // Peso de CADA bulto
+  peso_kg     Decimal @db.Decimal(8, 2)
+  apilable    Boolean @default(true)
+
+  pedido Pedido @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+
+  @@index([pedido_id])
+  @@map("pedido_bultos")
+}
+
+model Asignacion {
+  id               String           @id @default(uuid()) @db.Uuid
+  pedido_id        String           @db.Uuid
+  vehiculo_id      String           @db.Uuid
+  fecha_asignacion DateTime         @default(now()) @db.Timestamptz(3)
+  estado           EstadoAsignacion @default(asignada)
+  created_at       DateTime         @default(now()) @db.Timestamptz(3)
+  updated_at       DateTime         @updatedAt @db.Timestamptz(3)
+
+  pedido   Pedido   @relation(fields: [pedido_id], references: [id])
+  vehiculo Vehiculo @relation(fields: [vehiculo_id], references: [id])
+
+  // Además, la migración crea un índice único parcial: un pedido solo puede
+  // tener una asignación con estado 'asignada' a la vez.
+  @@index([pedido_id])
+  @@index([vehiculo_id])
+  @@map("asignaciones")
+}
+
+model Ruta {
+  id                      String     @id @default(uuid()) @db.Uuid
+  vehiculo_id             String     @db.Uuid
+  fecha                   DateTime   @db.Date
+  hora_salida             DateTime   @db.Time(0)
+  // Hora desde la que el vehículo está disponible (la salida real puede ser posterior)
+  hora_disponible         DateTime?  @db.Time(0)
+  distancia_estimada_km   Decimal?   @db.Decimal(7, 2)
+  // Distancia recorriendo los pedidos en el orden elegido por el operador (antes de optimizar)
+  distancia_sin_optimizar_km Decimal? @db.Decimal(7, 2)
+  tiempo_estimado_min     Int?
+  factor_trafico_aplicado Decimal?   @db.Decimal(4, 2)
+  geometria               Json?
+  estado                  EstadoRuta @default(generada)
+  created_at              DateTime   @default(now()) @db.Timestamptz(3)
+  updated_at              DateTime   @updatedAt @db.Timestamptz(3)
+
+  vehiculo Vehiculo     @relation(fields: [vehiculo_id], references: [id])
+  paradas  RutaParada[]
+
+  @@index([vehiculo_id])
+  @@map("rutas")
+}
+
+model RutaParada {
+  id                    String    @id @default(uuid()) @db.Uuid
+  ruta_id               String    @db.Uuid
+  pedido_id             String    @db.Uuid
+  orden                 Int       @db.SmallInt
+  hora_estimada_llegada DateTime? @db.Time(0)
+  // Minutos que el vehículo espera a que abra la ventana del cliente
+  espera_min            Int       @default(0) @db.SmallInt
+
+  ruta   Ruta   @relation(fields: [ruta_id], references: [id], onDelete: Cascade)
+  pedido Pedido @relation(fields: [pedido_id], references: [id])
+
+  @@unique([ruta_id, orden])
+  @@index([pedido_id])
+  @@map("ruta_paradas")
+}
+
+model FactorTrafico {
+  id          String   @id @default(uuid()) @db.Uuid
+  tipo_dia    TipoDia
+  hora_inicio DateTime @db.Time(0)
+  hora_fin    DateTime @db.Time(0)
+  factor      Decimal  @db.Decimal(4, 2)
+  descripcion String?  @db.VarChar(100)
+  created_at  DateTime @default(now()) @db.Timestamptz(3)
+  updated_at  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("factores_trafico")
+}

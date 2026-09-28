@@ -1,0 +1,98 @@
+// Pruebas del cliente de OpenRouteService con una respuesta simulada de la API.
+
+import { describe, expect, it } from "vitest";
+import { OptimizacionExternaError, OptimizacionNoConfiguradaError } from "../src/errors/errores.js";
+import { crearClienteOrs, decodificarPolilinea } from "../src/services/optimizacion/ors.client.js";
+
+const almacen = { latitud: -12.0681, longitud: -75.2104 };
+const vehiculo = { capacidad_carga_kg: 1000, largo_util_cm: 220, ancho_util_cm: 150, alto_util_cm: 120, aprovechamiento_pct: 80 };
+const pedidos = [
+  { id: "a", latitud: -12.06, longitud: -75.2, peso_kg: 120.5, volumen_m3: 0.0505, tiempo_servicio_min: 10, prioridad: "express", ventana_entrega_inicio: "08:00", ventana_entrega_fin: "12:00" },
+  { id: "b", latitud: -12.05, longitud: -75.21, peso_kg: 30, tiempo_servicio_min: 5, prioridad: "economico", ventana_entrega_inicio: "10:00", ventana_entrega_fin: "12:00" },
+];
+
+const respuestaJson = (cuerpo, status = 200) => async () => ({ ok: status < 400, status, json: async () => cuerpo });
+
+describe("decodificarPolilinea", () => {
+  it("decodifica el ejemplo oficial del formato", () => {
+    expect(decodificarPolilinea("_p~iF~ps|U_ulLnnqC_mqNvxq`@")).toEqual([
+      [38.5, -120.2],
+      [40.7, -120.95],
+      [43.252, -126.453],
+    ]);
+  });
+});
+
+describe("crearClienteOrs", () => {
+  it("falla con 503 si no hay API key", async () => {
+    await expect(crearClienteOrs({ apiKey: null }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 1 })).rejects.toBeInstanceOf(
+      OptimizacionNoConfiguradaError,
+    );
+  });
+
+  it("envía peso (g) y volumen (L) como dos capacidades, ventanas en segundos, prioridad y factor de velocidad", async () => {
+    let enviado;
+    const fetchImpl = async (url, opciones) => {
+      enviado = JSON.parse(opciones.body);
+      return respuestaJson({ routes: [{ distance: 0, geometry: "", steps: [{ type: "start", duration: 0 }, { type: "end", duration: 0 }] }], unassigned: [] })();
+    };
+    await crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 0.7 });
+
+    // 0,0505 m³ = 50,5 L -> la demanda se redondea hacia arriba
+    expect(enviado.jobs[0]).toMatchObject({ delivery: [120500, 51], service: 600, priority: 100, time_windows: [[28800, 43200]], location: [-75.2, -12.06] });
+    // 220×150×120 cm × 80 % = 3,168 m³ = 3168 L
+    expect(enviado.vehicles[0]).toMatchObject({ capacity: [1000000, 3168], speed_factor: 0.7, start: [-75.2104, -12.0681], time_window: [28800, 86399] });
+  });
+
+  it("devuelve el orden y el manejo de cada tramo (step.duration es acumulado)", async () => {
+    // VROOM retrasa la salida (arrival): solo se usan el orden y los tiempos de manejo
+    const fetchImpl = respuestaJson({
+      routes: [
+        {
+          distance: 8000,
+          geometry: "_p~iF~ps|U",
+          steps: [
+            { type: "start", arrival: 34000, duration: 0 },
+            { type: "job", id: 1, arrival: 34600, duration: 600, service: 600 },
+            { type: "job", id: 2, arrival: 36000, duration: 900, service: 300 },
+            { type: "end", arrival: 37000, duration: 1500 },
+          ],
+        },
+      ],
+      unassigned: [],
+    });
+    const r = await crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 1 });
+
+    expect(r.paradas).toEqual([
+      { pedido_id: "a", viaje_s: 600 },
+      { pedido_id: "b", viaje_s: 300 },
+    ]);
+    expect(r.regreso_s).toBe(600);
+    expect(r).toMatchObject({ distancia_m: 8000, no_asignados: [], geometria: [[38.5, -120.2]] });
+  });
+
+  it("calcula la distancia de un recorrido en el orden dado", async () => {
+    let enviado;
+    const fetchImpl = async (url, opciones) => {
+      enviado = { url, cuerpo: JSON.parse(opciones.body) };
+      return { ok: true, status: 200, json: async () => ({ routes: [{ summary: { distance: 15432 } }] }) };
+    };
+    const d = await crearClienteOrs({ apiKey: "k", fetchImpl }).distanciaRecorrido([almacen, pedidos[1], pedidos[0], almacen]);
+    expect(d).toBe(15432);
+    expect(enviado.url).toMatch(/directions\/driving-car/);
+    expect(enviado.cuerpo.coordinates).toEqual([[-75.2104, -12.0681], [-75.21, -12.05], [-75.2, -12.06], [-75.2104, -12.0681]]);
+  });
+
+  it("devuelve los pedidos no asignados", async () => {
+    const fetchImpl = respuestaJson({ routes: [], unassigned: [{ id: 2 }] });
+    const r = await crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 1 });
+    expect(r.no_asignados).toEqual(["b"]);
+  });
+
+  it("convierte los errores de la API en 502", async () => {
+    const fetchImpl = respuestaJson({ error: { message: "Too many vehicles" } }, 400);
+    await expect(
+      crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, vehiculo, pedidos, horaSalida: "08:00", factorVelocidad: 1 }),
+    ).rejects.toBeInstanceOf(OptimizacionExternaError);
+  });
+});
