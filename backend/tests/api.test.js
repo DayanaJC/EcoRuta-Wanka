@@ -457,16 +457,36 @@ describe("flujo de entregas", () => {
     expect((await pedido(p.id)).estado).toBe("cancelado");
   });
 
-  it("el simulador recorre la ruta y registra cada entrega a su hora estimada (hora de Lima)", async () => {
+  it("el simulador recorre la ruta tramo a tramo: salida, manejo con tráfico y atención (hora de Lima)", async () => {
+    // aleatorio = 0.5 => 1 min de carga, tráfico ×1,10 y atención ×1,10
     const p = await crearPedido();
     const ruta = await crearRuta([p], { hora_salida: "08:00" });
     expect(ruta.paradas[0].hora_estimada_llegada).toBe("08:10");
     const sim = (await api.post(`/api/v1/rutas/${ruta.id}/simular`).send({}).expect(200)).body;
-    expect(sim).toMatchObject({ estado: "completada", iniciada_at: "2026-09-28T13:00:00.000Z" }); // salida 08:00
-    // llegada 08:10 + 5 min de atención = 08:15 en Lima = 13:15 UTC
-    expect(sim.paradas[0]).toMatchObject({ estado: "entregada", entregado_at: "2026-09-28T13:15:00.000Z", dentro_ventana: true, registrado_por: "simulador" });
-    expect(await pedido(p.id)).toMatchObject({ estado: "entregado", fecha_entrega: "2026-09-28T13:15:00.000Z" });
+    // sale 08:01; 10 min de manejo ×1,1 = 11 min => llega 08:12; 5 min de atención ×1,1 = 5:30 => entregado 08:17:30
+    expect(sim).toMatchObject({ estado: "completada", iniciada_at: "2026-09-28T13:01:00.000Z" });
+    expect(sim.paradas[0]).toMatchObject({ estado: "entregada", entregado_at: "2026-09-28T13:17:30.000Z", dentro_ventana: true, registrado_por: "simulador" });
+    expect(await pedido(p.id)).toMatchObject({ estado: "entregado", fecha_entrega: "2026-09-28T13:17:30.000Z" });
+    // regreso: 10 min ×1,1 = 11 min => vuelve al almacén 08:28:30
+    expect(sim.completada_at).toBe("2026-09-28T13:28:30.000Z");
     await api.post(`/api/v1/rutas/${ruta.id}/simular`).send({}).expect(409); // ya completada
+  });
+
+  it("el simulador espera la apertura de la ventana y acumula los retrasos entre paradas", async () => {
+    api = request(crearApp({ repos, optimizador, geocodificador: geocodificadorFalso, almacen: ALMACEN, reloj: RELOJ, aleatorio: () => 0.99 }));
+    const temprano = await crearPedido({ cliente_nombre: "Panadería", ventana_entrega_inicio: "08:00", ventana_entrega_fin: "12:00" });
+    const tarde = await crearPedido({ cliente_id: "CLI-0002", cliente_nombre: "Bodega", ventana_entrega_inicio: "13:00", ventana_entrega_fin: "17:00" });
+    // El optimizador falso invierte el orden: primero la panadería y luego la bodega
+    const ruta = await crearRuta([tarde, temprano], { hora_salida: "08:00", ajustar_salida: false });
+    const sim = (await api.post(`/api/v1/rutas/${ruta.id}/simular`).send({ imprevistos: true }).expect(200)).body;
+    const [p1, p2] = sim.paradas.map((x) => new Date(x.entregado_at).getTime());
+    const hora = (hhmm) => new Date(`2026-09-28T${hhmm}:00-05:00`).getTime();
+    // Con mucho tráfico la primera entrega llega más tarde que lo estimado (08:10 + atención)
+    expect(p1).toBeGreaterThan(hora("08:15"));
+    // La segunda no puede ser antes de que abra la ventana (13:00) más la atención
+    expect(p2).toBeGreaterThanOrEqual(hora("13:05"));
+    expect(sim.paradas[1].dentro_ventana).toBe(true);
+    expect(new Date(sim.completada_at).getTime()).toBeGreaterThan(p2);
   });
 
   it("el simulador puede producir no entregas con motivo", async () => {

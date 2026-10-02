@@ -78,6 +78,15 @@ function AccionesParada({ parada, onRegistrar, gestionando }) {
   )
 }
 
+// Diferencia entre la hora real de entrega y la planificada (hora estimada + tiempo de atención)
+function Desfase({ parada }) {
+  if (!parada.hora_estimada_llegada || !parada.entregado_at) return null
+  const planificada = sumarMinutos(parada.hora_estimada_llegada, parada.tiempo_servicio_min ?? 5)
+  const d = minutosEntre(planificada, formatearHora(parada.entregado_at))
+  const texto = Math.abs(d) <= 2 ? 'según lo planificado' : `${d > 0 ? '+' : '−'}${formatearDuracion(Math.abs(d))} respecto a lo planificado (${planificada})`
+  return <span className="texto-secundario"> ({texto})</span>
+}
+
 // Resultado registrado de una parada: hora real y si cayó en la ventana del cliente
 function ResultadoParada({ parada }) {
   if (parada.estado === 'entregada') {
@@ -89,7 +98,8 @@ function ResultadoParada({ parada }) {
           'sin hora registrada'
         ) : (
           <>
-            a las <strong className="num">{formatearHora(parada.entregado_at)}</strong> ·{' '}
+            a las <strong className="num">{formatearHora(parada.entregado_at)}</strong>
+            <Desfase parada={parada} /> ·{' '}
             {parada.dentro_ventana ? (
               <span className="texto-verde">dentro de la ventana</span>
             ) : (
@@ -186,9 +196,9 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
                 <button
                   type="button"
                   className="boton boton-secundario boton-sm"
-                  onClick={() => onSimular({ variacion_min: imprevistos ? 20 : 10, probabilidad_no_entrega: imprevistos ? 0.15 : 0 })}
+                  onClick={() => onSimular({ imprevistos, probabilidad_no_entrega: imprevistos ? 0.15 : 0 })}
                   disabled={gestionando}
-                  title="Recorre la ruta y registra cada entrega a su hora estimada con una pequeña desviación"
+                  title="Recorre la ruta tramo a tramo: manejo con tráfico, espera de ventana y tiempo de atención en cada cliente"
                 >
                   <FlaskConical size={15} aria-hidden /> Simular reparto
                 </button>

@@ -125,10 +125,10 @@ export const registrarEntrega = z
     message: "Indica el motivo de la no entrega (al menos 3 caracteres).",
     path: ["motivo"],
   });
-// Simulación: cada entrega ocurre a su hora estimada con una desviación aleatoria
+// Simulación del reparto tramo a tramo (ver rutaService.simular)
 export const simularReparto = z.object({
-  // Desviación máxima en minutos (adelanto o retraso) respecto a la hora estimada
-  variacion_min: z.number().int().gte(0).lte(120).default(10),
+  // true = más tráfico y atenciones más largas
+  imprevistos: z.boolean().default(false),
   // Probabilidad (0 a 1) de que una parada no se pueda entregar
   probabilidad_no_entrega: z.number().gte(0).lte(1).default(0),
 });

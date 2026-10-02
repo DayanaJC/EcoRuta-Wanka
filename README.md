@@ -259,7 +259,7 @@ npm run dev                 # http://localhost:3000
 | GET    | `/api/v1/rutas/:id`               | Detalle con orden de entrega, horarios y trazado   |
 | PATCH  | `/api/v1/rutas/:id/estado`        | Inicia (`en_reparto`) o cancela la ruta            |
 | PATCH  | `/api/v1/rutas/:id/paradas/:orden`| Registra una parada: `entregada` o `no_entregada` + motivo |
-| POST   | `/api/v1/rutas/:id/simular`       | Simula el reparto completo (horas estimadas ± desviación) |
+| POST   | `/api/v1/rutas/:id/simular`       | Simula el reparto tramo a tramo (`imprevistos`, `probabilidad_no_entrega`) |
 | GET    | `/api/v1/factores-trafico`        | Factores de tráfico por franja horaria             |
 
 ### Flujo de entregas
@@ -275,7 +275,7 @@ Pedido:  pendiente ─────────────────▶ en_rut
 - Cada entrega guarda la **hora real** y si cayó **dentro de la ventana** del cliente: con eso se calcula el indicador O2 (entregas fuera de horario).
 - Cancelar una ruta devuelve a `pendiente` los pedidos que aún no se resolvieron.
 - Un pedido no puede estar en dos rutas activas a la vez.
-- El **simulador** usa exactamente las mismas reglas que el registro manual (y que la futura app del conductor).
+- El **simulador** recorre la ruta tramo a tramo: sale del almacén (0–2 min de carga), maneja cada tramo con el tiempo planificado afectado por el tráfico (×0,95–1,25; con imprevistos ×1,0–1,6), espera si llega antes de la ventana, atiende al cliente (tiempo de servicio ×0,8–1,4) y registra la entrega al terminar la atención. Los retrasos se acumulan y la ruta se completa al volver al almacén. Usa las mismas reglas que el registro manual (y que la futura app del conductor).
 
 Ejemplo de generación de ruta:
 

@@ -131,42 +131,72 @@ export function crearRutaService(
       return rutas.aplicarCambios(id, cambiosPorResultados(ruta, pedidosPorId, [{ parada, resultado, motivo, instante: reloj(), registrado_por }]));
     },
 
-    // Simulador: inicia la ruta (si hace falta) y registra cada parada pendiente, en orden, a su hora
-    // estimada más una desviación aleatoria acumulada. Aplica las mismas reglas que una entrega real.
-    async simular(id, { variacion_min = 10, probabilidad_no_entrega = 0 } = {}) {
+    // Simulador: recorre la ruta tramo a tramo como en la calle. Sale del almacén (con una pequeña
+    // demora de carga), maneja cada tramo con el tiempo de manejo planificado afectado por el tráfico,
+    // espera si llega antes de que abra la ventana, atiende al cliente y registra la entrega al
+    // terminar la atención. Los retrasos se acumulan; la ruta se completa al volver al almacén.
+    // Aplica las mismas reglas que una entrega real.
+    async simular(id, { imprevistos = false, probabilidad_no_entrega = 0 } = {}) {
       let ruta = await obtener(id);
       if (!ESTADOS_RUTA_ACTIVA.includes(ruta.estado)) {
         throw new RutaEstadoInvalidoError(`No se puede simular una ruta ${ETIQUETA_RUTA[ruta.estado]}.`);
       }
       let pedidosPorId = await porId(ruta.pedido_ids);
+      const rango = (min, max) => min + aleatorio() * (max - min);
+      // Multiplicadores del tiempo planificado: el tráfico casi nunca hace el viaje más rápido
+      const trafico = () => (imprevistos ? rango(1.0, 1.6) : rango(0.95, 1.25));
+      const atencion = () => (imprevistos ? rango(0.8, 2.0) : rango(0.8, 1.4));
+      const instanteDe = (hhmm) => instanteLocal(ruta.fecha, hhmm, zonaHoraria).getTime();
+
       if (ruta.estado === "generada") {
-        const salida = instanteLocal(ruta.fecha, ruta.hora_salida, zonaHoraria);
+        const cargaMin = Math.floor(aleatorio() * 3); // 0 a 2 min terminando de cargar
+        const salida = new Date(instanteDe(ruta.hora_salida) + cargaMin * 60000);
         ruta = await rutas.aplicarCambios(id, cambiosAlIniciar(ruta, pedidosPorId, salida));
         if (ruta.estado !== "en_reparto") return ruta;
         pedidosPorId = await porId(ruta.pedido_ids);
       }
 
-      const minuto = 60000;
-      let anterior = ruta.iniciada_at ? new Date(ruta.iniciada_at) : instanteLocal(ruta.fecha, ruta.hora_salida, zonaHoraria);
-      let deriva = 0;
-      const resultados = pendientes(ruta).map((parada) => {
+      // Tramos planificados (segundos): manejo desde el punto anterior hasta cada parada y el regreso.
+      // llegada = hora de entrega estimada - espera; el tramo empieza al terminar la parada anterior.
+      const servicioS = (pedidoId) => (pedidosPorId[pedidoId]?.tiempo_servicio_min ?? 5) * 60;
+      let finAnterior = horaASegundos(ruta.hora_salida);
+      const viajeS = {};
+      for (const p of ruta.paradas) {
+        const inicio = p.hora_estimada_llegada ? horaASegundos(p.hora_estimada_llegada) : finAnterior;
+        viajeS[p.orden] = Math.max(0, inicio - (p.espera_min ?? 0) * 60 - finAnterior);
+        finAnterior = inicio + servicioS(p.pedido_id);
+      }
+      const regresoS = Math.max(0, horaASegundos(ruta.hora_salida) + (ruta.tiempo_estimado_min ?? 0) * 60 - finAnterior);
+
+      // El reloj arranca en la salida real o en el último registro (si ya se registraron paradas)
+      const registros = ruta.paradas.map((p) => p.entregado_at).filter(Boolean).map((t) => new Date(t).getTime());
+      let reloj = Math.max(new Date(ruta.iniciada_at ?? instanteDe(ruta.hora_salida)).getTime(), ...registros);
+      const resultados = [];
+      for (const parada of pendientes(ruta)) {
         const pedido = pedidosPorId[parada.pedido_id];
-        // La entrega se registra al terminar la atención: llegada estimada + tiempo de servicio
-        const estimada = parada.hora_estimada_llegada
-          ? instanteLocal(ruta.fecha, parada.hora_estimada_llegada, zonaHoraria).getTime() + (pedido.tiempo_servicio_min ?? 5) * minuto
-          : anterior.getTime() + 10 * minuto;
-        // Los retrasos se arrastran en parte a la parada siguiente
-        deriva = Math.max(-variacion_min, Math.min(variacion_min, deriva * 0.5 + (aleatorio() * 2 - 1) * variacion_min));
-        const instante = new Date(Math.max(anterior.getTime() + minuto, estimada + Math.round(deriva) * minuto));
-        anterior = instante;
+        const llegada = reloj + viajeS[parada.orden] * trafico() * 1000;
         const falla = aleatorio() < probabilidad_no_entrega;
-        return {
-          parada, instante, registrado_por: "simulador",
+        let instante;
+        if (falla) {
+          // Llega, intenta contactar al cliente unos minutos y sigue
+          instante = llegada + rango(2, 5) * 60000;
+        } else {
+          const inicio = Math.max(llegada, instanteDe(pedido.ventana_entrega_inicio));
+          instante = inicio + servicioS(parada.pedido_id) * atencion() * 1000;
+        }
+        reloj = Math.round(instante / 1000) * 1000;
+        resultados.push({
+          parada, instante: new Date(reloj), registrado_por: "simulador",
           resultado: falla ? "no_entregada" : "entregada",
           motivo: falla ? MOTIVOS_SIMULADOS[Math.floor(aleatorio() * MOTIVOS_SIMULADOS.length)] : undefined,
-        };
-      });
-      return rutas.aplicarCambios(id, cambiosPorResultados(ruta, pedidosPorId, resultados));
+        });
+      }
+      const cambios = cambiosPorResultados(ruta, pedidosPorId, resultados);
+      if (cambios.ruta.estado === "completada") {
+        const vuelta = Math.round((reloj + regresoS * trafico() * 1000) / 1000) * 1000;
+        cambios.ruta.completada_at = new Date(vuelta).toISOString();
+      }
+      return rutas.aplicarCambios(id, cambios);
     },
 
     listar: () => rutas.listar(),
