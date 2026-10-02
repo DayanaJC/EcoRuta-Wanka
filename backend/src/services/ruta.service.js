@@ -134,7 +134,8 @@ export function crearRutaService(
     // Simulador: recorre la ruta tramo a tramo como en la calle. Sale del almacén (con una pequeña
     // demora de carga), maneja cada tramo con el tiempo de manejo planificado afectado por el tráfico,
     // espera si llega antes de que abra la ventana, atiende al cliente y registra la entrega al
-    // terminar la atención. Los retrasos se acumulan; la ruta se completa al volver al almacén.
+    // terminar la atención. Los retrasos se acumulan. La ruta se completa con la última parada y
+    // regreso_at guarda la llegada al almacén.
     // Aplica las mismas reglas que una entrega real.
     async simular(id, { imprevistos = false, probabilidad_no_entrega = 0 } = {}) {
       let ruta = await obtener(id);
@@ -193,8 +194,9 @@ export function crearRutaService(
       }
       const cambios = cambiosPorResultados(ruta, pedidosPorId, resultados);
       if (cambios.ruta.estado === "completada") {
+        // Tramo de regreso: tiempo de manejo planificado afectado por el tráfico
         const vuelta = Math.round((reloj + regresoS * trafico() * 1000) / 1000) * 1000;
-        cambios.ruta.completada_at = new Date(vuelta).toISOString();
+        cambios.ruta.regreso_at = new Date(vuelta).toISOString();
       }
       return rutas.aplicarCambios(id, cambios);
     },

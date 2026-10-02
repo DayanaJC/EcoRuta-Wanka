@@ -467,8 +467,9 @@ describe("flujo de entregas", () => {
     expect(sim).toMatchObject({ estado: "completada", iniciada_at: "2026-09-28T13:01:00.000Z" });
     expect(sim.paradas[0]).toMatchObject({ estado: "entregada", entregado_at: "2026-09-28T13:17:30.000Z", dentro_ventana: true, registrado_por: "simulador" });
     expect(await pedido(p.id)).toMatchObject({ estado: "entregado", fecha_entrega: "2026-09-28T13:17:30.000Z" });
-    // regreso: 10 min ×1,1 = 11 min => vuelve al almacén 08:28:30
-    expect(sim.completada_at).toBe("2026-09-28T13:28:30.000Z");
+    // completada con la última parada; regreso: 10 min ×1,1 = 11 min => vuelve al almacén 08:28:30
+    expect(sim.completada_at).toBe("2026-09-28T13:17:30.000Z");
+    expect(sim.regreso_at).toBe("2026-09-28T13:28:30.000Z");
     await api.post(`/api/v1/rutas/${ruta.id}/simular`).send({}).expect(409); // ya completada
   });
 
@@ -486,7 +487,7 @@ describe("flujo de entregas", () => {
     // La segunda no puede ser antes de que abra la ventana (13:00) más la atención
     expect(p2).toBeGreaterThanOrEqual(hora("13:05"));
     expect(sim.paradas[1].dentro_ventana).toBe(true);
-    expect(new Date(sim.completada_at).getTime()).toBeGreaterThan(p2);
+    expect(new Date(sim.regreso_at).getTime()).toBeGreaterThan(p2);
   });
 
   it("el simulador puede producir no entregas con motivo", async () => {

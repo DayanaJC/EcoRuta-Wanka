@@ -191,6 +191,8 @@ model Ruta {
   // Inicio y fin reales del reparto
   iniciada_at             DateTime?  @db.Timestamptz(3)
   completada_at           DateTime?  @db.Timestamptz(3)
+  // Llegada real del vehículo al almacén (la registra el simulador; en la fase 2, el conductor)
+  regreso_at              DateTime?  @db.Timestamptz(3)
   created_at              DateTime   @default(now()) @db.Timestamptz(3)
   updated_at              DateTime   @updatedAt @db.Timestamptz(3)
 

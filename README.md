@@ -275,7 +275,7 @@ Pedido:  pendiente ─────────────────▶ en_rut
 - Cada entrega guarda la **hora real** y si cayó **dentro de la ventana** del cliente: con eso se calcula el indicador O2 (entregas fuera de horario).
 - Cancelar una ruta devuelve a `pendiente` los pedidos que aún no se resolvieron.
 - Un pedido no puede estar en dos rutas activas a la vez.
-- El **simulador** recorre la ruta tramo a tramo: sale del almacén (0–2 min de carga), maneja cada tramo con el tiempo planificado afectado por el tráfico (×0,95–1,25; con imprevistos ×1,0–1,6), espera si llega antes de la ventana, atiende al cliente (tiempo de servicio ×0,8–1,4) y registra la entrega al terminar la atención. Los retrasos se acumulan y la ruta se completa al volver al almacén. Usa las mismas reglas que el registro manual (y que la futura app del conductor).
+- El **simulador** recorre la ruta tramo a tramo: sale del almacén (0–2 min de carga), maneja cada tramo con el tiempo planificado afectado por el tráfico (×0,95–1,25; con imprevistos ×1,0–1,6), espera si llega antes de la ventana, atiende al cliente (tiempo de servicio ×0,8–1,4) y registra la entrega al terminar la atención. Los retrasos se acumulan; la ruta se completa con la última parada y `regreso_at` guarda la llegada al almacén (tramo de regreso con tráfico). Usa las mismas reglas que el registro manual (y que la futura app del conductor).
 
 Ejemplo de generación de ruta:
 

@@ -111,6 +111,7 @@ const aRuta = (r, { conGeometria = true } = {}) => {
     estado: r.estado,
     iniciada_at: iso(r.iniciada_at),
     completada_at: iso(r.completada_at),
+    regreso_at: iso(r.regreso_at),
     created_at: iso(r.created_at),
     updated_at: iso(r.updated_at),
   };

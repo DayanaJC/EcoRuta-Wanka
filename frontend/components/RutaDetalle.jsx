@@ -78,6 +78,9 @@ function AccionesParada({ parada, onRegistrar, gestionando }) {
   )
 }
 
+// Minutos entre dos instantes ISO
+const minutosReales = (desde, hasta) => Math.round((new Date(hasta) - new Date(desde)) / 60000)
+
 // Diferencia entre la hora real de entrega y la planificada (hora estimada + tiempo de atención)
 function Desfase({ parada }) {
   if (!parada.hora_estimada_llegada || !parada.entregado_at) return null
@@ -250,6 +253,15 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
         <Aviso tipo="info">
           Reparto completado a las {formatearHora(ruta.completada_at)}
           {ruta.iniciada_at ? ` (inició a las ${formatearHora(ruta.iniciada_at)})` : ''}.
+          {ruta.regreso_at && (
+            <>
+              {' '}
+              Regresó al almacén a las <strong>{formatearHora(ruta.regreso_at)}</strong>
+              {ruta.iniciada_at &&
+                ` · duración real ${formatearDuracion(minutosReales(ruta.iniciada_at, ruta.regreso_at))} (planificada ${formatearDuracion(ruta.tiempo_estimado_min)})`}
+              .
+            </>
+          )}
         </Aviso>
       )}
 
@@ -315,7 +327,23 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
                 <span className="hito-marca">A</span>
                 <div>
                   <div className="hito-titulo">Regreso al almacén</div>
-                  <div className="hito-detalle">Fin estimado de la ruta</div>
+                  {ruta.regreso_at ? (
+                    <div className="hito-detalle hito-resultado">
+                      Llegó a las <strong className="num">{formatearHora(ruta.regreso_at)}</strong>
+                      <span className="texto-secundario">
+                        {' '}
+                        ({Math.abs(minutosEntre(regreso, formatearHora(ruta.regreso_at))) <= 2
+                          ? 'según lo planificado'
+                          : `${minutosEntre(regreso, formatearHora(ruta.regreso_at)) > 0 ? '+' : '−'}${formatearDuracion(
+                              Math.abs(minutosEntre(regreso, formatearHora(ruta.regreso_at))),
+                            )} respecto a lo planificado`}
+                        )
+                      </span>
+                      {ruta.completada_at && ` · tramo de regreso ${formatearDuracion(minutosReales(ruta.completada_at, ruta.regreso_at))}`}
+                    </div>
+                  ) : (
+                    <div className="hito-detalle">Fin estimado de la ruta</div>
+                  )}
                 </div>
               </li>
             </ol>
