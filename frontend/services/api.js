@@ -84,6 +84,8 @@ export const api = {
     pedir(`/asignaciones/${id}`, { method: 'DELETE' }),
   listarFactoresTrafico: () => pedir('/factores-trafico'),
   geocodificar: (texto) => pedir(`/geocodificar${aQueryParams({ q: texto })}`),
+  // Dirección de un punto marcado en el mapa (null si no hay ninguna cerca)
+  geocodificarInversa: (lat, lon) => pedir(`/geocodificar/inversa${aQueryParams({ lat, lon })}`),
   listarRutas: () => pedir('/rutas'),
   obtenerRuta: (id) => pedir(`/rutas/${id}`),
   generarRuta: (datos) =>

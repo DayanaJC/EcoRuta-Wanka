@@ -46,6 +46,8 @@ export function crearRouterApi(c) {
   factores.get("/", c.factoresTrafico.listar);
 
   api.get("/geocodificar", validar(e.busquedaDireccion, "query"), c.geocodificar);
+  // Dirección de un punto marcado en el mapa
+  api.get("/geocodificar/inversa", validar(e.puntoMapa, "query"), c.geocodificarInversa);
 
   api.use("/vehiculos", vehiculos);
   api.use("/pedidos", pedidos);

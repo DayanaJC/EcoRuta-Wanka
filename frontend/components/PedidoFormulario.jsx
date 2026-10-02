@@ -1,15 +1,8 @@
-import { MapPin, Search } from 'lucide-react'
-import dynamic from 'next/dynamic'
 import { useState } from 'react'
-import { api } from '../services/api.js'
 import { ETIQUETAS_PRIORIDAD } from '../utils/formatos.js'
 import { bultoVacio, convertirMedidas, EditorBultos } from './EditorBultos.jsx'
+import { SelectorUbicacion } from './SelectorUbicacion.jsx'
 import { Cargando, CampoGrupo } from './ui.jsx'
-
-const MapaSelector = dynamic(() => import('./MapaSelector.jsx'), {
-  ssr: false,
-  loading: () => <div className="mapa-selector mapa-cargando">Cargando mapa…</div>,
-})
 
 const VACIO = {
   cliente_id: '',
@@ -39,9 +32,6 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
   // Unidad en la que el operador escribe las medidas de los bultos (se guardan en cm)
   const [unidadMedida, setUnidadMedida] = useState('cm')
   const [intentoEnviar, setIntentoEnviar] = useState(false)
-  const [busqueda, setBusqueda] = useState('')
-  const [sugerencias, setSugerencias] = useState(null)
-  const [buscando, setBuscando] = useState(false)
 
   const cambiar = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
   const posicion = form.latitud != null ? [form.latitud, form.longitud] : null
@@ -49,20 +39,7 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
 
   const errores = {
     ventana: form.ventana_entrega_fin <= form.ventana_entrega_inicio ? 'El fin de la ventana debe ser posterior al inicio.' : null,
-    ubicacion: posicion ? null : 'Marca la ubicación de entrega en el mapa.',
-  }
-
-  const buscarDireccion = async () => {
-    const q = (busqueda || form.direccion).trim()
-    if (q.length < 3) return
-    setBuscando(true)
-    try {
-      setSugerencias(await api.geocodificar(q))
-    } catch {
-      setSugerencias([])
-    } finally {
-      setBuscando(false)
-    }
+    ubicacion: posicion ? null : 'Falta marcar la ubicación de entrega.',
   }
 
   const enviar = (e) => {
@@ -110,71 +87,22 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
         <fieldset className="seccion-form">
           <legend>
             Ubicación de entrega
-            <small>Busca la calle o haz clic en el mapa; puedes arrastrar el pin para ajustar el punto exacto.</small>
+            <small>Escribe la dirección y elige una sugerencia, o marca el punto exacto en el mapa.</small>
           </legend>
+          <CampoGrupo etiqueta="Dirección" requerido htmlFor="direccion">
+            <SelectorUbicacion
+              direccion={form.direccion}
+              posicion={posicion}
+              onDireccion={(direccion) => setForm((f) => ({ ...f, direccion }))}
+              onPosicion={fijarPosicion}
+              error={intentoEnviar ? errores.ubicacion : null}
+            />
+          </CampoGrupo>
           <div className="campos">
-            <CampoGrupo etiqueta="Dirección" requerido htmlFor="direccion">
-              <input id="direccion" className="campo" placeholder="Jr. Puno 450, Huancayo" value={form.direccion} onChange={cambiar('direccion')} required minLength={5} />
-            </CampoGrupo>
             <CampoGrupo etiqueta="Punto de referencia" htmlFor="referencia" ayuda="Útil en zonas sin numeración clara.">
               <input id="referencia" className="campo" placeholder="Frente al mercado" value={form.punto_referencia} onChange={cambiar('punto_referencia')} />
             </CampoGrupo>
           </div>
-
-          <div className="campo-grupo">
-            <label className="campo-etiqueta" htmlFor="buscar-direccion">
-              Buscar en el mapa
-            </label>
-            <div className="acciones" style={{ display: 'flex' }}>
-              <div className="buscador">
-                <Search size={16} aria-hidden />
-                <input
-                  id="buscar-direccion"
-                  className="campo"
-                  type="search"
-                  placeholder="Ej.: Jirón Puno, Huancayo"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      buscarDireccion()
-                    }
-                  }}
-                />
-              </div>
-              <button type="button" className="boton boton-secundario" onClick={buscarDireccion} disabled={buscando}>
-                {buscando ? <Cargando texto="Buscando" /> : 'Buscar'}
-              </button>
-            </div>
-            {sugerencias && (
-              <ul className="sugerencias">
-                {sugerencias.length === 0 && <li className="ayuda" style={{ padding: 8 }}>Sin resultados. Prueba con el nombre de la calle y el distrito, o marca el punto en el mapa.</li>}
-                {sugerencias.map((s) => (
-                  <li key={`${s.latitud},${s.longitud}`}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        fijarPosicion([s.latitud, s.longitud])
-                        setSugerencias(null)
-                      }}
-                    >
-                      <MapPin size={13} aria-hidden /> {s.nombre}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <MapaSelector posicion={posicion} onCambiar={fijarPosicion} />
-          {posicion ? (
-            <span className="ayuda num">
-              Coordenadas: {form.latitud}, {form.longitud}
-            </span>
-          ) : (
-            intentoEnviar && <span className="error-campo">{errores.ubicacion}</span>
-          )}
         </fieldset>
 
         <fieldset className="seccion-form">

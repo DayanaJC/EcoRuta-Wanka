@@ -49,6 +49,7 @@ export function crearControladores(servicios) {
     },
 
     geocodificar: async (req, res) => res.json(await geocodificador.buscar(req.valido.q)),
+    geocodificarInversa: async (req, res) => res.json(await geocodificador.invertir(req.valido.lat, req.valido.lon)),
 
     salud: async (req, res) => {
       const estado = await salud.verificar();

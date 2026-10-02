@@ -17,7 +17,8 @@ beforeEach(() => {
 });
 
 const geocodificadorFalso = {
-  buscar: async (q) => [{ nombre: `${q}, Huancayo, Junín, Perú`, latitud: -12.06, longitud: -75.2 }],
+  buscar: async (q) => [{ direccion: `${q}, Huancayo`, nombre: `${q}, Huancayo, Junín, Perú`, latitud: -12.06, longitud: -75.2 }],
+  invertir: async (latitud, longitud) => ({ direccion: "Jirón Puno, San Carlos, Huancayo", nombre: "Jirón Puno, San Carlos, Huancayo, Junín, Perú", latitud, longitud }),
 };
 
 const crearVehiculo = async (extra) => (await api.post("/api/v1/vehiculos").send(vehiculoValido(extra)).expect(201)).body;
@@ -39,6 +40,12 @@ describe("geocodificación", () => {
   it("devuelve sugerencias de direcciones", async () => {
     const res = await api.get("/api/v1/geocodificar?q=Jr.%20Puno%20450").expect(200);
     expect(res.body[0]).toMatchObject({ latitud: -12.06, longitud: -75.2 });
+  });
+
+  it("devuelve la dirección de un punto marcado en el mapa", async () => {
+    const res = await api.get("/api/v1/geocodificar/inversa?lat=-12.0668&lon=-75.206").expect(200);
+    expect(res.body).toMatchObject({ direccion: "Jirón Puno, San Carlos, Huancayo", latitud: -12.0668, longitud: -75.206 });
+    await api.get("/api/v1/geocodificar/inversa?lat=abc&lon=-75.2").expect(422);
   });
 
   it("exige al menos 3 caracteres (422)", async () => {

@@ -138,3 +138,4 @@ export const simularReparto = z.object({
 // ---------- Geocodificación ----------
 
 export const busquedaDireccion = z.object({ q: z.string().trim().min(3, "Escribe al menos 3 caracteres.").max(200) });
+export const puntoMapa = z.object({ lat: z.coerce.number().gte(-90).lte(90), lon: z.coerce.number().gte(-180).lte(180) });

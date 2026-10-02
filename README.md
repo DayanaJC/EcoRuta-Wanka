@@ -260,6 +260,8 @@ npm run dev                 # http://localhost:3000
 | PATCH  | `/api/v1/rutas/:id/estado`        | Inicia (`en_reparto`) o cancela la ruta            |
 | PATCH  | `/api/v1/rutas/:id/paradas/:orden`| Registra una parada: `entregada` o `no_entregada` + motivo |
 | POST   | `/api/v1/rutas/:id/simular`       | Simula el reparto tramo a tramo (`imprevistos`, `probabilidad_no_entrega`) |
+| GET    | `/api/v1/geocodificar?q=`         | Sugerencias de direcciones (Nominatim)             |
+| GET    | `/api/v1/geocodificar/inversa?lat=&lon=` | Dirección de un punto marcado en el mapa |
 | GET    | `/api/v1/factores-trafico`        | Factores de tráfico por franja horaria             |
 
 ### Flujo de entregas
