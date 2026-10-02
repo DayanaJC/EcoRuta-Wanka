@@ -4,7 +4,7 @@
 
 # 01. Transformando a ágil
 
-**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Versión anterior:** V_1_0_0 (11/09/2026) – cambio CC-01 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_2_0 | **Fecha:** 02/10/2026 | **Versión anterior:** V_1_1_0 (27/09/2026) – cambio CC-02 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -807,7 +807,7 @@ De acuerdo con la planificación realizada en Jira, el primer Sprint utiliza las
 
 **Sprint:** EW Sprint 1
 
-**Periodo:** 11/09/2026 – 25/09/2026
+**Periodo:** 11/09/2026 – 25/09/2026 (planificado). Por el cambio de stack CC-01, el Sprint se amplió hasta el 02/10/2026 y cerró con las tres historias completadas (ver *03 Implementación*).
 
 **Sprint Goal:**
 
@@ -882,3 +882,14 @@ El Sprint 1 queda conformado por **US-001, US-002 y US-003**, con un total de **
 
 ---
 
+---
+
+## Historial de versiones
+
+| Versión | Fecha | Descripción |
+| --- | --- | --- |
+| V_1_0_0 | 11/09/2026 | Épicas, historias de usuario, DoD y priorización del Sprint 1. |
+| V_1_1_0 | 27/09/2026 | CC-01: Enabler EN-006 y relación con la arquitectura cliente-servidor y MVC. |
+| V_1_2_0 | 02/10/2026 | CC-02: periodo real del Sprint 1 (ampliado hasta el 02/10/2026). |
+
+[⬅ Volver al README](../../README.md)
