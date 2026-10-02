@@ -1,6 +1,7 @@
 import {
   ETIQUETAS_ESTADO,
   ETIQUETAS_ESTADO_ASIGNACION,
+  ETIQUETAS_ESTADO_PARADA,
   ETIQUETAS_ESTADO_RUTA,
   ETIQUETAS_ESTADO_VEHICULO,
   ETIQUETAS_PRIORIDAD,
@@ -22,6 +23,8 @@ export const BadgeEstadoAsignacion = ({ estado }) => (
 )
 
 export const BadgeEstadoRuta = ({ estado }) => <Badge tono={TONOS.ruta[estado]}>{ETIQUETAS_ESTADO_RUTA[estado] ?? estado}</Badge>
+
+export const BadgeEstadoParada = ({ estado }) => <Badge tono={TONOS.parada[estado]}>{ETIQUETAS_ESTADO_PARADA[estado] ?? estado}</Badge>
 
 export const BadgePrioridad = ({ prioridad }) => (
   <Badge tono={TONOS.prioridad[prioridad]}>{ETIQUETAS_PRIORIDAD[prioridad] ?? prioridad}</Badge>

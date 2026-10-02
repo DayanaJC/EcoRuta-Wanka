@@ -64,7 +64,14 @@ export function crearRepositoriosMemoria() {
       ...r,
       listar: async () => r.todas(),
       listarPorVehiculo: async (id) => r.todas().filter((x) => x.vehiculo_id === id),
-      crearConParadas: async (datos) => r.crear({ ...datos, pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
+      crearConParadas: async (datos) =>
+        r.crear({ ...datos, paradas: datos.paradas.map((x) => ({ estado: "pendiente", ...x })), pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
+      aplicarCambios: async (id, { ruta = {}, paradas = [], pedidos: cambiosPedidos = [] }) => {
+        for (const { id: pedidoId, ...campos } of cambiosPedidos) await p.actualizar(pedidoId, campos);
+        const actual = await r.getById(id);
+        const nuevas = actual.paradas.map((x) => ({ ...x, ...(paradas.find((c) => c.orden === x.orden) ?? {}) }));
+        return r.actualizar(id, { ...ruta, paradas: nuevas });
+      },
     },
     factoresTrafico: {
       agregar: (f) => factores.push(f),

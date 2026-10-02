@@ -24,6 +24,20 @@ export const ETIQUETAS_ESTADO_RUTA = {
   cancelada: 'Cancelada',
 }
 
+export const ETIQUETAS_ESTADO_PARADA = {
+  pendiente: 'Pendiente',
+  entregada: 'Entregada',
+  no_entregada: 'No entregada',
+}
+
+export const ETIQUETAS_REGISTRADO_POR = {
+  operador: 'registrado por el operador',
+  simulador: 'simulado',
+  conductor: 'registrado por el conductor',
+  sistema: 'automático',
+  migracion: 'sin hora registrada',
+}
+
 export const ETIQUETAS_TIPO_VEHICULO = {
   camioneta: 'Camioneta',
   furgon: 'Furgón',
@@ -47,6 +61,7 @@ export const TONOS = {
   vehiculo: { activo: 'verde', inactivo: 'gris' },
   asignacion: { asignada: 'verde', cancelada: 'gris' },
   ruta: { generada: 'azul', en_reparto: 'ambar', completada: 'verde', cancelada: 'gris' },
+  parada: { pendiente: 'gris', entregada: 'verde', no_entregada: 'rojo' },
   prioridad: { express: 'rojo', estandar: 'violeta', economico: 'gris' },
 }
 
@@ -98,6 +113,20 @@ export function sumarMinutos(hhmm, minutos) {
 export function minutosEntre(desde, hasta) {
   const aMin = (hhmm) => hhmm.split(':').map(Number).reduce((h, m) => h * 60 + m)
   return aMin(hasta) - aMin(desde)
+}
+
+// Instante ISO -> hora de Huancayo "HH:MM"
+export function formatearHora(iso) {
+  if (!iso) return '—'
+  return new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso))
+}
+
+// Indicador O2: entregas registradas con hora que cayeron dentro de la ventana del cliente
+export function puntualidad(rutas) {
+  const medidas = rutas.flatMap((r) => r.paradas ?? []).filter((p) => p.estado === 'entregada' && p.dentro_ventana != null)
+  const aTiempo = medidas.filter((p) => p.dentro_ventana).length
+  const noEntregadas = rutas.flatMap((r) => r.paradas ?? []).filter((p) => p.estado === 'no_entregada').length
+  return { total: medidas.length, aTiempo, fuera: medidas.length - aTiempo, noEntregadas, pct: medidas.length ? Math.round((aTiempo / medidas.length) * 100) : null }
 }
 
 // Fecha de hoy en Huancayo (America/Lima) como "YYYY-MM-DD"

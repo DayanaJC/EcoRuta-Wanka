@@ -49,6 +49,12 @@ export class BultoNoCabeError extends Conflicto {}
 export class RutaNotFoundError extends NoEncontrado {}
 export class RutaSinDatosError extends NoProcesable {}
 export class RutaNoOptimizableError extends NoProcesable {}
+export class RutaEstadoInvalidoError extends Conflicto {}
+export class PedidoEnOtraRutaError extends Conflicto {}
+
+// Entregas (resultado de cada parada)
+export class ParadaNotFoundError extends NoEncontrado {}
+export class ParadaYaRegistradaError extends Conflicto {}
 
 // Servicio externo de optimización
 export class OptimizacionNoConfiguradaError extends ErrorDominio {

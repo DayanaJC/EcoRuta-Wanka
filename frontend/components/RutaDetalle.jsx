@@ -1,19 +1,23 @@
-import { CircleCheck, Clock, ExternalLink, Gauge, MapPin, Play, Printer, Route, XCircle } from 'lucide-react'
+import { CircleCheck, Clock, ExternalLink, FlaskConical, Gauge, MapPin, PackageX, Play, Printer, Route, Timer, XCircle } from 'lucide-react'
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { BadgeEstadoRuta } from './Badges.jsx'
+import { BadgeEstadoParada, BadgeEstadoRuta } from './Badges.jsx'
 import { AntesDespues } from './AntesDespues.jsx'
 import { Aviso } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import { capacidadVolumenM3 } from '../utils/carga.js'
 import { enlacesGoogleMaps } from '../utils/googleMaps.js'
 import {
+  ETIQUETAS_REGISTRADO_POR,
   ETIQUETAS_TIPO_VEHICULO,
   formatearDuracion,
+  formatearHora,
   formatearFechaCorta,
   formatearKg,
   formatearKm,
   formatearVentana,
   minutosEntre,
+  puntualidad,
   sumarMinutos,
 } from '../utils/formatos.js'
 
@@ -22,10 +26,90 @@ const MapaRuta = dynamic(() => import('./MapaRuta.jsx'), {
   loading: () => <div className="mapa-ruta mapa-cargando">Cargando mapa…</div>,
 })
 
-// Acción principal según el estado de la ruta
+// Acción principal según el estado de la ruta. "Completada" no se marca a mano:
+// la ruta se completa sola cuando se registra la última parada.
 const SIGUIENTE = {
   generada: { estado: 'en_reparto', texto: 'Iniciar reparto', icono: Play },
-  en_reparto: { estado: 'completada', texto: 'Marcar completada', icono: CircleCheck },
+}
+
+// Botones de una parada pendiente: entregada, o no entregada con motivo
+function AccionesParada({ parada, onRegistrar, gestionando }) {
+  const [motivo, setMotivo] = useState(null)
+  if (motivo !== null) {
+    return (
+      <form
+        className="acciones no-imprimir"
+        style={{ marginTop: 8, flexWrap: 'wrap' }}
+        onSubmit={(e) => {
+          e.preventDefault()
+          onRegistrar(parada.orden, { resultado: 'no_entregada', motivo: motivo.trim() })
+        }}
+      >
+        <input
+          className="campo"
+          style={{ maxWidth: 260 }}
+          placeholder="Motivo (ej. cliente ausente)"
+          value={motivo}
+          onChange={(e) => setMotivo(e.target.value)}
+          minLength={3}
+          maxLength={200}
+          required
+          autoFocus
+          aria-label={`Motivo de no entrega de la parada ${parada.orden}`}
+        />
+        <button type="submit" className="boton boton-peligro boton-sm" disabled={gestionando}>
+          Confirmar
+        </button>
+        <button type="button" className="boton boton-secundario boton-sm" onClick={() => setMotivo(null)}>
+          Volver
+        </button>
+      </form>
+    )
+  }
+  return (
+    <div className="acciones no-imprimir" style={{ marginTop: 8 }}>
+      <button type="button" className="boton boton-primario boton-sm" onClick={() => onRegistrar(parada.orden, { resultado: 'entregada' })} disabled={gestionando}>
+        <CircleCheck size={15} aria-hidden /> Entregado
+      </button>
+      <button type="button" className="boton boton-secundario boton-sm" onClick={() => setMotivo('')} disabled={gestionando}>
+        <PackageX size={15} aria-hidden /> No entregado
+      </button>
+    </div>
+  )
+}
+
+// Resultado registrado de una parada: hora real y si cayó en la ventana del cliente
+function ResultadoParada({ parada }) {
+  if (parada.estado === 'entregada') {
+    const sinHora = !parada.entregado_at
+    return (
+      <div className="hito-detalle hito-resultado">
+        <BadgeEstadoParada estado="entregada" />{' '}
+        {sinHora ? (
+          'sin hora registrada'
+        ) : (
+          <>
+            a las <strong className="num">{formatearHora(parada.entregado_at)}</strong> ·{' '}
+            {parada.dentro_ventana ? (
+              <span className="texto-verde">dentro de la ventana</span>
+            ) : (
+              <span className="texto-rojo">fuera de la ventana</span>
+            )}
+          </>
+        )}
+        {parada.registrado_por && ` · ${ETIQUETAS_REGISTRADO_POR[parada.registrado_por] ?? parada.registrado_por}`}
+      </div>
+    )
+  }
+  if (parada.estado === 'no_entregada') {
+    return (
+      <div className="hito-detalle hito-resultado">
+        <BadgeEstadoParada estado="no_entregada" /> {parada.motivo_no_entrega}
+        {parada.registrado_por && ` · ${ETIQUETAS_REGISTRADO_POR[parada.registrado_por] ?? parada.registrado_por}`}
+      </div>
+    )
+  }
+  return null
 }
 
 function Kpi({ icono: Icono, etiqueta, valor, extra }) {
@@ -45,7 +129,8 @@ function Kpi({ icono: Icono, etiqueta, valor, extra }) {
   )
 }
 
-export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onCancelar, gestionando }) {
+export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onCancelar, onRegistrarEntrega, onSimular, gestionando }) {
+  const [imprevistos, setImprevistos] = useState(false)
   const paradas = (ruta.paradas ?? []).map((p) => ({ ...pedidosPorId[p.pedido_id], ...p }))
   const conUbicacion = paradas.filter((p) => p.latitud !== undefined)
   const almacen = ruta.geometria?.[0]
@@ -59,6 +144,9 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
   const finalizada = ruta.estado === 'completada' || ruta.estado === 'cancelada'
   const ajustada = ruta.hora_disponible && ruta.hora_disponible !== ruta.hora_salida
   const esperaTotal = paradas.reduce((s, p) => s + (p.espera_min ?? 0), 0)
+  const activa = ruta.estado === 'generada' || ruta.estado === 'en_reparto'
+  const resueltas = paradas.filter((p) => p.estado && p.estado !== 'pendiente').length
+  const kpiPuntualidad = puntualidad([ruta])
 
   return (
     <div className="pila">
@@ -90,6 +178,22 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
                 <XCircle size={15} aria-hidden /> Cancelar
               </button>
             )}
+            {activa && (
+              <span className="acciones simulador">
+                <label className="texto-secundario" style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                  <input type="checkbox" checked={imprevistos} onChange={(e) => setImprevistos(e.target.checked)} /> con imprevistos
+                </label>
+                <button
+                  type="button"
+                  className="boton boton-secundario boton-sm"
+                  onClick={() => onSimular({ variacion_min: imprevistos ? 20 : 10, probabilidad_no_entrega: imprevistos ? 0.15 : 0 })}
+                  disabled={gestionando}
+                  title="Recorre la ruta y registra cada entrega a su hora estimada con una pequeña desviación"
+                >
+                  <FlaskConical size={15} aria-hidden /> Simular reparto
+                </button>
+              </span>
+            )}
             {siguiente && (
               <button type="button" className="boton boton-primario boton-sm" onClick={() => onCambiarEstado(siguiente.estado)} disabled={gestionando}>
                 <siguiente.icono size={15} aria-hidden /> {siguiente.texto}
@@ -114,7 +218,30 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
           valor={usoPeso != null ? `${usoPeso} % · ${usoVolumen} %` : '—'}
           extra={vehiculo ? `peso de ${formatearKg(vehiculo.capacidad_carga_kg)} · volumen de ${Number(capacidadVolumenM3(vehiculo).toFixed(2)).toLocaleString('es-PE')} m³` : undefined}
         />
+        {(ruta.estado === 'en_reparto' || ruta.estado === 'completada') && (
+          <Kpi
+            icono={Timer}
+            etiqueta="Entregas a tiempo"
+            valor={kpiPuntualidad.pct != null ? `${kpiPuntualidad.pct} %` : '—'}
+            extra={`${kpiPuntualidad.aTiempo} de ${kpiPuntualidad.total} dentro de la ventana · ${resueltas}/${paradas.length} paradas resueltas${
+              kpiPuntualidad.noEntregadas ? ` · ${kpiPuntualidad.noEntregadas} no entregada(s)` : ''
+            }`}
+          />
+        )}
       </section>
+
+      {ruta.estado === 'en_reparto' && (
+        <Aviso tipo="info">
+          Reparto en curso{ruta.iniciada_at ? ` desde las ${formatearHora(ruta.iniciada_at)}` : ''}. Registra cada parada como entregada o no
+          entregada: la hora se guarda sola y la ruta se completa al resolver la última.
+        </Aviso>
+      )}
+      {ruta.estado === 'completada' && ruta.completada_at && (
+        <Aviso tipo="info">
+          Reparto completado a las {formatearHora(ruta.completada_at)}
+          {ruta.iniciada_at ? ` (inició a las ${formatearHora(ruta.iniciada_at)})` : ''}.
+        </Aviso>
+      )}
 
       {ruta.estado === 'cancelada' && <Aviso tipo="info">Esta ruta fue cancelada.</Aviso>}
 
@@ -161,10 +288,14 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
                         {p.punto_referencia && ` · ${p.punto_referencia}`}
                       </div>
                     )}
-                    {p.espera_min > 0 && (
+                    {p.espera_min > 0 && (!p.estado || p.estado === 'pendiente') && (
                       <div className="hito-detalle hito-espera">
                         Llega antes y espera {formatearDuracion(p.espera_min)} a que abra la ventana
                       </div>
+                    )}
+                    <ResultadoParada parada={p} />
+                    {ruta.estado === 'en_reparto' && (!p.estado || p.estado === 'pendiente') && (
+                      <AccionesParada parada={p} onRegistrar={onRegistrarEntrega} gestionando={gestionando} />
                     )}
                   </div>
                 </li>

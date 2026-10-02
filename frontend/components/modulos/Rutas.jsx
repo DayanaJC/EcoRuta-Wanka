@@ -1,7 +1,7 @@
-import { Plus } from 'lucide-react'
+import { Plus, Timer } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../../services/api.js'
-import { ESTADOS_TERMINALES_PEDIDO, ETIQUETAS_ESTADO_RUTA, formatearFechaCorta } from '../../utils/formatos.js'
+import { ESTADOS_TERMINALES_PEDIDO, ETIQUETAS_ESTADO_RUTA, formatearFechaCorta, puntualidad } from '../../utils/formatos.js'
 import { navegar } from '../navegacion.js'
 import { RutaDetalle } from '../RutaDetalle.jsx'
 import { RutaFormulario } from '../RutaFormulario.jsx'
@@ -9,6 +9,28 @@ import { RutaLista } from '../RutaLista.jsx'
 import { EncabezadoPagina, EstadoVacio } from '../ui.jsx'
 
 const ir = (accion, id) => navegar({ vista: 'rutas', accion, id })
+
+// Indicador O2: porcentaje de entregas dentro de la ventana horaria del cliente (meta: más del 90 %)
+function Puntualidad({ rutas }) {
+  const p = puntualidad(rutas)
+  if (!p.total && !p.noEntregadas) return null
+  const tono = p.pct == null ? 'gris' : p.pct >= 90 ? 'verde' : p.pct >= 75 ? 'ambar' : 'rojo'
+  return (
+    <section className="tarjeta indicador" style={{ marginBottom: 16 }} aria-label="Entregas a tiempo">
+      <div className={`indicador-icono tono-${tono}`}>
+        <Timer size={18} aria-hidden />
+      </div>
+      <div>
+        <div className="indicador-valor num">{p.pct != null ? `${p.pct} %` : '—'}</div>
+        <div className="indicador-etiqueta">Entregas dentro de la ventana horaria</div>
+        <div className="indicador-extra">
+          {p.aTiempo} de {p.total} entregas a tiempo · {p.fuera} fuera de horario
+          {p.noEntregadas ? ` · ${p.noEntregadas} no entregada(s)` : ''} · meta O2: fuera de horario menos del 10 %
+        </div>
+      </div>
+    </section>
+  )
+}
 
 // El listado no incluye el trazado: el detalle completo se pide aparte
 function useRutaCompleta(id, version) {
@@ -52,12 +74,13 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
     }
   }
 
-  const cambiarEstado = async (estado) => {
+  // Toda acción sobre la ruta cambia también los pedidos: se recargan ambos
+  const ejecutar = async (accion, mensaje) => {
     setOcupado(true)
     try {
-      await api.actualizarEstadoRuta(ruta.id, estado)
-      notificar('exito', `Ruta marcada como "${ETIQUETAS_ESTADO_RUTA[estado]}".`)
-      await recargar('rutas')
+      const resultado = await accion()
+      notificar('exito', typeof mensaje === 'function' ? mensaje(resultado) : mensaje)
+      await recargar('rutas', 'pedidos')
       setVersion((v) => v + 1)
     } catch (e) {
       notificar('error', e.message)
@@ -65,6 +88,22 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
       setOcupado(false)
     }
   }
+
+  const cambiarEstado = (estado) =>
+    ejecutar(() => api.actualizarEstadoRuta(ruta.id, estado), `Ruta marcada como "${ETIQUETAS_ESTADO_RUTA[estado]}".`)
+
+  const fin = (r) => (r.estado === 'completada' ? ' La ruta quedó completada.' : '')
+  const registrarEntrega = (orden, cuerpo) =>
+    ejecutar(
+      () => api.registrarEntrega(ruta.id, orden, cuerpo),
+      (r) => `Parada ${orden} registrada como ${cuerpo.resultado === 'entregada' ? 'entregada' : 'no entregada'}.${fin(r)}`,
+    )
+
+  const simular = (opciones) =>
+    ejecutar(() => api.simularRuta(ruta.id, opciones), (r) => {
+      const p = puntualidad([r])
+      return `Reparto simulado: ${p.aTiempo} de ${p.total} entregas a tiempo${p.noEntregadas ? `, ${p.noEntregadas} no entregada(s)` : ''}.`
+    })
 
   const cancelar = async () => {
     const ok = await confirmar({
@@ -137,6 +176,8 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
           pedidosPorId={pedidosPorId}
           onCambiarEstado={cambiarEstado}
           onCancelar={cancelar}
+          onRegistrarEntrega={registrarEntrega}
+          onSimular={simular}
           gestionando={ocupado}
         />
       </>
@@ -150,6 +191,7 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
           <Plus size={17} aria-hidden /> Generar ruta
         </button>
       </EncabezadoPagina>
+      <Puntualidad rutas={datos.rutas} />
       <RutaLista rutas={datos.rutas} vehiculosPorId={vehiculosPorId} cargando={cargando} onVer={(r) => ir('ver', r.id)} onNueva={() => ir('nueva')} />
     </>
   )

@@ -37,6 +37,9 @@ export function crearRouterApi(c) {
   rutas.get("/vehiculo/:id", c.rutas.listarPorVehiculo);
   rutas.get("/:id", c.rutas.obtener);
   rutas.patch("/:id/estado", validar(e.cambiarEstadoRuta), c.rutas.cambiarEstado);
+  // Resultado de una parada (entregada / no entregada) y simulación del reparto completo
+  rutas.patch("/:id/paradas/:orden", validar(e.registrarEntrega), c.rutas.registrarEntrega);
+  rutas.post("/:id/simular", validar(e.simularReparto), c.rutas.simular);
   rutas.delete("/:id", c.rutas.cancelar);
 
   const factores = Router();

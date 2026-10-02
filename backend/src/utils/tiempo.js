@@ -37,3 +37,24 @@ export const tipoDia = (yyyymmdd) => {
 };
 
 export const ahoraIso = () => new Date().toISOString();
+
+// Desfase (en minutos) de una zona horaria respecto a UTC en un instante dado
+const desfaseMin = (instante, zonaHoraria) => {
+  const partes = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: zonaHoraria, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    }).formatToParts(instante).map((p) => [p.type, p.value]),
+  );
+  const comoUtc = Date.UTC(+partes.year, +partes.month - 1, +partes.day, +partes.hour, +partes.minute);
+  return Math.round((comoUtc - Math.floor(instante.getTime() / 60000) * 60000) / 60000);
+};
+
+// Instante (Date) que corresponde a "YYYY-MM-DD" + "HH:MM" en la hora local de la zona
+export const instanteLocal = (yyyymmdd, hhmm, zonaHoraria) => {
+  const comoUtc = new Date(`${yyyymmdd}T${hhmm}:00Z`);
+  return new Date(comoUtc.getTime() - desfaseMin(comoUtc, zonaHoraria) * 60000);
+};
+
+// Hora local "HH:MM" de un instante en la zona indicada
+export const horaLocal = (instante, zonaHoraria) =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: zonaHoraria, hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).format(instante);

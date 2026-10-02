@@ -257,7 +257,25 @@ npm run dev                 # http://localhost:3000
 | CRUD   | `/api/v1/asignaciones`            | Asignación de pedidos a vehículos                  |
 | POST   | `/api/v1/rutas`                   | Genera una ruta optimizada (RF-03)                 |
 | GET    | `/api/v1/rutas/:id`               | Detalle con orden de entrega, horarios y trazado   |
+| PATCH  | `/api/v1/rutas/:id/estado`        | Inicia (`en_reparto`) o cancela la ruta            |
+| PATCH  | `/api/v1/rutas/:id/paradas/:orden`| Registra una parada: `entregada` o `no_entregada` + motivo |
+| POST   | `/api/v1/rutas/:id/simular`       | Simula el reparto completo (horas estimadas ± desviación) |
 | GET    | `/api/v1/factores-trafico`        | Factores de tráfico por franja horaria             |
+
+### Flujo de entregas
+
+Los estados del pedido los mueve la ruta; a mano solo se puede **cancelar** un pedido pendiente.
+
+```text
+Ruta:    generada ──Iniciar reparto──▶ en_reparto ──(última parada registrada)──▶ completada
+Pedido:  pendiente ─────────────────▶ en_ruta ──Entregada──▶ entregado (con fecha y hora)
+                                              └─No entregada (motivo)─▶ pendiente (se vuelve a planificar)
+```
+
+- Cada entrega guarda la **hora real** y si cayó **dentro de la ventana** del cliente: con eso se calcula el indicador O2 (entregas fuera de horario).
+- Cancelar una ruta devuelve a `pendiente` los pedidos que aún no se resolvieron.
+- Un pedido no puede estar en dos rutas activas a la vez.
+- El **simulador** usa exactamente las mismas reglas que el registro manual (y que la futura app del conductor).
 
 Ejemplo de generación de ruta:
 

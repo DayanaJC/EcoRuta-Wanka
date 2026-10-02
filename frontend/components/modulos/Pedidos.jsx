@@ -1,7 +1,7 @@
 import { Pencil, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { api } from '../../services/api.js'
-import { ESTADOS_TERMINALES_PEDIDO, ETIQUETAS_ESTADO } from '../../utils/formatos.js'
+import { ESTADOS_TERMINALES_PEDIDO } from '../../utils/formatos.js'
 import { navegar } from '../navegacion.js'
 import { PedidoDetalle } from '../PedidoDetalle.jsx'
 import { PedidoFormulario } from '../PedidoFormulario.jsx'
@@ -37,8 +37,6 @@ export function Pedidos({ ubicacion, datos, cargando, recargar, notificar, confi
     if (r) navegar({ vista: 'pedidos', accion: 'ver', id: r.id }, { reemplazar: true })
   }
 
-  const cambiarEstado = (p, estado) =>
-    ejecutar(() => api.cambiarEstado(p.id, estado), `Pedido marcado como "${ETIQUETAS_ESTADO[estado]}".`)
 
   const cancelar = async (p) => {
     const ok = await confirmar({
@@ -100,7 +98,6 @@ export function Pedidos({ ubicacion, datos, cargando, recargar, notificar, confi
         </EncabezadoPagina>
         <PedidoDetalle
           pedido={pedido}
-          onCambiarEstado={cambiarEstado}
           onCancelar={cancelar}
           gestionando={ocupado}
         />

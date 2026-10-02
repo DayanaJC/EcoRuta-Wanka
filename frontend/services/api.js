@@ -94,4 +94,12 @@ export const api = {
       body: JSON.stringify({ estado }),
     }),
   cancelarRuta: (id) => pedir(`/rutas/${id}`, { method: 'DELETE' }),
+  // resultado: 'entregada' | 'no_entregada' (este último con motivo)
+  registrarEntrega: (rutaId, orden, cuerpo) =>
+    pedir(`/rutas/${rutaId}/paradas/${orden}`, {
+      method: 'PATCH',
+      body: JSON.stringify(cuerpo),
+    }),
+  simularRuta: (id, opciones = {}) =>
+    pedir(`/rutas/${id}/simular`, { method: 'POST', body: JSON.stringify(opciones) }),
 }

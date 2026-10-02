@@ -1086,6 +1086,25 @@ textarea {
   font-weight: 500;
 }
 
+.hito-resultado {
+  margin-top: 6px;
+}
+
+.texto-verde {
+  color: var(--verde);
+  font-weight: 600;
+}
+
+.texto-rojo {
+  color: var(--rojo);
+  font-weight: 600;
+}
+
+.simulador {
+  padding-left: 8px;
+  border-left: 1px solid var(--borde);
+}
+
 .mapa-ruta {
   height: 520px;
   width: 100%;

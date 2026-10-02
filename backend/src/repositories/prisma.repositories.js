@@ -66,6 +66,7 @@ const aPedido = (p) =>
     prioridad: p.prioridad,
     tipo_producto: p.tipo_producto,
     estado: p.estado,
+    fecha_entrega: iso(p.fecha_entrega),
     created_at: iso(p.created_at),
     updated_at: iso(p.updated_at),
   };
@@ -93,6 +94,11 @@ const aRuta = (r, { conGeometria = true } = {}) => {
       pedido_id: p.pedido_id,
       hora_estimada_llegada: dateAHora(p.hora_estimada_llegada),
       espera_min: p.espera_min ?? 0,
+      estado: p.estado,
+      entregado_at: iso(p.entregado_at),
+      dentro_ventana: p.dentro_ventana,
+      motivo_no_entrega: p.motivo_no_entrega,
+      registrado_por: p.registrado_por,
     })),
     fecha: dateAFecha(r.fecha),
     hora_disponible: dateAHora(r.hora_disponible),
@@ -103,6 +109,8 @@ const aRuta = (r, { conGeometria = true } = {}) => {
     factor_trafico_aplicado: num(r.factor_trafico_aplicado),
     ...(conGeometria ? { geometria: r.geometria ?? null } : {}),
     estado: r.estado,
+    iniciada_at: iso(r.iniciada_at),
+    completada_at: iso(r.completada_at),
     created_at: iso(r.created_at),
     updated_at: iso(r.updated_at),
   };
@@ -234,6 +242,16 @@ export function crearRepositorios(prisma) {
         }),
       ),
     actualizar: async (id, campos) => aRuta(await prisma.ruta.update({ where: { id }, data: campos, include: incluirParadas })),
+    // Aplica en UNA transacción los cambios de un evento de reparto: paradas (por orden),
+    // pedidos y la propia ruta. Así nunca quedan una parada entregada y su pedido sin entregar.
+    aplicarCambios: async (id, { ruta = {}, paradas = [], pedidos: cambiosPedidos = [] }) => {
+      await prisma.$transaction([
+        ...paradas.map(({ orden, ...data }) => prisma.rutaParada.update({ where: { ruta_id_orden: { ruta_id: id, orden } }, data })),
+        ...cambiosPedidos.map(({ id: pedidoId, ...data }) => prisma.pedido.update({ where: { id: pedidoId }, data })),
+        ...(Object.keys(ruta).length ? [prisma.ruta.update({ where: { id }, data: ruta })] : []),
+      ]);
+      return aRuta(await prisma.ruta.findUnique({ where: { id }, include: incluirParadas }));
+    },
   };
 
   const factoresTrafico = {
