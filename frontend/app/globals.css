@@ -1086,6 +1086,25 @@ textarea {
   font-weight: 500;
 }
 
+.hito-resultado {
+  margin-top: 6px;
+}
+
+.texto-verde {
+  color: var(--verde);
+  font-weight: 600;
+}
+
+.texto-rojo {
+  color: var(--rojo);
+  font-weight: 600;
+}
+
+.simulador {
+  padding-left: 8px;
+  border-left: 1px solid var(--borde);
+}
+
 .mapa-ruta {
   height: 520px;
   width: 100%;
@@ -1428,4 +1447,209 @@ textarea {
 .texto-ahorro {
   color: var(--verde);
   font-weight: 600;
+}
+
+/* ---------------- Ubicación de entrega (texto o mapa) ---------------- */
+
+.ubicacion-entrada {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.ubicacion-combo {
+  flex: 1 1 320px;
+}
+
+.ubicacion-cargando {
+  position: absolute;
+  right: 12px;
+  left: auto !important;
+}
+
+.ubicacion-sugerencias {
+  position: absolute;
+  z-index: 1000;
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.ubicacion-sugerencias button {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.ubicacion-sugerencias button svg {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--marca-600);
+}
+
+.ubicacion-sugerencias button.activa {
+  background: var(--marca-50);
+}
+
+.ubicacion-sugerencias strong {
+  display: block;
+  font-weight: 600;
+}
+
+.ubicacion-sugerencias small {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 0.76rem;
+}
+
+.ubicacion-nota {
+  padding: 8px 10px;
+}
+
+.ubicacion-sugerencias .ubicacion-ir-mapa {
+  border-top: 1px solid var(--borde);
+  border-radius: 0 0 6px 6px;
+  color: var(--marca-600);
+  font-weight: 600;
+}
+
+.ubicacion-confirmada {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--marca-500);
+  border-radius: var(--radio-lg);
+  background: var(--marca-50);
+}
+
+.ubicacion-mini-mapa {
+  width: 220px;
+  height: 120px;
+  flex-shrink: 0;
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.mapa-mini {
+  width: 100%;
+  height: 100%;
+}
+
+.ubicacion-vacia {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  border: 1px dashed var(--gris-300);
+  border-radius: var(--radio-lg);
+  color: var(--gris-600);
+  font-size: 0.88rem;
+}
+
+.ubicacion-vacia-error {
+  border-color: var(--rojo);
+  background: var(--rojo-bg);
+  color: var(--rojo);
+}
+
+.ubicacion-propuesta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radio);
+  background: var(--azul-bg);
+  font-size: 0.88rem;
+}
+
+/* Mapa en primer plano */
+.dialogo-mapa {
+  width: min(1100px, calc(100vw - 32px));
+  height: min(820px, calc(100dvh - 32px));
+  max-width: none;
+  max-height: none;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dialogo-mapa[open] {
+  display: flex;
+}
+
+.dialogo-mapa-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.dialogo-mapa-cabecera h2 {
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+
+.dialogo-mapa-cabecera p {
+  font-size: 0.85rem;
+}
+
+.dialogo-mapa-cuerpo {
+  flex: 1;
+  min-height: 0;
+}
+
+.mapa-pantalla {
+  width: 100%;
+  height: 100%;
+}
+
+.dialogo-mapa-pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--borde);
+}
+
+.dialogo-mapa-direccion {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1 1 300px;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .dialogo-mapa {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .ubicacion-confirmada {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ubicacion-mini-mapa {
+    width: 100%;
+  }
+
+  .dialogo-mapa-pie .acciones {
+    width: 100%;
+  }
+
+  .dialogo-mapa-pie .boton {
+    flex: 1;
+  }
 }

@@ -21,12 +21,14 @@ export function crearApp({
   traficoHabilitado = false,
   margenVentanaMin = 15,
   origenesCors = [],
+  reloj,
+  aleatorio,
 }) {
   const servicios = {
     vehiculos: crearVehiculoService(repos),
     pedidos: crearPedidoService(repos),
     asignaciones: crearAsignacionService(repos),
-    rutas: crearRutaService(repos, { optimizador, almacen, zonaHoraria, traficoHabilitado, margenVentanaMin }),
+    rutas: crearRutaService(repos, { optimizador, almacen, zonaHoraria, traficoHabilitado, margenVentanaMin, reloj, aleatorio }),
     factoresTrafico: { listar: () => repos.factoresTrafico.listar() },
     geocodificador,
     salud: {

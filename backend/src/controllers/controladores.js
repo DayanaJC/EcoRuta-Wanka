@@ -40,6 +40,8 @@ export function crearControladores(servicios) {
       obtener: async (req, res) => res.json(await rutas.obtener(req.params.id)),
       cambiarEstado: async (req, res) => res.json(await rutas.cambiarEstado(req.params.id, req.valido.estado)),
       cancelar: async (req, res) => res.json(await rutas.cancelar(req.params.id)),
+      registrarEntrega: async (req, res) => res.json(await rutas.registrarEntrega(req.params.id, req.params.orden, req.valido)),
+      simular: async (req, res) => res.json(await rutas.simular(req.params.id, req.valido)),
     },
 
     factoresTrafico: {
@@ -47,6 +49,7 @@ export function crearControladores(servicios) {
     },
 
     geocodificar: async (req, res) => res.json(await geocodificador.buscar(req.valido.q)),
+    geocodificarInversa: async (req, res) => res.json(await geocodificador.invertir(req.valido.lat, req.valido.lon)),
 
     salud: async (req, res) => {
       const estado = await salud.verificar();

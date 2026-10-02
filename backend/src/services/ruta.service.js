@@ -4,25 +4,34 @@
 import {
   BultoNoCabeError,
   CapacidadInsuficienteError,
+  ParadaNotFoundError,
+  ParadaYaRegistradaError,
+  PedidoEnOtraRutaError,
   PedidoNoDisponibleError,
   PedidoNotFoundError,
+  RutaEstadoInvalidoError,
   RutaNoOptimizableError,
   RutaNotFoundError,
   RutaSinDatosError,
   VehiculoNoDisponibleError,
   VehiculoNotFoundError,
 } from "../errors/errores.js";
-import { horaASegundos, hoyEn, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { horaASegundos, horaLocal, hoyEn, instanteLocal, segundosAHora, tipoDia } from "../utils/tiempo.js";
 import { bultosQueNoCaben, capacidadVolumenM3, describirBulto } from "./carga.js";
 import { programarHorario } from "./optimizacion/horario.js";
 import { ESTADOS_TERMINALES } from "./pedido.service.js";
 
 export const HORA_SALIDA_POR_DEFECTO = "08:00";
 export const FACTOR_SIN_TRAFICO = 1;
+export const ESTADOS_RUTA_ACTIVA = ["generada", "en_reparto"];
+// Transiciones permitidas; "completada" también ocurre sola al registrar la última parada
+const TRANSICIONES_RUTA = { generada: ["en_reparto", "cancelada"], en_reparto: ["completada", "cancelada"] };
+const MOTIVOS_SIMULADOS = ["Cliente ausente", "Local cerrado", "Dirección no encontrada"];
+const ETIQUETA_RUTA = { generada: "generada", en_reparto: "en reparto", completada: "completada", cancelada: "cancelada" };
 
 export function crearRutaService(
   { rutas, vehiculos, pedidos, factoresTrafico },
-  { optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15 },
+  { optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15, reloj = () => new Date(), aleatorio = Math.random },
 ) {
   const obtener = async (id) => {
     const ruta = await rutas.getById(id);
@@ -30,15 +39,167 @@ export function crearRutaService(
     return ruta;
   };
 
+  const pendientes = (ruta) => ruta.paradas.filter((p) => (p.estado ?? "pendiente") === "pendiente");
+  const porId = async (ids) => Object.fromEntries((await pedidos.getMuchos(ids)).map((p) => [p.id, p]));
+  const dentroVentana = (instante, pedido) => {
+    const h = horaLocal(instante, zonaHoraria);
+    return h >= pedido.ventana_entrega_inicio && h <= pedido.ventana_entrega_fin;
+  };
+
+  // Cambios que produce un conjunto de resultados de parada: la parada, su pedido y,
+  // si ya no queda ninguna parada pendiente, el cierre automático de la ruta.
+  const cambiosPorResultados = (ruta, pedidosPorId, resultados, cambiosRuta = {}) => {
+    const paradas = [];
+    const cambiosPedidos = [];
+    for (const { parada, resultado, motivo, instante, registrado_por } of resultados) {
+      const pedido = pedidosPorId[parada.pedido_id];
+      if (resultado === "entregada") {
+        paradas.push({
+          orden: parada.orden, estado: "entregada", entregado_at: instante.toISOString(),
+          dentro_ventana: dentroVentana(instante, pedido), motivo_no_entrega: null, registrado_por,
+        });
+        cambiosPedidos.push({ id: pedido.id, estado: "entregado", fecha_entrega: instante.toISOString() });
+      } else {
+        paradas.push({ orden: parada.orden, estado: "no_entregada", entregado_at: null, dentro_ventana: null, motivo_no_entrega: motivo, registrado_por });
+        // El pedido vuelve a quedar disponible para planificarlo en otra ruta (si estaba en curso)
+        if (pedido?.estado === "en_ruta") cambiosPedidos.push({ id: pedido.id, estado: "pendiente" });
+      }
+    }
+    const resueltas = new Set(resultados.map((r) => r.parada.orden));
+    const quedan = pendientes(ruta).filter((p) => !resueltas.has(p.orden)).length;
+    const ultimo = resultados.length ? resultados[resultados.length - 1].instante : reloj();
+    const datosRuta = quedan === 0 ? { ...cambiosRuta, estado: "completada", completada_at: ultimo.toISOString() } : cambiosRuta;
+    return { ruta: datosRuta, paradas, pedidos: cambiosPedidos };
+  };
+
+  // Iniciar el reparto: los pedidos pasan a 'en_ruta'; los cancelados antes de salir quedan como no entregados
+  const cambiosAlIniciar = (ruta, pedidosPorId, instante) => {
+    const enCurso = ["pendiente", "en_ruta"];
+    const omitidas = pendientes(ruta)
+      .filter((p) => !enCurso.includes(pedidosPorId[p.pedido_id]?.estado))
+      .map((parada) => ({ parada, resultado: "no_entregada", motivo: "Pedido cancelado antes de salir", instante, registrado_por: "sistema" }));
+    const cambios = cambiosPorResultados(ruta, pedidosPorId, omitidas, { estado: "en_reparto", iniciada_at: instante.toISOString() });
+    for (const p of pendientes(ruta)) {
+      if (pedidosPorId[p.pedido_id]?.estado === "pendiente") cambios.pedidos.push({ id: p.pedido_id, estado: "en_ruta" });
+    }
+    return cambios;
+  };
+
   const cambiarEstado = async (id, estado) => {
-    await obtener(id);
-    return rutas.actualizar(id, { estado });
+    const ruta = await obtener(id);
+    if (ruta.estado === estado) return ruta;
+    if (!(TRANSICIONES_RUTA[ruta.estado] ?? []).includes(estado)) {
+      throw new RutaEstadoInvalidoError(`Una ruta ${ETIQUETA_RUTA[ruta.estado]} no puede pasar a '${estado}'.`);
+    }
+    const pedidosPorId = await porId(ruta.pedido_ids);
+
+    if (estado === "en_reparto") return rutas.aplicarCambios(id, cambiosAlIniciar(ruta, pedidosPorId, reloj()));
+
+    if (estado === "completada") {
+      const faltan = pendientes(ruta).length;
+      if (faltan) {
+        throw new RutaEstadoInvalidoError(`Faltan ${faltan} parada(s) por registrar: marca cada una como entregada o no entregada.`);
+      }
+      return rutas.aplicarCambios(id, { ruta: { estado: "completada", completada_at: reloj().toISOString() } });
+    }
+
+    // Cancelar: los pedidos que aún no se resolvieron vuelven a 'pendiente'
+    const liberar = pendientes(ruta)
+      .map((p) => pedidosPorId[p.pedido_id])
+      .filter((p) => p?.estado === "en_ruta")
+      .map((p) => ({ id: p.id, estado: "pendiente" }));
+    return rutas.aplicarCambios(id, { ruta: { estado: "cancelada" }, pedidos: liberar });
   };
 
   return {
     obtener,
     cambiarEstado,
     cancelar: (id) => cambiarEstado(id, "cancelada"),
+
+    // Resultado de una parada registrado en el momento (hoy el operador; en la fase 2, el conductor)
+    async registrarEntrega(id, orden, { resultado, motivo }, registrado_por = "operador") {
+      const ruta = await obtener(id);
+      if (ruta.estado !== "en_reparto") {
+        throw new RutaEstadoInvalidoError(`Solo se registran entregas en rutas en reparto (esta ruta está ${ETIQUETA_RUTA[ruta.estado]}).`);
+      }
+      const parada = ruta.paradas.find((p) => p.orden === Number(orden));
+      if (!parada) throw new ParadaNotFoundError(`La ruta no tiene la parada ${orden}.`);
+      if ((parada.estado ?? "pendiente") !== "pendiente") {
+        throw new ParadaYaRegistradaError(`La parada ${orden} ya fue registrada como '${parada.estado}'.`);
+      }
+      const pedidosPorId = await porId([parada.pedido_id]);
+      return rutas.aplicarCambios(id, cambiosPorResultados(ruta, pedidosPorId, [{ parada, resultado, motivo, instante: reloj(), registrado_por }]));
+    },
+
+    // Simulador: recorre la ruta tramo a tramo como en la calle. Sale del almacén (con una pequeña
+    // demora de carga), maneja cada tramo con el tiempo de manejo planificado afectado por el tráfico,
+    // espera si llega antes de que abra la ventana, atiende al cliente y registra la entrega al
+    // terminar la atención. Los retrasos se acumulan. La ruta se completa con la última parada y
+    // regreso_at guarda la llegada al almacén.
+    // Aplica las mismas reglas que una entrega real.
+    async simular(id, { imprevistos = false, probabilidad_no_entrega = 0 } = {}) {
+      let ruta = await obtener(id);
+      if (!ESTADOS_RUTA_ACTIVA.includes(ruta.estado)) {
+        throw new RutaEstadoInvalidoError(`No se puede simular una ruta ${ETIQUETA_RUTA[ruta.estado]}.`);
+      }
+      let pedidosPorId = await porId(ruta.pedido_ids);
+      const rango = (min, max) => min + aleatorio() * (max - min);
+      // Multiplicadores del tiempo planificado: el tráfico casi nunca hace el viaje más rápido
+      const trafico = () => (imprevistos ? rango(1.0, 1.6) : rango(0.95, 1.25));
+      const atencion = () => (imprevistos ? rango(0.8, 2.0) : rango(0.8, 1.4));
+      const instanteDe = (hhmm) => instanteLocal(ruta.fecha, hhmm, zonaHoraria).getTime();
+
+      if (ruta.estado === "generada") {
+        const cargaMin = Math.floor(aleatorio() * 3); // 0 a 2 min terminando de cargar
+        const salida = new Date(instanteDe(ruta.hora_salida) + cargaMin * 60000);
+        ruta = await rutas.aplicarCambios(id, cambiosAlIniciar(ruta, pedidosPorId, salida));
+        if (ruta.estado !== "en_reparto") return ruta;
+        pedidosPorId = await porId(ruta.pedido_ids);
+      }
+
+      // Tramos planificados (segundos): manejo desde el punto anterior hasta cada parada y el regreso.
+      // llegada = hora de entrega estimada - espera; el tramo empieza al terminar la parada anterior.
+      const servicioS = (pedidoId) => (pedidosPorId[pedidoId]?.tiempo_servicio_min ?? 5) * 60;
+      let finAnterior = horaASegundos(ruta.hora_salida);
+      const viajeS = {};
+      for (const p of ruta.paradas) {
+        const inicio = p.hora_estimada_llegada ? horaASegundos(p.hora_estimada_llegada) : finAnterior;
+        viajeS[p.orden] = Math.max(0, inicio - (p.espera_min ?? 0) * 60 - finAnterior);
+        finAnterior = inicio + servicioS(p.pedido_id);
+      }
+      const regresoS = Math.max(0, horaASegundos(ruta.hora_salida) + (ruta.tiempo_estimado_min ?? 0) * 60 - finAnterior);
+
+      // El reloj arranca en la salida real o en el último registro (si ya se registraron paradas)
+      const registros = ruta.paradas.map((p) => p.entregado_at).filter(Boolean).map((t) => new Date(t).getTime());
+      let reloj = Math.max(new Date(ruta.iniciada_at ?? instanteDe(ruta.hora_salida)).getTime(), ...registros);
+      const resultados = [];
+      for (const parada of pendientes(ruta)) {
+        const pedido = pedidosPorId[parada.pedido_id];
+        const llegada = reloj + viajeS[parada.orden] * trafico() * 1000;
+        const falla = aleatorio() < probabilidad_no_entrega;
+        let instante;
+        if (falla) {
+          // Llega, intenta contactar al cliente unos minutos y sigue
+          instante = llegada + rango(2, 5) * 60000;
+        } else {
+          const inicio = Math.max(llegada, instanteDe(pedido.ventana_entrega_inicio));
+          instante = inicio + servicioS(parada.pedido_id) * atencion() * 1000;
+        }
+        reloj = Math.round(instante / 1000) * 1000;
+        resultados.push({
+          parada, instante: new Date(reloj), registrado_por: "simulador",
+          resultado: falla ? "no_entregada" : "entregada",
+          motivo: falla ? MOTIVOS_SIMULADOS[Math.floor(aleatorio() * MOTIVOS_SIMULADOS.length)] : undefined,
+        });
+      }
+      const cambios = cambiosPorResultados(ruta, pedidosPorId, resultados);
+      if (cambios.ruta.estado === "completada") {
+        // Tramo de regreso: tiempo de manejo planificado afectado por el tráfico
+        const vuelta = Math.round((reloj + regresoS * trafico() * 1000) / 1000) * 1000;
+        cambios.ruta.regreso_at = new Date(vuelta).toISOString();
+      }
+      return rutas.aplicarCambios(id, cambios);
+    },
 
     listar: () => rutas.listar(),
     listarPorVehiculo: (vehiculoId) => rutas.listarPorVehiculo(vehiculoId),
@@ -61,6 +222,19 @@ export function crearRutaService(
       if (noDisponibles.length) {
         throw new PedidoNoDisponibleError(
           `Estos pedidos están entregados o cancelados y no pueden incluirse: ${noDisponibles.map((p) => p.cliente_nombre).join(", ")}.`,
+        );
+      }
+
+      // Un pedido no puede estar pendiente de entrega en dos rutas activas a la vez
+      const ocupados = new Set(
+        (await rutas.listar())
+          .filter((r) => ESTADOS_RUTA_ACTIVA.includes(r.estado))
+          .flatMap((r) => pendientes(r).map((p) => p.pedido_id)),
+      );
+      const enOtraRuta = lista.filter((p) => ocupados.has(p.id) || p.estado === "en_ruta");
+      if (enOtraRuta.length) {
+        throw new PedidoEnOtraRutaError(
+          `Estos pedidos ya están en otra ruta activa: ${enOtraRuta.map((p) => p.cliente_nombre).join(", ")}. Cancela esa ruta o espera a que se resuelvan.`,
         );
       }
 

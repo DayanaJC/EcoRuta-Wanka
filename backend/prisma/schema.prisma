@@ -66,6 +66,14 @@ enum EstadoRuta {
   @@map("estado_ruta")
 }
 
+enum EstadoParada {
+  pendiente
+  entregada
+  no_entregada
+
+  @@map("estado_parada")
+}
+
 enum TipoDia {
   laborable
   fin_semana
@@ -114,6 +122,8 @@ model Pedido {
   prioridad              PrioridadPedido
   tipo_producto          TipoProducto
   estado                 EstadoPedido    @default(pendiente)
+  // Fecha y hora real de la entrega (la registra la ruta, no el operador)
+  fecha_entrega          DateTime?       @db.Timestamptz(3)
   created_at             DateTime        @default(now()) @db.Timestamptz(3)
   updated_at             DateTime        @updatedAt @db.Timestamptz(3)
 
@@ -178,6 +188,11 @@ model Ruta {
   factor_trafico_aplicado Decimal?   @db.Decimal(4, 2)
   geometria               Json?
   estado                  EstadoRuta @default(generada)
+  // Inicio y fin reales del reparto
+  iniciada_at             DateTime?  @db.Timestamptz(3)
+  completada_at           DateTime?  @db.Timestamptz(3)
+  // Llegada real del vehículo al almacén (la registra el simulador; en la fase 2, el conductor)
+  regreso_at              DateTime?  @db.Timestamptz(3)
   created_at              DateTime   @default(now()) @db.Timestamptz(3)
   updated_at              DateTime   @updatedAt @db.Timestamptz(3)
 
@@ -196,6 +211,14 @@ model RutaParada {
   hora_estimada_llegada DateTime? @db.Time(0)
   // Minutos que el vehículo espera a que abra la ventana del cliente
   espera_min            Int       @default(0) @db.SmallInt
+  // Resultado de la visita
+  estado                EstadoParada @default(pendiente)
+  entregado_at          DateTime?    @db.Timestamptz(3)
+  // true si la entrega cayó dentro de la ventana horaria del cliente (indicador O2)
+  dentro_ventana        Boolean?
+  motivo_no_entrega     String?      @db.VarChar(200)
+  // Quién registró el resultado: operador, simulador o conductor
+  registrado_por        String?      @db.VarChar(20)
 
   ruta   Ruta   @relation(fields: [ruta_id], references: [id], onDelete: Cascade)
   pedido Pedido @relation(fields: [pedido_id], references: [id])

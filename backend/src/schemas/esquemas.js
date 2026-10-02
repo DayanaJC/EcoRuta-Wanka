@@ -80,15 +80,15 @@ const camposPedido = {
   ventana_entrega_fin: hora,
   tiempo_servicio_min: z.number().int().gte(0).lte(240),
   prioridad: z.enum(PRIORIDADES),
+  // Por ahora no se contempla en la operación: es opcional y se guarda como 'no_perecedero'
   tipo_producto: z.enum(TIPOS_PRODUCTO),
-  estado: z.enum(ESTADOS_PEDIDO),
 };
 
 export const pedidoCrear = z.object({
   ...camposPedido,
   punto_referencia: camposPedido.punto_referencia.default(""),
   tiempo_servicio_min: camposPedido.tiempo_servicio_min.default(5),
-  estado: camposPedido.estado.default("pendiente"),
+  tipo_producto: camposPedido.tipo_producto.default("no_perecedero"),
 });
 export const pedidoActualizar = z.object(camposPedido).partial();
 export const cambiarEstadoPedido = z.object({ estado: z.enum(ESTADOS_PEDIDO) });
@@ -115,6 +115,27 @@ export const rutaCrear = z.object({
 });
 export const cambiarEstadoRuta = z.object({ estado: z.enum(ESTADOS_RUTA) });
 
+// ---------- Entregas ----------
+
+export const RESULTADOS_ENTREGA = ["entregada", "no_entregada"];
+export const registrarEntrega = z
+  .object({
+    resultado: z.enum(RESULTADOS_ENTREGA),
+    motivo: z.string().trim().max(200).optional(),
+  })
+  .refine((v) => v.resultado === "entregada" || (v.motivo && v.motivo.length >= 3), {
+    message: "Indica el motivo de la no entrega (al menos 3 caracteres).",
+    path: ["motivo"],
+  });
+// Simulación del reparto tramo a tramo (ver rutaService.simular)
+export const simularReparto = z.object({
+  // true = más tráfico y atenciones más largas
+  imprevistos: z.boolean().default(false),
+  // Probabilidad (0 a 1) de que una parada no se pueda entregar
+  probabilidad_no_entrega: z.number().gte(0).lte(1).default(0),
+});
+
 // ---------- Geocodificación ----------
 
 export const busquedaDireccion = z.object({ q: z.string().trim().min(3, "Escribe al menos 3 caracteres.").max(200) });
+export const puntoMapa = z.object({ lat: z.coerce.number().gte(-90).lte(90), lon: z.coerce.number().gte(-180).lte(180) });

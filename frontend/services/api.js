@@ -84,6 +84,8 @@ export const api = {
     pedir(`/asignaciones/${id}`, { method: 'DELETE' }),
   listarFactoresTrafico: () => pedir('/factores-trafico'),
   geocodificar: (texto) => pedir(`/geocodificar${aQueryParams({ q: texto })}`),
+  // Dirección de un punto marcado en el mapa (null si no hay ninguna cerca)
+  geocodificarInversa: (lat, lon) => pedir(`/geocodificar/inversa${aQueryParams({ lat, lon })}`),
   listarRutas: () => pedir('/rutas'),
   obtenerRuta: (id) => pedir(`/rutas/${id}`),
   generarRuta: (datos) =>
@@ -94,4 +96,12 @@ export const api = {
       body: JSON.stringify({ estado }),
     }),
   cancelarRuta: (id) => pedir(`/rutas/${id}`, { method: 'DELETE' }),
+  // resultado: 'entregada' | 'no_entregada' (este último con motivo)
+  registrarEntrega: (rutaId, orden, cuerpo) =>
+    pedir(`/rutas/${rutaId}/paradas/${orden}`, {
+      method: 'PATCH',
+      body: JSON.stringify(cuerpo),
+    }),
+  simularRuta: (id, opciones = {}) =>
+    pedir(`/rutas/${id}/simular`, { method: 'POST', body: JSON.stringify(opciones) }),
 }

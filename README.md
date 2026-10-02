@@ -257,7 +257,27 @@ npm run dev                 # http://localhost:3000
 | CRUD   | `/api/v1/asignaciones`            | Asignación de pedidos a vehículos                  |
 | POST   | `/api/v1/rutas`                   | Genera una ruta optimizada (RF-03)                 |
 | GET    | `/api/v1/rutas/:id`               | Detalle con orden de entrega, horarios y trazado   |
+| PATCH  | `/api/v1/rutas/:id/estado`        | Inicia (`en_reparto`) o cancela la ruta            |
+| PATCH  | `/api/v1/rutas/:id/paradas/:orden`| Registra una parada: `entregada` o `no_entregada` + motivo |
+| POST   | `/api/v1/rutas/:id/simular`       | Simula el reparto tramo a tramo (`imprevistos`, `probabilidad_no_entrega`) |
+| GET    | `/api/v1/geocodificar?q=`         | Sugerencias de direcciones (Nominatim)             |
+| GET    | `/api/v1/geocodificar/inversa?lat=&lon=` | Dirección de un punto marcado en el mapa |
 | GET    | `/api/v1/factores-trafico`        | Factores de tráfico por franja horaria             |
+
+### Flujo de entregas
+
+Los estados del pedido los mueve la ruta; a mano solo se puede **cancelar** un pedido pendiente.
+
+```text
+Ruta:    generada ──Iniciar reparto──▶ en_reparto ──(última parada registrada)──▶ completada
+Pedido:  pendiente ─────────────────▶ en_ruta ──Entregada──▶ entregado (con fecha y hora)
+                                              └─No entregada (motivo)─▶ pendiente (se vuelve a planificar)
+```
+
+- Cada entrega guarda la **hora real** y si cayó **dentro de la ventana** del cliente: con eso se calcula el indicador O2 (entregas fuera de horario).
+- Cancelar una ruta devuelve a `pendiente` los pedidos que aún no se resolvieron.
+- Un pedido no puede estar en dos rutas activas a la vez.
+- El **simulador** recorre la ruta tramo a tramo: sale del almacén (0–2 min de carga), maneja cada tramo con el tiempo planificado afectado por el tráfico (×0,95–1,25; con imprevistos ×1,0–1,6), espera si llega antes de la ventana, atiende al cliente (tiempo de servicio ×0,8–1,4) y registra la entrega al terminar la atención. Los retrasos se acumulan; la ruta se completa con la última parada y `regreso_at` guarda la llegada al almacén (tramo de regreso con tráfico). Usa las mismas reglas que el registro manual (y que la futura app del conductor).
 
 Ejemplo de generación de ruta:
 

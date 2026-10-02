@@ -159,7 +159,7 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
                             type="button"
                             className="boton boton-fantasma boton-icono"
                             onClick={() => onCancelar(p)}
-                            disabled={terminal}
+                            disabled={terminal || p.estado === 'en_ruta'}
                             aria-label={`Cancelar pedido de ${p.cliente_nombre}`}
                             title="Cancelar pedido"
                           >

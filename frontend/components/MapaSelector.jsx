@@ -21,6 +21,18 @@ function Clics({ onCambiar }) {
   return null
 }
 
+// Leaflet calcula el tamaño al crearse: dentro de un diálogo que se abre después hay que
+// avisarle cuando el contenedor cambia de tamaño
+function Redimensionar() {
+  const map = useMap()
+  useEffect(() => {
+    const observador = new ResizeObserver(() => map.invalidateSize())
+    observador.observe(map.getContainer())
+    return () => observador.disconnect()
+  }, [map])
+  return null
+}
+
 // Centra el mapa cuando la posición cambia desde fuera (buscador de direcciones)
 function Seguir({ posicion }) {
   const map = useMap()
@@ -30,9 +42,20 @@ function Seguir({ posicion }) {
   return null
 }
 
-export default function MapaSelector({ posicion, onCambiar, soloLectura = false }) {
+// estatico: vista previa sin interacción (miniatura)
+export default function MapaSelector({ posicion, onCambiar, soloLectura = false, estatico = false, className = 'mapa-selector' }) {
   return (
-    <MapContainer center={posicion ?? HUANCAYO} zoom={posicion ? 16 : 13} className="mapa-selector" scrollWheelZoom={!soloLectura}>
+    <MapContainer
+      center={posicion ?? HUANCAYO}
+      zoom={posicion ? 17 : 13}
+      className={className}
+      scrollWheelZoom={!soloLectura}
+      dragging={!estatico}
+      zoomControl={!estatico}
+      doubleClickZoom={!estatico}
+      attributionControl={!estatico}
+    >
+      <Redimensionar />
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
