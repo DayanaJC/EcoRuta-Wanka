@@ -4,7 +4,7 @@
 
 # 03. Registro de riesgos
 
-**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Versión anterior:** V_1_0_0 (11/09/2026) – cambio CC-01 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_2_0 | **Fecha:** 02/10/2026 | **Versión anterior:** V_1_1_0 (27/09/2026) – cambio CC-02 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -105,6 +105,25 @@ Los riesgos identificados se relacionan con los principales elementos de EcoRuta
 
 Los riesgos serán revisados durante el desarrollo del proyecto y al finalizar cada sprint. Si cambia la probabilidad o el impacto de un riesgo, se actualizará su nivel de severidad y las acciones de respuesta correspondientes.
 
+### 6.1 Revisión al cierre del Sprint 1 (02/10/2026)
+
+| Riesgo | Situación | Resultado |
+| --- | --- | --- |
+| RSK-16 – Retrabajo por la migración del stack | **Se materializó**: el Sprint se amplió 7 días (hasta el 02/10/2026). | Se aplicó la respuesta prevista: migración por módulos reutilizando las reglas de negocio. **Cerrado**: la migración terminó el 28/09/2026 (IMP-06). |
+| RSK-15 – Disponibilidad y límites de la API de optimización | No se materializó; la API respondió en todas las pruebas y en la demostración. | **Vigente**: se mantiene el control del consumo. Además se detectaron límites de servicios gratuitos relacionados: Neon se suspende por inactividad (IMP-09) y Nominatim admite una consulta por segundo. |
+
+Los nuevos impedimentos del Sprint 1 se registran en *03 Implementación/02 Registro de Impedimentos*.
+
 ---
 
+---
 
+## Historial de versiones
+
+| Versión | Fecha | Descripción |
+| --- | --- | --- |
+| V_1_0_0 | 11/09/2026 | Registro inicial de riesgos RSK-01 a RSK-14. |
+| V_1_1_0 | 27/09/2026 | CC-01: nuevos RSK-15 y RSK-16; actualización de RSK-01 y RSK-10. |
+| V_1_2_0 | 02/10/2026 | CC-02: revisión de riesgos al cierre del Sprint 1 (RSK-16 materializado y cerrado; RSK-15 vigente). |
+
+[⬅ Volver al README](../../README.md)

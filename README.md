@@ -56,7 +56,7 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 
 ## Tecnologías
 
-> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migró de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El prototipo inicial puede consultarse en el historial de Git (commit `846a165` de `main`). Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md).
+> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migró de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El prototipo inicial puede consultarse en el historial de Git (commit `846a165` de `main`). Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_2_0.md).
 
 | Componente               | Tecnología                                   |
 | ------------------------ | -------------------------------------------- |
@@ -132,13 +132,15 @@ EcoRuta-Wanka/
 │   │   ├── schemas/         # Validación con Zod
 │   │   ├── middlewares/     # Validación y manejo de errores
 │   │   ├── errors/          # Errores de dominio
-│   │   ├── app.js           # Ensamblaje de la aplicación
-│   │   └── server.js
+│   │   ├── utils/           # Conversión de horas y fechas (zona horaria de Lima)
+│   │   ├── aplicacion.js    # Ensamblaje de la aplicación (inyección de dependencias)
+│   │   └── server.js        # Arranque local y exportación para Vercel
 │   ├── prisma/
 │   │   ├── schema.prisma    # Modelo de datos de Neon
 │   │   ├── migrations/
 │   │   └── seed.js          # Datos iniciales
-│   ├── tests/
+│   ├── tests/               # Vitest + Supertest (71 pruebas)
+│   ├── vitest.config.js     # Configuración de pruebas y cobertura
 │   ├── .env.example
 │   └── package.json
 │
@@ -150,8 +152,6 @@ EcoRuta-Wanka/
 │   ├── .env.example
 │   └── package.json
 │
-├── database/
-│
 ├── docs/
 │   ├── 01 Inicio/
 │   ├── 02 Planificacion/
@@ -161,6 +161,9 @@ EcoRuta-Wanka/
 │   └── 06 Otros/
 │       └── evidencias/
 │
+├── .github/
+│   └── pull_request_template.md   # Lista de verificación de la Definition of Done
+│
 ├── .gitignore
 └── README.md
 ```
@@ -169,9 +172,10 @@ EcoRuta-Wanka/
 
 * **backend/**: contiene la API REST desarrollada con Node.js + Express.
 * **frontend/**: contiene la interfaz web desarrollada con Next.js.
-* **database/**: contiene documentación relacionada con el modelo de datos.
+* **backend/prisma/**: modelo de datos, migraciones y datos iniciales de la base de datos (el diseño se documenta en `docs/01 Inicio/11. Base de datos`).
 * **docs/**: contiene la documentación académica del proyecto.
-* **backend/tests/**: contiene las pruebas del backend.
+* **backend/tests/**: contiene las pruebas del backend (`npm test` y `npm run test:coverage`).
+* **.github/**: plantilla de Pull Request con la Definition of Done.
 
 ---
 
@@ -338,85 +342,64 @@ Durante el desarrollo se pueden generar versiones intermedias para registrar ava
 
 ## Documentación
 
-La documentación del proyecto se encuentra organizada por fases:
+La documentación del proyecto está en `docs/`, organizada por fases. Todos los enlaces son relativos y cada documento tiene un enlace de regreso a este README.
 
-### Inicio
+### Entregables del Sprint 1 (`docs/03 Implementación/`)
 
-`docs/01 Inicio/`
+| # | Documento | Contenido |
+| --- | --- | --- |
+| 1 | [01 Informe de estado del proyecto V_1_0_0](docs/03%20Implementaci%C3%B3n/01%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md) | Estado del Sprint 1: historias, indicadores, Definition of Done y pendientes |
+| 2 | [02 Registro de Impedimentos V_1_0_0](docs/03%20Implementaci%C3%B3n/02%20Registro%20de%20Impedimentos%20V_1_0_0.md) | Impedimentos técnicos, operativos y organizativos con prioridad, estado y resolución |
+| 3 | [03 Revisión del Sprint V_1_0_0](docs/03%20Implementaci%C3%B3n/03%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) | Historias completadas con trazabilidad a pruebas, guion y evidencias de la demostración |
+| 4 | [04 Retrospectiva del Sprint V_1_0_0](docs/03%20Implementaci%C3%B3n/04%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) | Aprendizajes, aciertos, mejoras por eje y plan de acción |
 
-Contiene la documentación relacionada con el inicio y definición del proyecto:
+Evidencias de la demostración (capturas del sistema en producción): `docs/06 Otros/evidencias/` (Evidencias 6 a 12).
 
-* enfoque del proyecto;
-* acta de constitución;
-* visión;
-* supuestos y restricciones;
-* interesados;
-* requisitos funcionales;
-* requisitos no funcionales;
-* usuarios;
-* reglas de negocio;
-* stack tecnológico;
-* base de datos;
-* modelo C4;
-* restricciones.
+### Inicio (`docs/01 Inicio/`)
 
-### Planificación
+* [01. Selección del enfoque del proyecto V_1_0_0](docs/01%20Inicio/01.%20Selecci%C3%B3n%20del%20enfoque%20del%20proyecto%20V_1_0_0.md)
+* [02. Acta de constitución V_1_0_0](docs/01%20Inicio/02.%20Acta%20de%20constituci%C3%B3n%20V_1_0_0.md)
+* [03. Declaración de la visión V_1_0_0](docs/01%20Inicio/03.%20Declaraci%C3%B3n%20de%20la%20visi%C3%B3n%20V_1_0_0.md)
+* [04. Registro de supuestos y restricciones V_1_1_0](docs/01%20Inicio/04.%20Registro%20de%20supuestos%20y%20restricciones%20V_1_1_0.md)
+* [05. Registro de interesados V_1_0_0](docs/01%20Inicio/05.%20Registro%20de%20interesados%20V_1_0_0.md)
+* [06. Requisitos funcionales V_1_2_0](docs/01%20Inicio/06.%20Requisitos%20funcionales%20V_1_2_0.md)
+* [07. Requisitos no funcionales V_1_0_0](docs/01%20Inicio/07.%20Requisitos%20no%20funcionales%20V_1_0_0.md)
+* [08. Usuarios V_1_0_0](docs/01%20Inicio/08.%20Usuarios%20V_1_0_0.md)
+* [09. Reglas de negocio V_1_1_0](docs/01%20Inicio/09.%20Reglas%20de%20negocio%20V_1_1_0.md)
+* [10. Stack tecnológico V_1_2_0](docs/01%20Inicio/10.%20Stack%20tecnol%C3%B3gico%20V_1_2_0.md)
+* [11. Base de datos V_1_2_0](docs/01%20Inicio/11.%20Base%20de%20datos%20V_1_2_0.md)
+* [12. Modelo C4 V_1_1_0](docs/01%20Inicio/12.%20Modelo%20C4%20V_1_1_0.md)
+* [13. Restricciones V_1_1_0](docs/01%20Inicio/13.%20Restricciones%20V_1_1_0.md)
 
-`docs/02 Planificacion/`
+### Planificación (`docs/02 Planificacion/`)
 
-Contiene la planificación del proyecto y los artefactos relacionados con Jira:
+* [01 Transformando a ágil V_1_2_0](docs/02%20Planificacion/01%20Transformando%20a%20%C3%A1gil%20V_1_2_0.md)
+* [02 Artefactos Jira V_1_0_0](docs/02%20Planificacion/02%20Artefactos%20Jira%20V_1_0_0.md)
+* [03 Registro de riesgos V_1_2_0](docs/02%20Planificacion/03%20Registro%20de%20riesgos%20V_1_2_0.md)
+* [04 Presupuesto del proyecto V_1_1_0](docs/02%20Planificacion/04%20Presupuesto%20del%20proyecto%20V_1_1_0.md)
 
-* transformación a metodología ágil;
-* configuración y evidencias de Jira;
-* registro de riesgos;
-* presupuesto del proyecto.
+Evidencias de Jira: `docs/06 Otros/evidencias/` (Evidencias 1 a 5).
 
-### Implementación
+### Seguimiento y control (`docs/04 Seguimiento_control/`)
 
-`docs/03 Implementación/`
+* [01 Registro de control de cambios V_1_2_0](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_2_0.md)
 
-Contiene los documentos de seguimiento y cierre del Sprint 1:
+### Cierre (`docs/05 Cierre/`)
 
-* [01 Informe de estado del proyecto V_1_1_0.md](docs/03 Implementación/01 Informe de estado del proyecto V_1_1_0.md)
-* [02 Registro de Impedimentos V_1_1_0.md](docs/03 Implementación/02 Registro de Impedimentos V_1_1_0.md)
-* [03 Revisión del Sprint V_1_1_0.md](docs/03 Implementación/03 Revisión del Sprint V_1_1_0.md)
-* [04 Retrospectiva del Sprint V_1_1_0.md](docs/03 Implementación/04 Retrospectiva del Sprint V_1_1_0.md)
-
-> **Volver al [README](../README.md)**
-
-### Seguimiento y control
-
-`docs/04 Seguimiento_control/`
-
-Contiene información relacionada con el seguimiento del proyecto, control de cambios, commits, ramas y Pull Requests.
-
-* [01 Registro de control de cambios V_1_1_0.md](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_1_0.md)
-
-### Cierre
-
-`docs/05 Cierre/`
-
-Contiene la documentación correspondiente al cierre del proyecto, resultados y conclusiones.
-
-### Otros
-
-`docs/06 Otros/`
-
-Contiene recursos complementarios y evidencias del proyecto.
-
-Las evidencias de Jira se encuentran en:
-
-```text
-docs/06 Otros/evidencias/
-```
+Se completará al finalizar el proyecto.
 
 ---
 
 ## Estado del proyecto
 
-**EcoRuta Wanka** se encuentra en desarrollo dentro del Proyecto de Fin de Asignatura.
+**EW Sprint 1 cerrado el 02/10/2026:** 3 de 3 historias completadas (US-001, US-002 y US-003; 23 SP), 29,5 % del MVP v1.0.0 (78 SP).
 
-El proyecto tiene como objetivo alcanzar el **MVP v1.0.0**, de acuerdo con los requisitos, planificación y entregables definidos en la documentación.
+| Componente | URL |
+| --- | --- |
+| Aplicación web (Vista) | https://ecoruta-frontend.vercel.app |
+| API REST | https://ecoruta-backend.vercel.app/health |
+
+El detalle está en el [Informe de estado del proyecto](docs/03%20Implementaci%C3%B3n/01%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md).
 
 ---
 
@@ -425,7 +408,8 @@ El proyecto tiene como objetivo alcanzar el **MVP v1.0.0**, de acuerdo con los r
 **Proyecto:** EcoRuta Wanka
 **Organización:** WankaLogística S.A.C.
 **Ubicación:** Huancayo, Junín, Perú
-**Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
+**Líder del proyecto:** Javier Curi Dayana
+**Integrantes:** Javier Curi Dayana, Arroyo Canchari Henry
 **Arquitectura:** Cliente-servidor + MVC con capa de servicios
 **Tipo:** Proyecto académico — PFA
 

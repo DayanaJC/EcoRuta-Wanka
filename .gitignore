@@ -1,54 +1,58 @@
 # =====================================================
 # EcoRuta Wanka — Archivos ignorados por Git
+# Stack: Node.js + Express + Prisma (backend/) · Next.js (frontend/)
 # =====================================================
 
-# ---------- Python / Backend ----------
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-.venv/
-venv/
-env/
-.Python
-build/
-dist/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-htmlcov/
-.coverage
-.tox/
+# ---------- Dependencias ----------
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # ---------- Variables de entorno y credenciales ----------
-# .env real (NUNCA versionar) pero mantiene .env.example
+# Nunca se versionan; se documentan en los archivos .env.example
 .env
 .env.*
 !.env.example
-
-# Credenciales de Firebase / service accounts
-*.key
 *.pem
-serviceAccountKey.json
-service-account*.json
-firebase-service-account.json
-firebase*.json
-# Carpeta credentials: se ignoran sus contenidos, pero se versiona .gitkeep
-# (no se puede re-incluir un archivo si su carpeta padre esta excluida).
-credentials/*
-!credentials/.gitkeep
+*.key
+credentials/
 
-# ---------- Node / Frontend ----------
-node_modules/
+# ---------- Next.js (frontend) ----------
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+# Archivos de instrucciones para asistentes de código que genera `next dev`
+frontend/AGENTS.md
+frontend/CLAUDE.md
+
+# ---------- Builds y despliegue ----------
+build/
 dist/
-dist-ssr/
-*.local
-.vite/
+.vercel/
+
+# ---------- Pruebas y cobertura ----------
+coverage/
+*.lcov
+.nyc_output/
+
+# ---------- Logs ----------
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# ---------- Temporales ----------
+*.tmp
+*.tmp.*
+tmp/
+temp/
 
 # ---------- Editor y sistema operativo ----------
 .vscode/
@@ -57,5 +61,4 @@ pnpm-debug.log*
 *.swo
 .DS_Store
 Thumbs.db
-# Logs de los servidores locales
-dev.log
+desktop.ini
