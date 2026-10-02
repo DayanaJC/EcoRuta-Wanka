@@ -310,6 +310,11 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
                         {p.punto_referencia && ` · ${p.punto_referencia}`}
                       </div>
                     )}
+                    {(p.bultos ?? []).some((b) => !b.apilable) && (
+                      <div className="hito-detalle hito-espera">
+                        No poner carga encima de: {(p.bultos ?? []).filter((b) => !b.apilable).map((b) => b.descripcion).join(', ')}
+                      </div>
+                    )}
                     {p.espera_min > 0 && (!p.estado || p.estado === 'pendiente') && (
                       <div className="hito-detalle hito-espera">
                         Llega antes y espera {formatearDuracion(p.espera_min)} a que abra la ventana

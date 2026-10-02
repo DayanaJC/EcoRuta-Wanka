@@ -92,6 +92,13 @@ describe("vehículos (RF-01)", () => {
 });
 
 describe("pedidos (RF-02)", () => {
+  it("el tipo de producto es opcional (por ahora no se contempla)", async () => {
+    const { tipo_producto, ...sinTipo } = pedidoValido();
+    const p = (await api.post("/api/v1/pedidos").send(sinTipo).expect(201)).body;
+    expect(p.tipo_producto).toBe("no_perecedero");
+    expect(tipo_producto).toBeDefined();
+  });
+
   it("registra con valores por defecto", async () => {
     const p = await crearPedido();
     expect(p).toMatchObject({ estado: "pendiente", punto_referencia: "", tiempo_servicio_min: 5 });

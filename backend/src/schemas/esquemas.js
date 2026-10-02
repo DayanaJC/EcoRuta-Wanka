@@ -80,6 +80,7 @@ const camposPedido = {
   ventana_entrega_fin: hora,
   tiempo_servicio_min: z.number().int().gte(0).lte(240),
   prioridad: z.enum(PRIORIDADES),
+  // Por ahora no se contempla en la operación: es opcional y se guarda como 'no_perecedero'
   tipo_producto: z.enum(TIPOS_PRODUCTO),
 };
 
@@ -87,6 +88,7 @@ export const pedidoCrear = z.object({
   ...camposPedido,
   punto_referencia: camposPedido.punto_referencia.default(""),
   tiempo_servicio_min: camposPedido.tiempo_servicio_min.default(5),
+  tipo_producto: camposPedido.tipo_producto.default("no_perecedero"),
 });
 export const pedidoActualizar = z.object(camposPedido).partial();
 export const cambiarEstadoPedido = z.object({ estado: z.enum(ESTADOS_PEDIDO) });

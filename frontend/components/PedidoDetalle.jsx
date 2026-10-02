@@ -5,7 +5,6 @@ import { Aviso } from './ui.jsx'
 import { medidasBulto, volumenBultoM3 } from '../utils/carga.js'
 import {
   ESTADOS_TERMINALES_PEDIDO,
-  ETIQUETAS_TIPO,
   formatearFecha,
   formatearKg,
   formatearNumero,
@@ -19,6 +18,12 @@ const MapaSelector = dynamic(() => import('./MapaSelector.jsx'), {
 
 // Los estados "en ruta" y "entregado" no se marcan aquí: los registra la ruta
 // (al iniciar el reparto y al registrar cada parada).
+// "Sí" si todos los bultos admiten carga encima; si no, cuáles no
+function textoCargaEncima(pedido) {
+  const no = (pedido.bultos ?? []).filter((b) => !b.apilable).map((b) => b.descripcion)
+  return no.length ? `No sobre: ${no.join(', ')}` : 'Sí, todos los bultos'
+}
+
 export function PedidoDetalle({ pedido, onCancelar, gestionando }) {
   const terminal = ESTADOS_TERMINALES_PEDIDO.includes(pedido.estado)
 
@@ -60,8 +65,8 @@ export function PedidoDetalle({ pedido, onCancelar, gestionando }) {
                 </dd>
               </div>
               <div>
-                <dt>Producto</dt>
-                <dd>{ETIQUETAS_TIPO[pedido.tipo_producto]}</dd>
+                <dt>¿Carga encima?</dt>
+                <dd>{textoCargaEncima(pedido)}</dd>
               </div>
               <div>
                 <dt>Tiempo de entrega</dt>
@@ -125,7 +130,7 @@ export function PedidoDetalle({ pedido, onCancelar, gestionando }) {
                 <th>Medidas</th>
                 <th>Peso c/u</th>
                 <th>Volumen</th>
-                <th>Apilable</th>
+                <th>¿Carga encima?</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +151,7 @@ export function PedidoDetalle({ pedido, onCancelar, gestionando }) {
                   <td data-etiqueta="Volumen" className="num">
                     {formatearNumero(Number((volumenBultoM3(b) * b.cantidad).toFixed(3)))} m³
                   </td>
-                  <td data-etiqueta="Apilable">{b.apilable ? 'Sí' : 'No'}</td>
+                  <td data-etiqueta="¿Carga encima?">{b.apilable ? 'Sí' : 'No'}</td>
                 </tr>
               ))}
             </tbody>

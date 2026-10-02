@@ -63,7 +63,7 @@ export function EditorBultos({ bultos, unidad, onChange, onCambiarUnidad }) {
   return (
     <div className="pila">
       <div className="acciones" style={{ justifyContent: 'space-between', width: '100%', display: 'flex' }}>
-        <span className="ayuda">Medidas de cada bulto; el peso es el de una unidad.</span>
+        <span className="ayuda">Medidas de cada bulto; el peso es el de una unidad. Indica si se puede poner otra carga encima (frágil, colchones, vidrio: No).</span>
         <div className="segmentos" role="group" aria-label="Unidad de las medidas">
           {['cm', 'm'].map((u) => (
             <button key={u} type="button" className="segmento" aria-pressed={unidad === u} onClick={() => onCambiarUnidad(u)}>
@@ -83,7 +83,7 @@ export function EditorBultos({ bultos, unidad, onChange, onCambiarUnidad }) {
               <th>Ancho</th>
               <th>Alto</th>
               <th>Peso c/u</th>
-              <th title="¿Admite carga encima?">Apilable</th>
+              <th title="¿Se puede poner otra carga encima de este bulto? (frágil, colchones, vidrio: No)">¿Carga encima?</th>
               <th>Volumen</th>
               <th>
                 <span className="sr-only">Quitar</span>
@@ -112,8 +112,16 @@ export function EditorBultos({ bultos, unidad, onChange, onCambiarUnidad }) {
                   <td data-etiqueta="Ancho">{campo(i, 'ancho_cm', unidad, { ...limites, placeholder: unidad === 'm' ? '1.35' : '135', 'aria-label': `Ancho del bulto ${n} en ${unidad}` })}</td>
                   <td data-etiqueta="Alto">{campo(i, 'alto_cm', unidad, { ...limites, placeholder: unidad === 'm' ? '0.25' : '25', 'aria-label': `Alto del bulto ${n} en ${unidad}` })}</td>
                   <td data-etiqueta="Peso c/u">{campo(i, 'peso_kg', 'kg', { min: 0.01, max: 5000, placeholder: '12', 'aria-label': `Peso de cada bulto ${n} en kg` })}</td>
-                  <td data-etiqueta="Apilable">
-                    <input type="checkbox" checked={b.apilable} onChange={(e) => cambiar(i, 'apilable', e.target.checked)} aria-label={`Bulto ${n} apilable`} />
+                  <td data-etiqueta="¿Carga encima?">
+                    <select
+                      className="campo"
+                      value={b.apilable ? 'si' : 'no'}
+                      onChange={(e) => cambiar(i, 'apilable', e.target.value === 'si')}
+                      aria-label={`¿Se puede poner carga encima del bulto ${n}?`}
+                    >
+                      <option value="si">Sí</option>
+                      <option value="no">No</option>
+                    </select>
                   </td>
                   <td data-etiqueta="Volumen" className="num texto-secundario">
                     {vol ? `${formatearNumero(Number(vol.toFixed(3)))} m³` : '—'}

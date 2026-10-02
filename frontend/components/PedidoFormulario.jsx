@@ -2,7 +2,7 @@ import { MapPin, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { api } from '../services/api.js'
-import { ETIQUETAS_PRIORIDAD, ETIQUETAS_TIPO } from '../utils/formatos.js'
+import { ETIQUETAS_PRIORIDAD } from '../utils/formatos.js'
 import { bultoVacio, convertirMedidas, EditorBultos } from './EditorBultos.jsx'
 import { Cargando, CampoGrupo } from './ui.jsx'
 
@@ -22,7 +22,6 @@ const VACIO = {
   ventana_entrega_fin: '12:00',
   tiempo_servicio_min: '5',
   prioridad: 'estandar',
-  tipo_producto: 'no_perecedero',
 }
 
 const desdePedido = (p) =>
@@ -90,7 +89,6 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
       ventana_entrega_fin: form.ventana_entrega_fin,
       tiempo_servicio_min: Number(form.tiempo_servicio_min),
       prioridad: form.prioridad,
-      tipo_producto: form.tipo_producto,
     })
   }
 
@@ -193,17 +191,6 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
               setUnidadMedida(nueva)
             }}
           />
-          <div className="campos">
-            <CampoGrupo etiqueta="Tipo de producto" htmlFor="tipo_producto">
-              <select id="tipo_producto" className="campo" value={form.tipo_producto} onChange={cambiar('tipo_producto')}>
-                {Object.entries(ETIQUETAS_TIPO).map(([v, e]) => (
-                  <option key={v} value={v}>
-                    {e}
-                  </option>
-                ))}
-              </select>
-            </CampoGrupo>
-          </div>
         </fieldset>
 
         <fieldset className="seccion-form">
