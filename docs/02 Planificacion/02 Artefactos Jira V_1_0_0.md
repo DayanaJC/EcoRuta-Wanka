@@ -146,3 +146,5 @@ Estas tres historias forman parte del Sprint 1 y permiten iniciar el desarrollo 
 La configuración de EcoRuta-Wanka en Jira permite organizar las historias de usuario, agruparlas por épicas, planificar el Sprint 1 y visualizar el avance del trabajo mediante el tablero Scrum.
 
 Las cinco evidencias presentadas muestran la configuración realizada en Jira y sirven como respaldo de la planificación del proyecto.
+
+[Volver al README principal](../../README.md)

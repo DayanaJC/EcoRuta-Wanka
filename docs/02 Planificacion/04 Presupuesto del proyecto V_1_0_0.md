@@ -4,7 +4,7 @@
 
 # 04. Presupuesto del proyecto
 
-**Versión:** V_1_1_0 | **Fecha:** 27/09/2026 | **Versión anterior:** V_1_0_0 (11/09/2026) – cambio CC-01 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_1_0 | **Fecha:** 11/09/2026  | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -136,3 +136,4 @@ La mayor parte del presupuesto corresponde a recursos humanos, debido a que el d
 
 ---
 
+[Volver al README principal](../../README.md)
