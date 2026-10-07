@@ -70,3 +70,5 @@
 | Mejorar las pruebas de las pantallas de la aplicación.           | Arroyo Canchari Henry                      | Sprint 2           |
 | Revisar los avances con el docente durante el Sprint.            | Javier Curi Dayana                         | Sprint 2           |
 | Revisar al finalizar el Sprint si las acciones fueron cumplidas. | Ambos integrantes                          | Fin del Sprint 2   |
+
+[Volver al README principal](../../README.md)

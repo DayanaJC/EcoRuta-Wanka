@@ -110,3 +110,5 @@ Demostración a los stakeholders de las funcionalidades implementadas.
 * Verificar la compatibilidad con otros navegadores.
 * Continuar con las historias de usuario planificadas para los siguientes Sprints.
 * Recoger las observaciones del docente durante la demostración.
+
+[Volver al README principal](../../README.md)
