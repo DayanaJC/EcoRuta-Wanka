@@ -56,34 +56,34 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 
 ## Tecnologías
 
-> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migró de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**. El prototipo inicial puede consultarse en el historial de Git (commit `846a165` de `main`). Detalle en [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_2_0.md).
+> **Cambio de stack (CC-01, 27/09/2026):** el proyecto migró de Python + FastAPI, React + Vite y Firebase a **Node.js + Express, Next.js y Neon (PostgreSQL)**.
 
-| Componente               | Tecnología                                   |
-| ------------------------ | -------------------------------------------- |
-| Arquitectura             | Cliente-servidor + patrón MVC con capa de servicios |
-| Comunicación             | API REST (JSON)                              |
-| Frontend (Vista)         | Next.js (React) + JavaScript                 |
-| Mapas                    | Leaflet + OpenStreetMap                      |
-| Backend (Controlador y Modelo) | Node.js + Express                      |
-| Validación de datos      | Zod                                          |
-| Acceso a datos           | Prisma ORM                                   |
-| Base de datos            | Neon (PostgreSQL)                            |
-| Optimización de rutas    | API de OpenRouteService (VROOM) + factores de tráfico |
-| Geocodificación          | Nominatim (OpenStreetMap)                    |
-| Autenticación            | JWT + bcrypt                                 |
-| Pruebas                  | Vitest + Supertest                           |
-| Control de versiones     | Git + GitHub                                 |
-| Gestión del proyecto     | Jira Software                                |
-| Documentación de API     | OpenAPI                                      |
+| Componente                     | Tecnología                                            |
+| ------------------------------ | ----------------------------------------------------- |
+| Arquitectura                   | Cliente-servidor + patrón MVC con capa de servicios   |
+| Comunicación                   | API REST (JSON)                                       |
+| Frontend (Vista)               | Next.js (React) + JavaScript                          |
+| Mapas                          | Leaflet + OpenStreetMap                               |
+| Backend (Controlador y Modelo) | Node.js + Express                                     |
+| Validación de datos            | Zod                                                   |
+| Acceso a datos                 | Prisma ORM                                            |
+| Base de datos                  | Neon (PostgreSQL)                                     |
+| Optimización de rutas          | API de OpenRouteService (VROOM) + factores de tráfico |
+| Geocodificación                | Nominatim (OpenStreetMap)                             |
+| Autenticación                  | JWT + bcrypt                                          |
+| Pruebas                        | Vitest + Supertest                                    |
+| Control de versiones           | Git + GitHub                                          |
+| Gestión del proyecto           | Jira Software                                         |
+| Documentación de API           | OpenAPI                                               |
 
 ### Justificación
 
-* **API de optimización en lugar de un algoritmo propio:** OpenRouteService calcula el orden óptimo de visita sobre calles reales (capacidad, ventanas de entrega y tiempos). El backend prepara los datos, llama a la API e interpreta la respuesta.
+* **API de optimización en lugar de un algoritmo propio:** OpenRouteService calcula el orden óptimo de visita sobre calles reales. El backend prepara los datos, llama a la API e interpreta la respuesta.
 * **Factores de tráfico:** la API no considera el tráfico en tiempo real; EcoRuta Wanka ajusta los tiempos con factores configurables por franja horaria.
 * **Node.js + Express:** adecuado para orquestar llamadas HTTP asíncronas con JSON y permite usar un solo lenguaje (JavaScript) en todo el sistema.
 * **Next.js:** construido sobre React, permite reutilizar los componentes del prototipo.
-* **Neon (PostgreSQL):** base de datos relacional con plan gratuito; garantiza las relaciones entre pedidos, vehículos, asignaciones y rutas mediante claves foráneas.
-* **Zod y Prisma:** validación de datos y acceso tipado a la base de datos con migraciones.
+* **Neon (PostgreSQL):** base de datos relacional con plan gratuito.
+* **Zod y Prisma:** validación de datos y acceso a la base de datos con migraciones.
 * **Vitest + Supertest:** pruebas de reglas de negocio y de los endpoints de la API.
 * **Git y GitHub:** permiten controlar las versiones del código y trabajar mediante ramas y Pull Requests.
 * **Jira Software:** permite organizar épicas, historias de usuario, tareas, sprints y releases.
@@ -98,21 +98,21 @@ EcoRuta Wanka utiliza una **arquitectura cliente-servidor**: el frontend (client
 CLIENTE                                   SERVIDOR
 Vista (Next.js)  ── API REST (JSON) ──►   Controlador (Express)
                                              ↓
-                                          Modelo: Servicios ──► API de OpenRouteService
-                                             ↓                  (orden óptimo + factores de tráfico)
-                                          Modelo: Repositorios (Prisma)
+                                           Modelo: Servicios ──► API de OpenRouteService
                                              ↓
-                                          Neon (PostgreSQL)
+                                           Modelo: Repositorios (Prisma)
+                                             ↓
+                                           Neon (PostgreSQL)
 ```
 
 ### Partes del sistema
 
-| Parte del MVC            | Responsabilidad                                                              |
-| ------------------------ | ---------------------------------------------------------------------------- |
-| Vista                    | Pantallas y mapa con los que interactúa el usuario (Next.js).                |
-| Controlador              | Recibe las solicitudes de la API, valida la entrada y devuelve la respuesta. |
-| Modelo – Servicios       | Reglas de negocio e integración con la API de optimización de rutas.         |
-| Modelo – Repositorios    | Acceso a la información almacenada en Neon.                                  |
+| Parte del MVC         | Responsabilidad                                                              |
+| --------------------- | ---------------------------------------------------------------------------- |
+| Vista                 | Pantallas y mapa con los que interactúa el usuario (Next.js).                |
+| Controlador           | Recibe las solicitudes de la API, valida la entrada y devuelve la respuesta. |
+| Modelo – Servicios    | Reglas de negocio e integración con la API de optimización de rutas.         |
+| Modelo – Repositorios | Acceso a la información almacenada en Neon.                                  |
 
 Esta organización permite separar responsabilidades y facilita el mantenimiento y evolución del proyecto.
 
@@ -123,46 +123,48 @@ Esta organización permite separar responsabilidades y facilita el mantenimiento
 ```text
 EcoRuta-Wanka/
 │
-├── backend/                 # API REST con Node.js + Express
+├── backend/
 │   ├── src/
-│   │   ├── routes/          # Definición de endpoints /api/v1/...
-│   │   ├── controllers/     # Controlador (MVC)
-│   │   ├── services/        # Modelo: reglas de negocio y APIs externas
-│   │   ├── repositories/    # Modelo: acceso a datos con Prisma
-│   │   ├── schemas/         # Validación con Zod
-│   │   ├── middlewares/     # Validación y manejo de errores
-│   │   ├── errors/          # Errores de dominio
-│   │   ├── utils/           # Conversión de horas y fechas (zona horaria de Lima)
-│   │   ├── aplicacion.js    # Ensamblaje de la aplicación (inyección de dependencias)
-│   │   └── server.js        # Arranque local y exportación para Vercel
+│   │   ├── routes/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── repositories/
+│   │   ├── schemas/
+│   │   ├── middlewares/
+│   │   ├── errors/
+│   │   ├── utils/
+│   │   ├── aplicacion.js
+│   │   └── server.js
 │   ├── prisma/
-│   │   ├── schema.prisma    # Modelo de datos de Neon
+│   │   ├── schema.prisma
 │   │   ├── migrations/
-│   │   └── seed.js          # Datos iniciales
-│   ├── tests/               # Vitest + Supertest (71 pruebas)
-│   ├── vitest.config.js     # Configuración de pruebas y cobertura
+│   │   └── seed.js
+│   ├── tests/
+│   ├── vitest.config.js
 │   ├── .env.example
 │   └── package.json
 │
-├── frontend/                # Vista con Next.js
-│   ├── app/                 # Layout y página (App Router)
-│   ├── components/          # Pantallas, formularios y mapa
-│   ├── services/            # Cliente de la API
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── services/
 │   ├── utils/
 │   ├── .env.example
 │   └── package.json
 │
 ├── docs/
 │   ├── 01 Inicio/
-│   ├── 02 Planificacion/
+│   ├── 02 Planificación/
 │   ├── 03 Implementación/
+│   │   ├── Sprint 1/
+│   │   └── Sprint 2/
 │   ├── 04 Seguimiento_control/
 │   ├── 05 Cierre/
 │   └── 06 Otros/
 │       └── evidencias/
 │
 ├── .github/
-│   └── pull_request_template.md   # Lista de verificación de la Definition of Done
+│   └── pull_request_template.md
 │
 ├── .gitignore
 └── README.md
@@ -172,10 +174,10 @@ EcoRuta-Wanka/
 
 * **backend/**: contiene la API REST desarrollada con Node.js + Express.
 * **frontend/**: contiene la interfaz web desarrollada con Next.js.
-* **backend/prisma/**: modelo de datos, migraciones y datos iniciales de la base de datos (el diseño se documenta en `docs/01 Inicio/11. Base de datos`).
+* **backend/prisma/**: contiene el modelo de datos, migraciones y datos iniciales.
 * **docs/**: contiene la documentación académica del proyecto.
-* **backend/tests/**: contiene las pruebas del backend (`npm test` y `npm run test:coverage`).
-* **.github/**: plantilla de Pull Request con la Definition of Done.
+* **backend/tests/**: contiene las pruebas del backend.
+* **.github/**: contiene la plantilla de Pull Request.
 
 ---
 
@@ -183,16 +185,15 @@ EcoRuta-Wanka/
 
 ### Base de datos (Neon)
 
-1. Crear un proyecto en [Neon](https://neon.tech) (plan gratuito).
+1. Crear un proyecto en Neon.
 2. Crear una rama de base de datos para desarrollo y otra para pruebas.
-3. En **Connect**, copiar la cadena con pooling en `DATABASE_URL` y la directa en `DATABASE_URL_UNPOOLED` (backend).
-   Con Prisma 7 la conexión se configura en `backend/prisma.config.ts`, no en `schema.prisma`.
+3. En **Connect**, copiar la cadena con pooling en `DATABASE_URL` y la directa en `DATABASE_URL_UNPOOLED`.
 4. Aplicar el modelo de datos con las migraciones de Prisma.
 
 ### Optimización de rutas (OpenRouteService)
 
-1. Crear una cuenta en [account.heigit.org](https://account.heigit.org) (sin tarjeta).
-2. Solicitar un token del plan *Standard* (o el plan *Collaborative* con el correo institucional).
+1. Crear una cuenta en OpenRouteService.
+2. Solicitar un token.
 3. Copiar el token en la variable `ORS_API_KEY` del backend.
 
 Las credenciales reales deben mantenerse fuera del repositorio.
@@ -204,14 +205,11 @@ Las credenciales reales deben mantenerse fuera del repositorio.
 Copiar `backend/.env.example` como `backend/.env` y completar los valores:
 
 ```env
-# Con pooling (host "-pooler"): la usa la aplicación
 DATABASE_URL="postgresql://usuario:contraseña@ep-xxxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
-# Directa (sin "-pooler"): la usa Prisma para las migraciones
 DATABASE_URL_UNPOOLED="postgresql://usuario:contraseña@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require"
 ORS_API_KEY=
 PORT=4000
 FRONTEND_URL=http://localhost:3000
-# Opcional: almacén de salida (por defecto, Plaza de la Constitución de Huancayo)
 ALMACEN_LATITUD=-12.0681
 ALMACEN_LONGITUD=-75.2104
 ```
@@ -236,11 +234,11 @@ Requisitos: Node.js 20 o superior.
 
 ```bash
 cd backend
-npm install                 # instala dependencias y genera el cliente de Prisma
-npm run db:deploy           # crea las tablas en Neon (migraciones de Prisma)
-npm run db:seed             # factores de tráfico y datos de prueba de Huancayo
-npm run dev                 # http://localhost:4000
-npm test                    # pruebas con Vitest + Supertest
+npm install
+npm run db:deploy
+npm run db:seed
+npm run dev
+npm test
 ```
 
 ### Frontend (Next.js)
@@ -248,49 +246,25 @@ npm test                    # pruebas con Vitest + Supertest
 ```bash
 cd frontend
 npm install
-npm run dev                 # http://localhost:3000
+npm run dev
 ```
 
 ### Endpoints principales
 
-| Método | Endpoint                          | Descripción                                        |
-| ------ | --------------------------------- | -------------------------------------------------- |
-| GET    | `/health`                         | Estado de la base de datos y de la optimización    |
-| CRUD   | `/api/v1/vehiculos`               | Gestión de flota (RF-01)                           |
-| CRUD   | `/api/v1/pedidos`                 | Gestión de pedidos (RF-02)                         |
-| CRUD   | `/api/v1/asignaciones`            | Asignación de pedidos a vehículos                  |
-| POST   | `/api/v1/rutas`                   | Genera una ruta optimizada (RF-03)                 |
-| GET    | `/api/v1/rutas/:id`               | Detalle con orden de entrega, horarios y trazado   |
-| PATCH  | `/api/v1/rutas/:id/estado`        | Inicia (`en_reparto`) o cancela la ruta            |
-| PATCH  | `/api/v1/rutas/:id/paradas/:orden`| Registra una parada: `entregada` o `no_entregada` + motivo |
-| POST   | `/api/v1/rutas/:id/simular`       | Simula el reparto tramo a tramo (`imprevistos`, `probabilidad_no_entrega`) |
-| GET    | `/api/v1/geocodificar?q=`         | Sugerencias de direcciones (Nominatim)             |
-| GET    | `/api/v1/geocodificar/inversa?lat=&lon=` | Dirección de un punto marcado en el mapa |
-| GET    | `/api/v1/factores-trafico`        | Factores de tráfico por franja horaria             |
-
-### Flujo de entregas
-
-Los estados del pedido los mueve la ruta; a mano solo se puede **cancelar** un pedido pendiente.
-
-```text
-Ruta:    generada ──Iniciar reparto──▶ en_reparto ──(última parada registrada)──▶ completada
-Pedido:  pendiente ─────────────────▶ en_ruta ──Entregada──▶ entregado (con fecha y hora)
-                                              └─No entregada (motivo)─▶ pendiente (se vuelve a planificar)
-```
-
-- Cada entrega guarda la **hora real** y si cayó **dentro de la ventana** del cliente: con eso se calcula el indicador O2 (entregas fuera de horario).
-- Cancelar una ruta devuelve a `pendiente` los pedidos que aún no se resolvieron.
-- Un pedido no puede estar en dos rutas activas a la vez.
-- El **simulador** recorre la ruta tramo a tramo: sale del almacén (0–2 min de carga), maneja cada tramo con el tiempo planificado afectado por el tráfico (×0,95–1,25; con imprevistos ×1,0–1,6), espera si llega antes de la ventana, atiende al cliente (tiempo de servicio ×0,8–1,4) y registra la entrega al terminar la atención. Los retrasos se acumulan; la ruta se completa con la última parada y `regreso_at` guarda la llegada al almacén (tramo de regreso con tráfico). Usa las mismas reglas que el registro manual (y que la futura app del conductor).
-
-Ejemplo de generación de ruta:
-
-```json
-POST /api/v1/rutas
-{ "vehiculo_id": "…", "pedido_ids": ["…", "…"], "fecha": "2026-09-28", "hora_salida": "08:00" }
-```
-
-La respuesta incluye el orden de entrega (`paradas`), la hora estimada de cada entrega, la distancia, el tiempo total, el factor de tráfico aplicado y la geometría para el mapa.
+| Método | Endpoint                                 | Descripción                                      |
+| ------ | ---------------------------------------- | ------------------------------------------------ |
+| GET    | `/health`                                | Estado de la base de datos y de la optimización  |
+| CRUD   | `/api/v1/vehiculos`                      | Gestión de flota (RF-01)                         |
+| CRUD   | `/api/v1/pedidos`                        | Gestión de pedidos (RF-02)                       |
+| CRUD   | `/api/v1/asignaciones`                   | Asignación de pedidos a vehículos                |
+| POST   | `/api/v1/rutas`                          | Genera una ruta optimizada (RF-03)               |
+| GET    | `/api/v1/rutas/:id`                      | Detalle con orden de entrega, horarios y trazado |
+| PATCH  | `/api/v1/rutas/:id/estado`               | Inicia o cancela la ruta                         |
+| PATCH  | `/api/v1/rutas/:id/paradas/:orden`       | Registra una parada                              |
+| POST   | `/api/v1/rutas/:id/simular`              | Simula el reparto                                |
+| GET    | `/api/v1/geocodificar?q=`                | Sugerencias de direcciones                       |
+| GET    | `/api/v1/geocodificar/inversa?lat=&lon=` | Dirección de un punto                            |
+| GET    | `/api/v1/factores-trafico`               | Factores de tráfico                              |
 
 ---
 
@@ -340,73 +314,189 @@ Durante el desarrollo se pueden generar versiones intermedias para registrar ava
 
 ---
 
-## Documentación
+# Documentación
 
-La documentación del proyecto está en `docs/`, organizada por fases. Todos los enlaces son relativos y cada documento tiene un enlace de regreso a este README.
+La documentación del proyecto se encuentra organizada de acuerdo con las etapas del proyecto:
 
-### Entregables del Sprint 1 (`docs/03 Implementación/`)
+```text
+docs/
+│
+├── 01 Inicio/
+├── 02 Planificación/
+├── 03 Implementación/
+│   ├── Sprint 1/
+│   └── Sprint 2/
+├── 04 Seguimiento_control/
+├── 05 Cierre/
+└── 06 Otros/
+    └── evidencias/
+```
 
-| # | Documento | Contenido |
-| --- | --- | --- |
-| 1 | [01 Informe de estado del proyecto V_1_0_0](docs/03%20Implementaci%C3%B3n/01%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md) | Estado del Sprint 1: historias, indicadores, Definition of Done y pendientes |
-| 2 | [02 Registro de Impedimentos V_1_0_0](docs/03%20Implementaci%C3%B3n/02%20Registro%20de%20Impedimentos%20V_1_0_0.md) | Impedimentos técnicos, operativos y organizativos con prioridad, estado y resolución |
-| 3 | [03 Revisión del Sprint V_1_0_0](docs/03%20Implementaci%C3%B3n/03%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) | Historias completadas con trazabilidad a pruebas, guion y evidencias de la demostración |
-| 4 | [04 Retrospectiva del Sprint V_1_0_0](docs/03%20Implementaci%C3%B3n/04%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) | Aprendizajes, aciertos, mejoras por eje y plan de acción |
+---
 
-Evidencias de la demostración (capturas del sistema en producción): `docs/06 Otros/evidencias/` (Evidencias 6 a 12).
+## 01. Inicio
 
-### Inicio (`docs/01 Inicio/`)
+Documentos relacionados con la definición, alcance, requisitos, usuarios, reglas de negocio, tecnologías y restricciones del proyecto.
 
-* [01. Selección del enfoque del proyecto V_1_0_0](docs/01%20Inicio/01.%20Selecci%C3%B3n%20del%20enfoque%20del%20proyecto%20V_1_0_0.md)
-* [02. Acta de constitución V_1_0_0](docs/01%20Inicio/02.%20Acta%20de%20constituci%C3%B3n%20V_1_0_0.md)
-* [03. Declaración de la visión V_1_0_0](docs/01%20Inicio/03.%20Declaraci%C3%B3n%20de%20la%20visi%C3%B3n%20V_1_0_0.md)
-* [04. Registro de supuestos y restricciones V_1_0_0](docs/01%20Inicio/04.%20Registro%20de%20supuestos%20y%20restricciones%20V_1_0_0.md)
-* [05. Registro de interesados V_1_0_0](docs/01%20Inicio/05.%20Registro%20de%20interesados%20V_1_0_0.md)
-* [06. Requisitos funcionales V_1_0_0](docs/01%20Inicio/06.%20Requisitos%20funcionales%20V_1_0_0.md)
-* [07. Requisitos no funcionales V_1_0_0](docs/01%20Inicio/07.%20Requisitos%20no%20funcionales%20V_1_0_0.md)
-* [08. Usuarios V_1_0_0](docs/01%20Inicio/08.%20Usuarios%20V_1_0_0.md)
-* [09. Reglas de negocio V_1_0_0](docs/01%20Inicio/09.%20Reglas%20de%20negocio%20V_1_0_0.md)
-* [10. Stack tecnológico V_1_0_0](docs/01%20Inicio/10.%20Stack%20tecnol%C3%B3gico%20V_1_0_0.md)
-* [11. Base de datos V_1_0_0](docs/01%20Inicio/11.%20Base%20de%20datos%20V_1_0_0.md)
-* [12. Modelo C4 V_1_0_0](docs/01%20Inicio/12.%20Modelo%20C4%20V_1_0_0.md)
-* [13. Restricciones V_1_0_0](docs/01%20Inicio/13.%20Restricciones%20V_1_0_0.md)
+| #  | Documento                                                                                                                  |
+| -- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1  | [Selección del enfoque del proyecto](docs/01%20Inicio/01.%20Selecci%C3%B3n%20del%20enfoque%20del%20proyecto%20V_1_0_0.md)  |
+| 2  | [Acta de constitución](docs/01%20Inicio/02.%20Acta%20de%20constituci%C3%B3n%20V_1_0_0.md)                                  |
+| 3  | [Declaración de la visión](docs/01%20Inicio/03.%20Declaraci%C3%B3n%20de%20la%20visi%C3%B3n%20V_1_0_0.md)                   |
+| 4  | [Registro de supuestos y restricciones](docs/01%20Inicio/04.%20Registro%20de%20supuestos%20y%20restricciones%20V_1_0_0.md) |
+| 5  | [Registro de interesados](docs/01%20Inicio/05.%20Registro%20de%20interesados%20V_1_0_0.md)                                 |
+| 6  | [Requisitos funcionales](docs/01%20Inicio/06.%20Requisitos%20funcionales%20V_1_0_0.md)                                     |
+| 7  | [Requisitos no funcionales](docs/01%20Inicio/07.%20Requisitos%20no%20funcionales%20V_1_0_0.md)                             |
+| 8  | [Usuarios](docs/01%20Inicio/08.%20Usuarios%20V_1_0_0.md)                                                                   |
+| 9  | [Reglas de negocio](docs/01%20Inicio/09.%20Reglas%20de%20negocio%20V_1_0_0.md)                                             |
+| 10 | [Stack tecnológico](docs/01%20Inicio/10.%20Stack%20tecnol%C3%B3gico%20V_1_0_0.md)                                          |
+| 11 | [Base de datos](docs/01%20Inicio/11.%20Base%20de%20datos%20V_1_0_0.md)                                                     |
+| 12 | [Modelo C4](docs/01%20Inicio/12.%20Modelo%20C4%20V_1_0_0.md)                                                               |
+| 13 | [Restricciones](docs/01%20Inicio/13.%20Restricciones%20V_1_0_0.md)                                                         |
 
-### Planificación (`docs/02 Planificacion/`)
+---
 
-* [01 Transformando a ágil V_1_0_0](docs/02%20Planificacion/01%20Transformando%20a%20%C3%A1gil%20V_1_0_0.md)
-* [02 Artefactos Jira V_1_0_0](docs/02%20Planificacion/02%20Artefactos%20Jira%20V_1_0_0.md)
-* [03 Registro de riesgos V_1_0_0](docs/02%20Planificacion/03%20Registro%20de%20riesgos%20V_1_0_0.md)
-* [04 Presupuesto del proyecto V_1_0_0](docs/02%20Planificacion/04%20Presupuesto%20del%20proyecto%20V_1_0_0.md)
+## 02. Planificación
 
-Evidencias de Jira: `docs/06 Otros/evidencias/` (Evidencias 1 a 5).
+Documentos relacionados con la planificación ágil, Jira, riesgos y presupuesto.
 
-### Cierre (`docs/05 Cierre/`)
+| # | Documento                                                                                               |
+| - | ------------------------------------------------------------------------------------------------------- |
+| 1 | [Transformando a ágil](docs/02%20Planificaci%C3%B3n/01%20Transformando%20a%20%C3%A1gil%20V_1_0_0.md)    |
+| 2 | [Artefactos Jira](docs/02%20Planificaci%C3%B3n/02%20Artefactos%20Jira%20V_1_0_0.md)                     |
+| 3 | [Registro de riesgos](docs/02%20Planificaci%C3%B3n/03%20Registro%20de%20riesgos%20V_1_0_0.md)           |
+| 4 | [Presupuesto del proyecto](docs/02%20Planificaci%C3%B3n/04%20Presupuesto%20del%20proyecto%20V_1_0_0.md) |
 
-Se completará al finalizar el proyecto.
+---
+
+## 03. Implementación
+
+La documentación de implementación está organizada por Sprint.
+
+### Sprint 1
+
+**Periodo:** 10/09/2026 – 25/09/2026
+
+**Historias completadas:** US-001, US-002 y US-003
+
+**Story Points:** 23 SP
+
+| # | Documento                                                                                                                            |
+| - | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 | [Informe de estado del proyecto](docs/03%20Implementaci%C3%B3n/Sprint%201/01.%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md) |
+| 2 | [Registro de Impedimentos](docs/03%20Implementaci%C3%B3n/Sprint%201/02.%20Registro%20de%20Impedimentos%20V_1_0_0.md)                 |
+| 3 | [Revisión del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%201/03.%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md)                      |
+| 4 | [Retrospectiva del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%201/04.%20Retrospectiva%20del%20Sprint%20V_1_0_0.md)                 |
+
+### Sprint 2
+
+**Periodo:** 28/09/2026 – 08/10/2026
+
+**Historias completadas:** US-004, US-005, US-006 y US-008
+
+**Story Points:** 29 SP
+
+| # | Documento                                                                                                                            |
+| - | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 | [Informe de estado del proyecto](docs/03%20Implementaci%C3%B3n/Sprint%202/01.%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md) |
+| 2 | [Registro de Impedimentos](docs/03%20Implementaci%C3%B3n/Sprint%202/02.%20Registro%20de%20Impedimentos%20V_1_0_0.md)                 |
+| 3 | [Revisión del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%202/03.%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md)                      |
+| 4 | [Retrospectiva del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%202/04.%20Retrospectiva%20del%20Sprint%20V_1_0_0.md)                 |
+
+---
+
+## 04. Seguimiento y control
+
+Documentación relacionada con el seguimiento de cambios realizados durante el proyecto.
+
+Actualmente se encuentra pendiente de completar al finalizar el desarrollo del proyecto.
+
+---
+
+## 05. Cierre
+
+Esta sección contiene los documentos correspondientes al cierre del proyecto.
+
+Actualmente se encuentra pendiente de completar al finalizar el desarrollo del proyecto.
+
+---
+
+## 06. Otros
+
+### Evidencias
+
+Las evidencias del proyecto se encuentran organizadas en:
+
+`docs/06 Otros/evidencias/`
+
+Incluyen las evidencias relacionadas con:
+
+* Jira y planificación.
+* Sprint 1.
+* Sprint 2.
+* Demostraciones y avances del proyecto.
 
 ---
 
 ## Estado del proyecto
 
-**EW Sprint 1 cerrado el 02/10/2026:** 3 de 3 historias completadas (US-001, US-002 y US-003; 23 SP), 29,5 % del MVP v1.0.0 (78 SP).
+### Sprint 1
 
-| Componente | URL |
-| --- | --- |
-| Aplicación web (Vista) | https://ecoruta-frontend.vercel.app |
-| API REST | https://ecoruta-backend.vercel.app/health |
+**EW Sprint 1:** 3 de 3 historias completadas:
 
-El detalle está en el [Informe de estado del proyecto](docs/03%20Implementaci%C3%B3n/01%20Informe%20de%20estado%20del%20proyecto%20V_1_0_0.md).
+* **US-001** – Gestión de flota vehicular – 5 SP
+* **US-002** – Gestión de pedidos de reparto – 5 SP
+* **US-003** – Generación de rutas optimizadas por vehículo – 13 SP
+
+**Total:** 23 SP.
+
+### Sprint 2
+
+**EW Sprint 2:** 4 de 4 historias completadas:
+
+* **US-004** – Visualización de rutas en mapa interactivo – 8 SP
+* **US-005** – Dashboard de indicadores de sostenibilidad – 8 SP
+* **US-006** – Reporte de sostenibilidad en PDF – 5 SP
+* **US-008** – Registro y asignación de conductores a rutas – 8 SP
+
+**Total:** 29 SP.
+
+### Avance acumulado
+
+| Sprint    | Historias completadas | Story Points |
+| --------- | --------------------: | -----------: |
+| Sprint 1  |                     3 |        23 SP |
+| Sprint 2  |                     4 |        29 SP |
+| **Total** |                 **7** |    **52 SP** |
+
+Las historias **US-007** y **US-009** permanecen pendientes para los siguientes Sprints.
+
+| Componente             | URL                                       |
+| ---------------------- | ----------------------------------------- |
+| Aplicación web (Vista) | https://ecoruta-frontend.vercel.app       |
+| API REST               | https://ecoruta-backend.vercel.app/health |
+
+El detalle de los avances se encuentra en la documentación correspondiente a cada Sprint:
+
+* [Documentación Sprint 1](docs/03%20Implementaci%C3%B3n/Sprint%201/)
+* [Documentación Sprint 2](docs/03%20Implementaci%C3%B3n/Sprint%202/)
 
 ---
 
 ## Información del proyecto
 
 **Proyecto:** EcoRuta Wanka
+
 **Organización:** WankaLogística S.A.C.
+
 **Ubicación:** Huancayo, Junín, Perú
+
 **Líder del proyecto:** Javier Curi Dayana
+
 **Integrantes:** Javier Curi Dayana, Arroyo Canchari Henry
+
 **Arquitectura:** Cliente-servidor + MVC con capa de servicios
+
 **Tipo:** Proyecto académico — PFA
 
 ---
