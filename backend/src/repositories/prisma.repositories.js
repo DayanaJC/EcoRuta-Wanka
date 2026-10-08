@@ -39,6 +39,18 @@ const aVehiculo = (v) =>
     updated_at: iso(v.updated_at),
   };
 
+const aConductor = (c) =>
+  c && {
+    id: c.id,
+    nombre: c.nombre,
+    dni: c.dni,
+    telefono: c.telefono,
+    licencia: c.licencia,
+    estado: c.estado,
+    created_at: iso(c.created_at),
+    updated_at: iso(c.updated_at),
+  };
+
 const aPedido = (p) =>
   p && {
     id: p.id,
@@ -88,6 +100,7 @@ const aRuta = (r, { conGeometria = true } = {}) => {
   return {
     id: r.id,
     vehiculo_id: r.vehiculo_id,
+    conductor_id: r.conductor_id ?? null,
     pedido_ids: paradas.map((p) => p.pedido_id),
     paradas: paradas.map((p) => ({
       orden: p.orden,
@@ -148,6 +161,15 @@ export function crearRepositorios(prisma) {
       (await prisma.vehiculo.findMany({ where: estado ? { estado } : {}, orderBy: { created_at: "desc" } })).map(aVehiculo),
     crear: async (datos) => aVehiculo(await prisma.vehiculo.create({ data: datos })),
     actualizar: async (id, campos) => aVehiculo(await prisma.vehiculo.update({ where: { id }, data: campos })),
+  };
+
+  const conductores = {
+    getById: async (id) => (esUuid(id) ? aConductor(await prisma.conductor.findUnique({ where: { id } })) : null),
+    getByDni: async (dni) => aConductor(await prisma.conductor.findUnique({ where: { dni } })),
+    listar: async ({ estado } = {}) =>
+      (await prisma.conductor.findMany({ where: estado ? { estado } : {}, orderBy: { nombre: "asc" } })).map(aConductor),
+    crear: async (datos) => aConductor(await prisma.conductor.create({ data: datos })),
+    actualizar: async (id, campos) => aConductor(await prisma.conductor.update({ where: { id }, data: campos })),
   };
 
   const pedidos = {
@@ -213,8 +235,16 @@ export function crearRepositorios(prisma) {
   const incluirParadas = { paradas: { orderBy: { orden: "asc" } } };
   const rutas = {
     getById: async (id) => (esUuid(id) ? aRuta(await prisma.ruta.findUnique({ where: { id }, include: incluirParadas })) : null),
-    listar: async () =>
-      (await prisma.ruta.findMany({ include: incluirParadas, orderBy: { created_at: "desc" } })).map((r) => aRuta(r, { conGeometria: false })),
+    // Filtros opcionales: periodo (fecha de la ruta), vehículo y conductor
+    listar: async ({ desde, hasta, vehiculo_id, conductor_id, conGeometria = false } = {}) => {
+      if ((vehiculo_id && !esUuid(vehiculo_id)) || (conductor_id && !esUuid(conductor_id))) return [];
+      const where = {
+        ...(desde || hasta ? { fecha: { ...(desde ? { gte: fechaADate(desde) } : {}), ...(hasta ? { lte: fechaADate(hasta) } : {}) } } : {}),
+        ...(vehiculo_id ? { vehiculo_id } : {}),
+        ...(conductor_id ? { conductor_id } : {}),
+      };
+      return (await prisma.ruta.findMany({ where, include: incluirParadas, orderBy: { created_at: "desc" } })).map((r) => aRuta(r, { conGeometria }));
+    },
     listarPorVehiculo: async (vehiculoId) =>
       esUuid(vehiculoId)
         ? (
@@ -269,5 +299,5 @@ export function crearRepositorios(prisma) {
 
   const salud = { ping: async () => prisma.$queryRaw`SELECT 1` };
 
-  return { vehiculos, pedidos, asignaciones, rutas, factoresTrafico, salud };
+  return { vehiculos, conductores, pedidos, asignaciones, rutas, factoresTrafico, salud };
 }

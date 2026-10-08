@@ -52,6 +52,16 @@ export class RutaNoOptimizableError extends NoProcesable {}
 export class RutaEstadoInvalidoError extends Conflicto {}
 export class PedidoEnOtraRutaError extends Conflicto {}
 
+// Conductores (RF-08)
+export class ConductorNotFoundError extends NoEncontrado {}
+export class ConductorExistenteError extends Conflicto {}
+export class ConductorNoDisponibleError extends Conflicto {}
+export class ConductorConRutasError extends Conflicto {}
+
+// Indicadores y reportes de sostenibilidad (RF-05, RF-06)
+export class PeriodoInvalidoError extends NoProcesable {}
+export class SinDatosError extends NoEncontrado {}
+
 // Entregas (resultado de cada parada)
 export class ParadaNotFoundError extends NoEncontrado {}
 export class ParadaYaRegistradaError extends Conflicto {}

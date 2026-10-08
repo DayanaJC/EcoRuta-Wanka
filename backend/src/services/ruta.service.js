@@ -17,6 +17,7 @@ import {
   VehiculoNotFoundError,
 } from "../errors/errores.js";
 import { horaASegundos, horaLocal, hoyEn, instanteLocal, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { verificarConductorDisponible } from "./conductor.service.js";
 import { bultosQueNoCaben, capacidadVolumenM3, describirBulto } from "./carga.js";
 import { programarHorario } from "./optimizacion/horario.js";
 import { ESTADOS_TERMINALES } from "./pedido.service.js";
@@ -30,7 +31,7 @@ const MOTIVOS_SIMULADOS = ["Cliente ausente", "Local cerrado", "Dirección no en
 const ETIQUETA_RUTA = { generada: "generada", en_reparto: "en reparto", completada: "completada", cancelada: "cancelada" };
 
 export function crearRutaService(
-  { rutas, vehiculos, pedidos, factoresTrafico },
+  { rutas, vehiculos, pedidos, factoresTrafico, conductores },
   { optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15, reloj = () => new Date(), aleatorio = Math.random },
 ) {
   const obtener = async (id) => {
@@ -201,13 +202,38 @@ export function crearRutaService(
       return rutas.aplicarCambios(id, cambios);
     },
 
-    listar: () => rutas.listar(),
+    listar: ({ geometria, ...filtros } = {}) => rutas.listar({ ...filtros, conGeometria: geometria === "true" }),
+
+    // RF-08: asigna (o quita, con null) el conductor de la ruta. Solo en rutas por hacer o en curso;
+    // una ruta en reparto puede cambiar de conductor, pero no quedarse sin él.
+    async asignarConductor(id, conductor_id) {
+      const ruta = await obtener(id);
+      if (!ESTADOS_RUTA_ACTIVA.includes(ruta.estado)) {
+        throw new RutaEstadoInvalidoError(`No se puede cambiar el conductor de una ruta ${ETIQUETA_RUTA[ruta.estado]}.`);
+      }
+      if (conductor_id === null) {
+        if (ruta.estado === "en_reparto") {
+          throw new RutaEstadoInvalidoError("La ruta está en reparto: puedes cambiar el conductor, pero no dejarla sin conductor.");
+        }
+        return rutas.actualizar(id, { conductor_id: null });
+      }
+      if (ruta.conductor_id === conductor_id) return ruta;
+      await verificarConductorDisponible({ conductores, rutas }, conductor_id, ruta);
+      return rutas.actualizar(id, { conductor_id });
+    },
     listarPorVehiculo: (vehiculoId) => rutas.listarPorVehiculo(vehiculoId),
 
-    async generar({ vehiculo_id, pedido_ids, fecha, hora_salida, ajustar_salida = true }) {
+    async generar({ vehiculo_id, pedido_ids, fecha, hora_salida, ajustar_salida = true, conductor_id = null }) {
       const vehiculo = await vehiculos.getById(vehiculo_id);
       if (!vehiculo) throw new VehiculoNotFoundError(`No existe un vehículo con id ${vehiculo_id}.`);
       if (vehiculo.estado !== "activo") throw new VehiculoNoDisponibleError(`El vehículo ${vehiculo.placa} no está activo.`);
+      const dia = fecha ?? hoyEn(zonaHoraria);
+      const salida = hora_salida ?? HORA_SALIDA_POR_DEFECTO;
+      // Conductor (opcional): se descarta antes de optimizar si no existe o está inactivo;
+      // el cruce de horarios se revisa con la salida y duración ya calculadas.
+      if (conductor_id) {
+        await verificarConductorDisponible({ conductores, rutas }, conductor_id, null);
+      }
 
       const ids = [...new Set(pedido_ids)];
       if (!ids.length) throw new RutaSinDatosError("No se proporcionaron pedidos para generar la ruta.");
@@ -261,8 +287,6 @@ export function crearRutaService(
         throw new BultoNoCabeError(`No caben en el vehículo ${vehiculo.placa}: ${noCaben.join(", ")}.`);
       }
 
-      const dia = fecha ?? hoyEn(zonaHoraria);
-      const salida = hora_salida ?? HORA_SALIDA_POR_DEFECTO;
       // Factores de tráfico: implementación futura. Mientras estén deshabilitados, la API
       // calcula los tiempos con las velocidades promedio de las vías (factor 1).
       const factor = traficoHabilitado
@@ -313,14 +337,21 @@ export function crearRutaService(
         }),
       });
 
+      const horaSalida = segundosAHora(horario.salida_s);
+      const tiempoEstimado = Math.round((horario.fin_s - horario.salida_s) / 60);
+      if (conductor_id) {
+        await verificarConductorDisponible({ conductores, rutas }, conductor_id, { fecha: dia, hora_salida: horaSalida, tiempo_estimado_min: tiempoEstimado });
+      }
+
       return rutas.crearConParadas({
         vehiculo_id,
+        conductor_id,
         fecha: dia,
         hora_disponible: salida,
-        hora_salida: segundosAHora(horario.salida_s),
+        hora_salida: horaSalida,
         distancia_estimada_km: Number((resultado.distancia_m / 1000).toFixed(2)),
         distancia_sin_optimizar_km: distanciaSinOptimizar == null ? null : Number((distanciaSinOptimizar / 1000).toFixed(2)),
-        tiempo_estimado_min: Math.round((horario.fin_s - horario.salida_s) / 60),
+        tiempo_estimado_min: tiempoEstimado,
         factor_trafico_aplicado: traficoHabilitado ? factor : null,
         geometria: resultado.geometria,
         estado: "generada",

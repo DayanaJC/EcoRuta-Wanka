@@ -15,6 +15,14 @@ export function crearRouterApi(c) {
   vehiculos.patch("/:id/estado", validar(e.cambiarEstadoVehiculo), c.vehiculos.cambiarEstado);
   vehiculos.delete("/:id", c.vehiculos.desactivar);
 
+  const conductores = Router();
+  conductores.post("/", validar(e.conductorCrear), c.conductores.crear);
+  conductores.get("/", validar(e.filtroConductores, "query"), c.conductores.listar);
+  conductores.get("/:id", c.conductores.obtener);
+  conductores.put("/:id", validar(e.conductorActualizar), c.conductores.actualizar);
+  conductores.patch("/:id/estado", validar(e.cambiarEstadoConductor), c.conductores.cambiarEstado);
+  conductores.delete("/:id", c.conductores.desactivar);
+
   const pedidos = Router();
   pedidos.post("/", validar(e.pedidoCrear), c.pedidos.crear);
   pedidos.get("/", validar(e.filtroPedidos, "query"), c.pedidos.listar);
@@ -33,13 +41,15 @@ export function crearRouterApi(c) {
 
   const rutas = Router();
   rutas.post("/", validar(e.rutaCrear), c.rutas.generar);
-  rutas.get("/", c.rutas.listar);
+  rutas.get("/", validar(e.filtroRutas, "query"), c.rutas.listar);
   rutas.get("/vehiculo/:id", c.rutas.listarPorVehiculo);
   rutas.get("/:id", c.rutas.obtener);
   rutas.patch("/:id/estado", validar(e.cambiarEstadoRuta), c.rutas.cambiarEstado);
   // Resultado de una parada (entregada / no entregada) y simulación del reparto completo
   rutas.patch("/:id/paradas/:orden", validar(e.registrarEntrega), c.rutas.registrarEntrega);
   rutas.post("/:id/simular", validar(e.simularReparto), c.rutas.simular);
+  // Conductor de la ruta (RF-08); { conductor_id: null } lo quita
+  rutas.patch("/:id/conductor", validar(e.asignarConductor), c.rutas.asignarConductor);
   rutas.delete("/:id", c.rutas.cancelar);
 
   const factores = Router();
@@ -49,7 +59,12 @@ export function crearRouterApi(c) {
   // Dirección de un punto marcado en el mapa
   api.get("/geocodificar/inversa", validar(e.puntoMapa, "query"), c.geocodificarInversa);
 
+  // Sostenibilidad (RF-05 y RF-06): mismos filtros para el dashboard y el PDF
+  api.get("/indicadores", validar(e.filtroIndicadores, "query"), c.indicadores);
+  api.get("/reportes/sostenibilidad.pdf", validar(e.filtroIndicadores, "query"), c.reporteSostenibilidad);
+
   api.use("/vehiculos", vehiculos);
+  api.use("/conductores", conductores);
   api.use("/pedidos", pedidos);
   api.use("/asignaciones", asignaciones);
   api.use("/rutas", rutas);

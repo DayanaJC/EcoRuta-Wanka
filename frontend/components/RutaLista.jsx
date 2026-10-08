@@ -7,7 +7,7 @@ import { ETIQUETAS_ESTADO_RUTA, formatearDuracion, formatearFechaCorta, formatea
 
 const SEGMENTOS = [['', 'Todas'], ...Object.entries(ETIQUETAS_ESTADO_RUTA)]
 
-export function RutaLista({ rutas, vehiculosPorId, cargando, onVer, onNueva }) {
+export function RutaLista({ rutas, vehiculosPorId, conductoresPorId = {}, cargando, onVer, onNueva }) {
   const [estado, setEstado] = useState('')
   const filtradas = rutas.filter((r) => !estado || r.estado === estado)
 
@@ -43,6 +43,7 @@ export function RutaLista({ rutas, vehiculosPorId, cargando, onVer, onNueva }) {
               <tr>
                 <th>Fecha</th>
                 <th>Vehículo</th>
+                <th>Conductor</th>
                 <th>Paradas</th>
                 <th>Distancia</th>
                 <th>Duración</th>
@@ -51,7 +52,7 @@ export function RutaLista({ rutas, vehiculosPorId, cargando, onVer, onNueva }) {
             </thead>
             <tbody>
               {cargando ? (
-                <FilasCargando columnas={6} filas={3} />
+                <FilasCargando columnas={7} filas={3} />
               ) : (
                 filtradas.map((r) => {
                   const v = vehiculosPorId[r.vehiculo_id]
@@ -71,6 +72,9 @@ export function RutaLista({ rutas, vehiculosPorId, cargando, onVer, onNueva }) {
                         ) : (
                           '—'
                         )}
+                      </td>
+                      <td data-etiqueta="Conductor">
+                        {conductoresPorId[r.conductor_id]?.nombre ?? <span className="texto-secundario">Sin asignar</span>}
                       </td>
                       <td data-etiqueta="Paradas" className="num">
                         {r.pedido_ids.length}

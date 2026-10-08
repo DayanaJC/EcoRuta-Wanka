@@ -52,6 +52,47 @@ export const vehiculoActualizar = z.object(camposVehiculo).partial();
 export const cambiarEstadoVehiculo = z.object({ estado: z.enum(ESTADOS_VEHICULO) });
 export const filtroVehiculos = z.object({ estado: z.enum(ESTADOS_VEHICULO).optional() });
 
+// ---------- Conductores ----------
+
+export const ESTADOS_CONDUCTOR = ["activo", "inactivo"];
+
+const camposConductor = {
+  nombre: texto(3, 120),
+  dni: z
+    .string({ error: "El DNI es obligatorio." })
+    .trim()
+    .regex(/^\d{8}$/, "DNI inválido: debe tener 8 dígitos."),
+  telefono: z
+    .string()
+    .trim()
+    .regex(/^\+?\d{6,14}$/, "Teléfono inválido: solo dígitos (6 a 14), opcionalmente con + al inicio.")
+    .nullable(),
+  licencia: z
+    .string()
+    .trim()
+    .transform((v) => v.toUpperCase())
+    .refine((v) => /^[A-Z0-9-]{5,15}$/.test(v), "Licencia inválida: use de 5 a 15 letras, dígitos o guiones (ejemplo: Q12345678).")
+    .nullable(),
+  estado: z.enum(ESTADOS_CONDUCTOR),
+};
+
+// Un texto vacío en los campos opcionales equivale a "sin dato"
+const vacioANull = (v) => (typeof v === "string" && v.trim() === "" ? null : v);
+const opcional = (esquema) => z.preprocess(vacioANull, esquema);
+
+export const conductorCrear = z.object({
+  nombre: camposConductor.nombre,
+  dni: camposConductor.dni,
+  telefono: opcional(camposConductor.telefono.default(null)),
+  licencia: opcional(camposConductor.licencia.default(null)),
+  estado: camposConductor.estado.default("activo"),
+});
+export const conductorActualizar = z
+  .object({ ...camposConductor, telefono: opcional(camposConductor.telefono), licencia: opcional(camposConductor.licencia) })
+  .partial();
+export const cambiarEstadoConductor = z.object({ estado: z.enum(ESTADOS_CONDUCTOR) });
+export const filtroConductores = z.object({ estado: z.enum(ESTADOS_CONDUCTOR).optional() });
+
 // ---------- Pedidos ----------
 
 const camposPedido = {
@@ -112,8 +153,31 @@ export const rutaCrear = z.object({
   hora_salida: hora.optional(),
   // false = salir exactamente a hora_salida (p. ej. por el turno del conductor)
   ajustar_salida: z.boolean().default(true),
+  // Conductor opcional: también puede asignarse después (RF-08)
+  conductor_id: id.nullable().optional(),
 });
 export const cambiarEstadoRuta = z.object({ estado: z.enum(ESTADOS_RUTA) });
+// null = quitar el conductor de la ruta
+export const asignarConductor = z.object({ conductor_id: id.nullable() });
+
+const fecha = z.string().regex(PATRON_FECHA, "Fecha inválida: use el formato YYYY-MM-DD.");
+export const filtroRutas = z.object({
+  desde: fecha.optional(),
+  hasta: fecha.optional(),
+  vehiculo_id: id.optional(),
+  conductor_id: id.optional(),
+  // "true" = incluir el trazado de cada ruta (mapa general del día)
+  geometria: z.enum(["true", "false"]).optional(),
+});
+
+// ---------- Indicadores y reportes (RF-05, RF-06) ----------
+
+// Sin fechas: los últimos 7 días (ver indicadoresService)
+export const filtroIndicadores = z.object({
+  desde: fecha.optional(),
+  hasta: fecha.optional(),
+  vehiculo_id: id.optional(),
+});
 
 // ---------- Entregas ----------
 

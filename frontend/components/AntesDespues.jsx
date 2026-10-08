@@ -21,6 +21,8 @@ export function AntesDespues({ ruta, vehiculo }) {
   const ahorro = { km: antes.km - despues.km, litros: antes.litros - despues.litros, co2: antes.co2 - despues.co2 }
   const porcentaje = antes.km > 0 ? Math.round((ahorro.km / antes.km) * 100) : 0
   const hayAhorro = ahorro.km > 0.01
+  // La optimización puede alargar el recorrido para llegar dentro de las ventanas horarias
+  const masLarga = ahorro.km < -0.01
 
   const filas = [
     ['Distancia', 'km', 'km', 2],
@@ -57,7 +59,7 @@ export function AntesDespues({ ruta, vehiculo }) {
                   {fmt(despues[clave], decimales)} {unidad}
                 </td>
                 <td data-etiqueta="Ahorro" className={`num ${hayAhorro ? 'texto-ahorro' : 'texto-secundario'}`}>
-                  {hayAhorro ? `${fmt(ahorro[clave], decimales)} ${unidad}` : '—'}
+                  {hayAhorro ? `${fmt(ahorro[clave], decimales)} ${unidad}` : masLarga ? `+${fmt(-ahorro[clave], decimales)} ${unidad}` : '—'}
                 </td>
               </tr>
             ))}
@@ -67,7 +69,9 @@ export function AntesDespues({ ruta, vehiculo }) {
       <p className="ayuda" style={{ padding: '12px 20px' }}>
         {hayAhorro
           ? 'Antes = recorrer los pedidos en el orden en que se eligieron; después = orden calculado por la optimización.'
-          : 'El orden elegido ya coincidía con el recorrido óptimo.'}{' '}
+          : masLarga
+            ? 'La ruta optimizada recorre algo más porque ordena las entregas para llegar dentro de la ventana horaria de cada cliente.'
+            : 'El orden elegido ya coincidía con el recorrido óptimo.'}{' '}
         Estimación: litros = km × {formatearNumero(vehiculo.consumo_combustible_l100km)} L/100 km; CO₂ = litros ×{' '}
         {formatearNumero(vehiculo.factor_emision_co2_kg_l)} kg/L. No incluye pendientes, carga ni tráfico.
       </p>

@@ -26,6 +26,13 @@ enum EstadoVehiculo {
   @@map("estado_vehiculo")
 }
 
+enum EstadoConductor {
+  activo
+  inactivo
+
+  @@map("estado_conductor")
+}
+
 enum PrioridadPedido {
   express
   estandar
@@ -106,6 +113,24 @@ model Vehiculo {
   @@map("vehiculos")
 }
 
+// Conductores de la flota (RF-08). Solo un conductor activo y libre en el horario puede recibir una ruta (RN-009).
+model Conductor {
+  id         String          @id @default(uuid()) @db.Uuid
+  nombre     String          @db.VarChar(120)
+  dni        String          @unique @db.VarChar(8)
+  telefono   String?         @db.VarChar(15)
+  // Número de licencia de conducir (brevete)
+  licencia   String?         @db.VarChar(15)
+  estado     EstadoConductor @default(activo)
+  created_at DateTime        @default(now()) @db.Timestamptz(3)
+  updated_at DateTime        @updatedAt @db.Timestamptz(3)
+
+  rutas Ruta[]
+
+  @@index([estado])
+  @@map("conductores")
+}
+
 model Pedido {
   id                     String          @id @default(uuid()) @db.Uuid
   cliente_id             String          @db.VarChar(50)
@@ -177,6 +202,8 @@ model Asignacion {
 model Ruta {
   id                      String     @id @default(uuid()) @db.Uuid
   vehiculo_id             String     @db.Uuid
+  // Conductor asignado (RF-08); la ruta puede generarse sin conductor y asignarse después
+  conductor_id            String?    @db.Uuid
   fecha                   DateTime   @db.Date
   hora_salida             DateTime   @db.Time(0)
   // Hora desde la que el vehículo está disponible (la salida real puede ser posterior)
@@ -196,10 +223,13 @@ model Ruta {
   created_at              DateTime   @default(now()) @db.Timestamptz(3)
   updated_at              DateTime   @updatedAt @db.Timestamptz(3)
 
-  vehiculo Vehiculo     @relation(fields: [vehiculo_id], references: [id])
-  paradas  RutaParada[]
+  vehiculo  Vehiculo     @relation(fields: [vehiculo_id], references: [id])
+  conductor Conductor?   @relation(fields: [conductor_id], references: [id])
+  paradas   RutaParada[]
 
   @@index([vehiculo_id])
+  @@index([conductor_id])
+  @@index([fecha])
   @@map("rutas")
 }
 

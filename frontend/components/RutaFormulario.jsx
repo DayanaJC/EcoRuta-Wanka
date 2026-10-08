@@ -10,11 +10,12 @@ import { ETIQUETAS_TIPO_VEHICULO, formatearKg, formatearVentana, hoyEnLima, norm
  * @param pedidosDisponibles pedidos que pueden incluirse (no terminales ni en otra ruta activa)
  * @param asignacionPorPedido pedido_id -> vehiculo_id de la asignación activa
  */
-export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPedido, onGenerar, onCancelar, generando }) {
+export function RutaFormulario({ vehiculos, conductores = [], pedidosDisponibles, asignacionPorPedido, onGenerar, onCancelar, generando }) {
   const [vehiculoId, setVehiculoId] = useState('')
   const [fecha, setFecha] = useState(hoyEnLima)
   const [horaSalida, setHoraSalida] = useState('08:00')
   const [salidaFija, setSalidaFija] = useState(false)
+  const [conductorId, setConductorId] = useState('')
   const [seleccion, setSeleccion] = useState(() => new Set())
   const [busqueda, setBusqueda] = useState('')
 
@@ -62,7 +63,7 @@ export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPed
   const enviar = (e) => {
     e.preventDefault()
     if (motivoBloqueo) return
-    onGenerar({ vehiculo_id: vehiculoId, pedido_ids: seleccionados.map((p) => p.id), fecha, hora_salida: horaSalida, ajustar_salida: !salidaFija })
+    onGenerar({ vehiculo_id: vehiculoId, pedido_ids: seleccionados.map((p) => p.id), fecha, hora_salida: horaSalida, ajustar_salida: !salidaFija, conductor_id: conductorId || null })
   }
 
   return (
@@ -108,6 +109,20 @@ export function RutaFormulario({ vehiculos, pedidosDisponibles, asignacionPorPed
               </span>
               <span className="ayuda">Úsalo si el turno del conductor fija la salida.</span>
             </label>
+            <CampoGrupo
+              etiqueta="Conductor"
+              htmlFor="conductor"
+              ayuda={conductores.length ? 'Opcional: también puedes asignarlo después desde la ruta.' : 'No hay conductores activos; podrás asignarlo después.'}
+            >
+              <select id="conductor" className="campo" value={conductorId} onChange={(e) => setConductorId(e.target.value)}>
+                <option value="">Sin asignar por ahora</option>
+                {conductores.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            </CampoGrupo>
           </div>
         </fieldset>
 

@@ -27,6 +27,7 @@ function tabla() {
 
 export function crearRepositoriosMemoria() {
   const v = tabla();
+  const c = tabla();
   const p = tabla();
   const a = tabla();
   const r = tabla();
@@ -39,6 +40,12 @@ export function crearRepositoriosMemoria() {
       crear: async (datos) => v.crear({ aprovechamiento_pct: 80, ...datos, capacidad_volumen_m3: capacidadVolumenM3({ aprovechamiento_pct: 80, ...datos }) }),
       getByPlaca: async (placa) => v.todas().find((x) => x.placa === placa) ?? null,
       listar: async ({ estado } = {}) => v.todas().filter((x) => !estado || x.estado === estado),
+    },
+    conductores: {
+      ...c,
+      crear: (datos) => c.crear({ telefono: null, licencia: null, estado: "activo", ...datos }),
+      getByDni: async (dni) => c.todas().find((x) => x.dni === dni) ?? null,
+      listar: async ({ estado } = {}) => c.todas().filter((x) => !estado || x.estado === estado),
     },
     pedidos: {
       ...p,
@@ -62,10 +69,14 @@ export function crearRepositoriosMemoria() {
     },
     rutas: {
       ...r,
-      listar: async () => r.todas(),
+      listar: async ({ desde, hasta, vehiculo_id, conductor_id } = {}) =>
+        r
+          .todas()
+          .filter((x) => (!desde || x.fecha >= desde) && (!hasta || x.fecha <= hasta))
+          .filter((x) => (!vehiculo_id || x.vehiculo_id === vehiculo_id) && (!conductor_id || x.conductor_id === conductor_id)),
       listarPorVehiculo: async (id) => r.todas().filter((x) => x.vehiculo_id === id),
       crearConParadas: async (datos) =>
-        r.crear({ ...datos, paradas: datos.paradas.map((x) => ({ estado: "pendiente", ...x })), pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
+        r.crear({ conductor_id: null, ...datos, paradas: datos.paradas.map((x) => ({ estado: "pendiente", ...x })), pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
       aplicarCambios: async (id, { ruta = {}, paradas = [], pedidos: cambiosPedidos = [] }) => {
         for (const { id: pedidoId, ...campos } of cambiosPedidos) await p.actualizar(pedidoId, campos);
         const actual = await r.getById(id);

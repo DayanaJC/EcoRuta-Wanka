@@ -3,6 +3,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { BadgeEstadoParada, BadgeEstadoRuta } from './Badges.jsx'
 import { AntesDespues } from './AntesDespues.jsx'
+import { ConductorRuta } from './ConductorRuta.jsx'
 import { Aviso } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import { capacidadVolumenM3 } from '../utils/carga.js'
@@ -142,7 +143,19 @@ function Kpi({ icono: Icono, etiqueta, valor, extra }) {
   )
 }
 
-export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onCancelar, onRegistrarEntrega, onSimular, gestionando }) {
+export function RutaDetalle({
+  ruta,
+  vehiculo,
+  pedidosPorId,
+  conductores,
+  rutas,
+  onCambiarEstado,
+  onCancelar,
+  onRegistrarEntrega,
+  onSimular,
+  onAsignarConductor,
+  gestionando,
+}) {
   const [imprevistos, setImprevistos] = useState(false)
   const paradas = (ruta.paradas ?? []).map((p) => ({ ...pedidosPorId[p.pedido_id], ...p }))
   const conUbicacion = paradas.filter((p) => p.latitud !== undefined)
@@ -215,6 +228,8 @@ export function RutaDetalle({ ruta, vehiculo, pedidosPorId, onCambiarEstado, onC
           </div>
         </div>
       </div>
+
+      <ConductorRuta ruta={ruta} conductores={conductores} rutas={rutas} onAsignar={onAsignarConductor} gestionando={gestionando} />
 
       <section className="indicadores" style={{ marginBottom: 0 }} aria-label="Resumen de la ruta">
         <Kpi icono={MapPin} etiqueta="Paradas" valor={paradas.length} extra={`Carga ${formatearKg(carga)}`} />
