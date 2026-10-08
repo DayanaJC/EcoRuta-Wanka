@@ -12,6 +12,11 @@ export const ETIQUETAS_ESTADO_VEHICULO = {
   inactivo: 'Inactivo',
 }
 
+export const ETIQUETAS_ESTADO_CONDUCTOR = {
+  activo: 'Activo',
+  inactivo: 'Inactivo',
+}
+
 export const ETIQUETAS_ESTADO_ASIGNACION = {
   asignada: 'Asignada',
   cancelada: 'Cancelada',
@@ -59,11 +64,17 @@ export const ETIQUETAS_TIPO = {
 export const TONOS = {
   pedido: { pendiente: 'azul', en_ruta: 'ambar', entregado: 'verde', cancelado: 'gris' },
   vehiculo: { activo: 'verde', inactivo: 'gris' },
+  conductor: { activo: 'verde', inactivo: 'gris' },
   asignacion: { asignada: 'verde', cancelada: 'gris' },
   ruta: { generada: 'azul', en_reparto: 'ambar', completada: 'verde', cancelada: 'gris' },
   parada: { pendiente: 'gris', entregada: 'verde', no_entregada: 'rojo' },
   prioridad: { express: 'rojo', estandar: 'violeta', economico: 'gris' },
 }
+
+// Color de cada ruta en el mapa del día: orden fijo de una paleta categórica validada
+// para daltonismo; desde la 9.ª ruta, gris (no se generan colores nuevos)
+export const COLORES_RUTA = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
+export const colorRuta = (i) => COLORES_RUTA[i] ?? '#64748b'
 
 export const ESTADOS_TERMINALES_PEDIDO = ['entregado', 'cancelado']
 
@@ -132,6 +143,13 @@ export function puntualidad(rutas) {
 // Fecha de hoy en Huancayo (America/Lima) como "YYYY-MM-DD"
 export function hoyEnLima() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date())
+}
+
+// "2026-10-08" + n días -> "YYYY-MM-DD"
+export function sumarDias(yyyymmdd, dias) {
+  const d = new Date(`${yyyymmdd}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + dias)
+  return d.toISOString().slice(0, 10)
 }
 
 // Búsqueda sin tildes ni mayúsculas

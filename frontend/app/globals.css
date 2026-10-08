@@ -1260,6 +1260,246 @@ textarea {
   display: none;
 }
 
+/* ---------------- Sprint 2: conductores, mapa del día y sostenibilidad ---------------- */
+
+/* Botón con aspecto de enlace */
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--marca-700);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.enlace:hover {
+  text-decoration: underline;
+}
+
+.segmento svg {
+  vertical-align: -2px;
+}
+
+/* Conductor de la ruta */
+.conductor-ruta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+
+.conductor-ruta-cuerpo {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+/* Leyenda sobre los mapas */
+.leyenda-mapa {
+  position: absolute;
+  left: 10px;
+  bottom: 22px;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  max-width: calc(100% - 20px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: var(--sombra);
+  font-size: 0.75rem;
+  color: var(--gris-700);
+}
+
+.leyenda-mapa span,
+.leyenda-grafico span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.leyenda-mapa i,
+.leyenda-grafico i,
+.grafico-tooltip i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Lista de rutas del mapa del día */
+.leyenda-rutas {
+  list-style: none;
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.leyenda-ruta {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.leyenda-ruta:hover {
+  background: var(--gris-50);
+}
+
+.leyenda-ruta > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.leyenda-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+/* Indicadores del dashboard en 3 columnas (2 en tabletas, 1 en móvil) */
+.indicadores-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1080px) {
+  .indicadores-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .indicadores-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Filtros del dashboard */
+.filtros-sostenibilidad {
+  margin-bottom: 16px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+}
+
+.filtros-sostenibilidad .campo {
+  width: auto;
+}
+
+/* Metas del proyecto */
+.metas {
+  display: grid;
+  gap: 14px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.badge-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Gráfico de CO₂ */
+.leyenda-grafico {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  padding: 12px 20px 0;
+  font-size: 0.8rem;
+  color: var(--gris-700);
+}
+
+.leyenda-grafico i {
+  border-radius: 3px;
+}
+
+.grafico {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 8px 12px 12px;
+}
+
+/* El gráfico mide su contenedor: sin esto, su ancho inicial ensancharía la columna */
+.pila > * {
+  min-width: 0;
+}
+
+.grafico svg {
+  display: block;
+}
+
+.grafico-guia {
+  stroke: var(--gris-200);
+  stroke-width: 1;
+}
+
+.grafico-eje {
+  stroke: var(--gris-300);
+  stroke-width: 1;
+}
+
+.grafico-texto {
+  fill: var(--gris-500);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.grafico-tooltip {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+  display: grid;
+  gap: 3px;
+  min-width: 180px;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-lg);
+  font-size: 0.78rem;
+  color: var(--gris-700);
+  pointer-events: none;
+}
+
+.grafico-tooltip i {
+  border-radius: 3px;
+}
+
+@media (max-width: 640px) {
+  .filtros-sostenibilidad .segmentos {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .filtros-sostenibilidad .campo,
+  .filtros-sostenibilidad select {
+    width: 100%;
+  }
+}
+
 @media print {
   .lateral,
   .barra-movil,
@@ -1333,7 +1573,7 @@ textarea {
     inset: auto 0 0 0;
     z-index: 50;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: var(--superficie);
     border-top: 1px solid var(--borde);
@@ -1345,7 +1585,7 @@ textarea {
     gap: 2px;
     padding: 6px 2px;
     color: var(--gris-500);
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     text-align: center;
   }
 

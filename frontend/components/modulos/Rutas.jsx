@@ -1,4 +1,4 @@
-import { Plus, Timer } from 'lucide-react'
+import { List, Map as IconoMapa, Plus, Timer } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../../services/api.js'
 import { ESTADOS_TERMINALES_PEDIDO, ETIQUETAS_ESTADO_RUTA, formatearFechaCorta, puntualidad } from '../../utils/formatos.js'
@@ -7,6 +7,7 @@ import { RutaDetalle } from '../RutaDetalle.jsx'
 import { RutaFormulario } from '../RutaFormulario.jsx'
 import { RutaLista } from '../RutaLista.jsx'
 import { EncabezadoPagina, EstadoVacio } from '../ui.jsx'
+import { VistaMapaDia } from '../VistaMapaDia.jsx'
 
 const ir = (accion, id) => navegar({ vista: 'rutas', accion, id })
 
@@ -105,6 +106,12 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
       return `Reparto simulado: ${p.aTiempo} de ${p.total} entregas a tiempo${p.noEntregadas ? `, ${p.noEntregadas} no entregada(s)` : ''}.`
     })
 
+  const asignarConductor = (conductorId) =>
+    ejecutar(
+      () => api.asignarConductor(ruta.id, conductorId),
+      conductorId ? `Conductor ${datos.conductores.find((c) => c.id === conductorId)?.nombre ?? ''} asignado a la ruta.` : 'Se quitó el conductor de la ruta.',
+    )
+
   const cancelar = async () => {
     const ok = await confirmar({
       titulo: 'Cancelar ruta',
@@ -134,6 +141,7 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
         />
         <RutaFormulario
           vehiculos={datos.vehiculos.filter((v) => v.estado === 'activo')}
+          conductores={datos.conductores.filter((c) => c.estado === 'activo')}
           pedidosDisponibles={datos.pedidos.filter((p) => !ESTADOS_TERMINALES_PEDIDO.includes(p.estado) && !enRutaActiva.has(p.id))}
           asignacionPorPedido={asignacionPorPedido}
           onGenerar={generar}
@@ -174,7 +182,10 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
           ruta={ruta}
           vehiculo={vehiculo}
           pedidosPorId={pedidosPorId}
+          conductores={datos.conductores}
+          rutas={datos.rutas}
           onCambiarEstado={cambiarEstado}
+          onAsignarConductor={asignarConductor}
           onCancelar={cancelar}
           onRegistrarEntrega={registrarEntrega}
           onSimular={simular}
@@ -184,15 +195,41 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
     )
   }
 
+  const conductoresPorId = Object.fromEntries(datos.conductores.map((c) => [c.id, c]))
+  const enMapa = accion === 'mapa'
   return (
     <>
       <EncabezadoPagina titulo="Rutas" descripcion="Rutas de reparto optimizadas por vehículo.">
+        <div className="segmentos" role="group" aria-label="Forma de ver las rutas">
+          <button type="button" className="segmento" aria-pressed={!enMapa} onClick={() => navegar({ vista: 'rutas' }, { reemplazar: true })}>
+            <List size={15} aria-hidden /> Lista
+          </button>
+          <button type="button" className="segmento" aria-pressed={enMapa} onClick={() => navegar({ vista: 'rutas', accion: 'mapa' }, { reemplazar: true })}>
+            <IconoMapa size={15} aria-hidden /> Mapa del día
+          </button>
+        </div>
         <button type="button" className="boton boton-primario" onClick={() => ir('nueva')}>
           <Plus size={17} aria-hidden /> Generar ruta
         </button>
       </EncabezadoPagina>
-      <Puntualidad rutas={datos.rutas} />
-      <RutaLista rutas={datos.rutas} vehiculosPorId={vehiculosPorId} cargando={cargando} onVer={(r) => ir('ver', r.id)} onNueva={() => ir('nueva')} />
+      {enMapa && cargando ? (
+        <div className="mapa-ruta mapa-cargando">Cargando rutas…</div>
+      ) : enMapa ? (
+        // El día inicial depende de las rutas cargadas
+        <VistaMapaDia
+          rutas={datos.rutas}
+          pedidosPorId={pedidosPorId}
+          vehiculosPorId={vehiculosPorId}
+          conductoresPorId={conductoresPorId}
+          onVer={(r) => ir('ver', r.id)}
+          notificar={notificar}
+        />
+      ) : (
+        <>
+          <Puntualidad rutas={datos.rutas} />
+          <RutaLista rutas={datos.rutas} vehiculosPorId={vehiculosPorId} conductoresPorId={conductoresPorId} cargando={cargando} onVer={(r) => ir('ver', r.id)} onNueva={() => ir('nueva')} />
+        </>
+      )}
     </>
   )
 }

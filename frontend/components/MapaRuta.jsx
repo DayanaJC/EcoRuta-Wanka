@@ -7,9 +7,12 @@ import L from 'leaflet'
 import { useEffect } from 'react'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 
-const HUANCAYO = [-12.0681, -75.2104]
+export const HUANCAYO = [-12.0681, -75.2104]
+// Color de cada parada según el resultado de la entrega
+export const COLOR_PARADA = { pendiente: '#2563eb', entregada: '#16a34a', no_entregada: '#dc2626' }
+const ESTADO_PARADA = { pendiente: 'Pendiente', entregada: 'Entregada', no_entregada: 'No entregada' }
 
-const icono = (texto, color) =>
+export const icono = (texto, color) =>
   L.divIcon({
     className: '',
     html: `<div class="marcador-mapa" style="background:${color}">${texto}</div>`,
@@ -17,7 +20,7 @@ const icono = (texto, color) =>
     iconAnchor: [14, 14],
   })
 
-function Encuadrar({ puntos }) {
+export function Encuadrar({ puntos }) {
   const map = useMap()
   useEffect(() => {
     if (puntos.length > 1) map.fitBounds(L.latLngBounds(puntos), { padding: [30, 30] })
@@ -39,19 +42,40 @@ export default function MapaRuta({ geometria, paradas }) {
       <Encuadrar puntos={puntos} />
       {trazado.length > 1 && <Polyline positions={trazado} pathOptions={{ color: '#2563eb', weight: 5, opacity: 0.8 }} />}
       {almacen && (
-        <Marker position={almacen} icon={icono('A', '#16a34a')}>
+        <Marker position={almacen} icon={icono('A', '#0f3d25')}>
           <Popup>Almacén (salida y regreso)</Popup>
         </Marker>
       )}
       {paradas.map((p) => (
-        <Marker key={p.orden} position={[p.latitud, p.longitud]} icon={icono(p.orden, '#2563eb')}>
+        <Marker key={p.orden} position={[p.latitud, p.longitud]} icon={icono(p.orden, COLOR_PARADA[p.estado ?? 'pendiente'])}>
           <Popup>
-            {p.orden}. {p.cliente_nombre}
+            <strong>
+              {p.orden}. {p.cliente_nombre}
+            </strong>
             <br />
-            Entrega estimada: {p.hora_estimada_llegada ?? '—'}
+            {p.direccion}
+            <br />
+            Entrega estimada: {p.hora_estimada_llegada ?? '—'} · ventana {p.ventana_entrega_inicio}–{p.ventana_entrega_fin}
+            <br />
+            Estado: {ESTADO_PARADA[p.estado ?? 'pendiente']}
+            {p.motivo_no_entrega ? ` (${p.motivo_no_entrega})` : ''}
           </Popup>
         </Marker>
       ))}
+      <div className="leyenda-mapa">
+        <span>
+          <i style={{ background: '#0f3d25' }} /> Almacén
+        </span>
+        <span>
+          <i style={{ background: COLOR_PARADA.entregada }} /> Entregada
+        </span>
+        <span>
+          <i style={{ background: COLOR_PARADA.pendiente }} /> Pendiente
+        </span>
+        <span>
+          <i style={{ background: COLOR_PARADA.no_entregada }} /> No entregada
+        </span>
+      </div>
     </MapContainer>
   )
 }

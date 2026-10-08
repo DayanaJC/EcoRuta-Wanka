@@ -265,6 +265,11 @@ npm run dev
 | GET    | `/api/v1/geocodificar?q=`                | Sugerencias de direcciones                       |
 | GET    | `/api/v1/geocodificar/inversa?lat=&lon=` | Dirección de un punto                            |
 | GET    | `/api/v1/factores-trafico`               | Factores de tráfico                              |
+| CRUD   | `/api/v1/conductores`                    | Gestión de conductores (RF-08)                   |
+| PATCH  | `/api/v1/rutas/:id/conductor`            | Asigna, cambia o quita el conductor (RN-009)     |
+| GET    | `/api/v1/rutas?desde=&hasta=&geometria=` | Rutas de un periodo; con trazado para el mapa del día (RF-04) |
+| GET    | `/api/v1/indicadores?desde=&hasta=&vehiculo_id=` | Indicadores de sostenibilidad del periodo (RF-05) |
+| GET    | `/api/v1/reportes/sostenibilidad.pdf?desde=&hasta=&vehiculo_id=` | Reporte de sostenibilidad en PDF (RF-06) |
 
 ---
 

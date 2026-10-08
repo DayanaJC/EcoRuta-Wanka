@@ -3,10 +3,12 @@
 // Estructura general: barra lateral, datos compartidos, avisos y confirmaciones.
 // Cada módulo se encarga de su propia lista, formulario y detalle.
 
-import { Leaf, Package, Route, Truck } from 'lucide-react'
+import { ChartColumn, IdCard, Leaf, Package, Route, Truck } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../services/api.js'
+import { Conductores } from './modulos/Conductores.jsx'
 import { Pedidos } from './modulos/Pedidos.jsx'
+import { Sostenibilidad } from './modulos/Sostenibilidad.jsx'
 import { Rutas } from './modulos/Rutas.jsx'
 import { Vehiculos } from './modulos/Vehiculos.jsx'
 import { navegar, useUbicacion } from './navegacion.js'
@@ -18,18 +20,21 @@ import { DialogoConfirmacion, Toasts } from './ui.jsx'
 const MODULOS = [
   { id: 'pedidos', etiqueta: 'Pedidos', icono: Package, componente: Pedidos },
   { id: 'vehiculos', etiqueta: 'Vehículos', icono: Truck, componente: Vehiculos },
+  { id: 'conductores', etiqueta: 'Conductores', icono: IdCard, componente: Conductores },
   { id: 'rutas', etiqueta: 'Rutas', icono: Route, componente: Rutas },
+  { id: 'sostenibilidad', etiqueta: 'Sostenibilidad', etiquetaCorta: 'Indicadores', icono: ChartColumn, componente: Sostenibilidad },
 ]
 
 const CARGADORES = {
   pedidos: () => api.listarPedidos(),
   vehiculos: () => api.listarVehiculos(),
+  conductores: () => api.listarConductores(),
   asignaciones: () => api.listarAsignaciones(),
   rutas: () => api.listarRutas(),
 }
 
 function useDatos(notificar) {
-  const [datos, setDatos] = useState({ pedidos: [], vehiculos: [], asignaciones: [], rutas: [] })
+  const [datos, setDatos] = useState({ pedidos: [], vehiculos: [], conductores: [], asignaciones: [], rutas: [] })
   const [cargando, setCargando] = useState(true)
 
   const recargar = useCallback(
@@ -89,7 +94,8 @@ export default function App() {
     rutas: datos.rutas.filter((r) => r.estado === 'generada' || r.estado === 'en_reparto').length,
   }
 
-  const itemsNav = MODULOS.map((m) => {
+  // En la barra inferior del móvil se usa la etiqueta corta (si la hay)
+  const itemsNav = (corta) => MODULOS.map((m) => {
     const Icono = m.icono
     return (
       <button
@@ -100,7 +106,7 @@ export default function App() {
         onClick={() => navegar({ vista: m.id })}
       >
         <Icono size={19} aria-hidden />
-        <span>{m.etiqueta}</span>
+        <span>{(corta && m.etiquetaCorta) || m.etiqueta}</span>
         {contadores[m.id] > 0 && (
           <span className="nav-contador" aria-label={`${contadores[m.id]} pendientes`}>
             {contadores[m.id]}
@@ -123,7 +129,7 @@ export default function App() {
           </div>
         </div>
         <nav className="nav" aria-label="Módulos">
-          {itemsNav}
+          {itemsNav(false)}
         </nav>
         <div className="lateral-pie">WankaLogística S.A.C. · Huancayo, Junín</div>
       </aside>
@@ -148,7 +154,7 @@ export default function App() {
       </main>
 
       <nav className="nav-inferior" aria-label="Módulos">
-        {itemsNav}
+        {itemsNav(true)}
       </nav>
 
       <Toasts avisos={avisos} onCerrar={cerrarAviso} />

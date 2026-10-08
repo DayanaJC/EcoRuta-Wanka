@@ -2,6 +2,17 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'
 const TIMEOUT_MS = 15000
 
+// Mensaje de error de la API ({ detail }) o uno genérico con el código HTTP
+async function detalleError(respuesta) {
+  try {
+    const cuerpo = await respuesta.json()
+    if (cuerpo.detail) return typeof cuerpo.detail === 'string' ? cuerpo.detail : JSON.stringify(cuerpo.detail)
+  } catch {
+    // sin cuerpo JSON: se queda el mensaje generico
+  }
+  return `Error del servidor (${respuesta.status}).`
+}
+
 async function pedir(ruta, opciones = {}) {
   const controlador = new AbortController()
   const id = setTimeout(() => controlador.abort(), TIMEOUT_MS)
@@ -13,21 +24,7 @@ async function pedir(ruta, opciones = {}) {
       signal: controlador.signal,
     })
 
-    if (!respuesta.ok) {
-      let detalle = `Error del servidor (${respuesta.status}).`
-      try {
-        const cuerpo = await respuesta.json()
-        if (cuerpo.detail) {
-          detalle =
-            typeof cuerpo.detail === 'string'
-              ? cuerpo.detail
-              : JSON.stringify(cuerpo.detail)
-        }
-      } catch {
-        // sin cuerpo JSON: se queda el mensaje generico
-      }
-      throw new Error(detalle)
-    }
+    if (!respuesta.ok) throw new Error(await detalleError(respuesta))
 
     if (respuesta.status === 204) return null
     return respuesta.json()
@@ -86,7 +83,32 @@ export const api = {
   geocodificar: (texto) => pedir(`/geocodificar${aQueryParams({ q: texto })}`),
   // Dirección de un punto marcado en el mapa (null si no hay ninguna cerca)
   geocodificarInversa: (lat, lon) => pedir(`/geocodificar/inversa${aQueryParams({ lat, lon })}`),
-  listarRutas: () => pedir('/rutas'),
+  listarConductores: (params = {}) => pedir(`/conductores${aQueryParams(params)}`),
+  crearConductor: (datos) =>
+    pedir('/conductores', { method: 'POST', body: JSON.stringify(datos) }),
+  actualizarConductor: (id, datos) =>
+    pedir(`/conductores/${id}`, { method: 'PUT', body: JSON.stringify(datos) }),
+  cambiarEstadoConductor: (id, estado) =>
+    pedir(`/conductores/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    }),
+  // params: { desde, hasta, vehiculo_id, conductor_id, geometria: 'true' }
+  listarRutas: (params = {}) => pedir(`/rutas${aQueryParams(params)}`),
+  // conductor_id null = quitar el conductor
+  asignarConductor: (rutaId, conductorId) =>
+    pedir(`/rutas/${rutaId}/conductor`, {
+      method: 'PATCH',
+      body: JSON.stringify({ conductor_id: conductorId }),
+    }),
+  // Sostenibilidad: { desde, hasta, vehiculo_id }
+  indicadores: (params = {}) => pedir(`/indicadores${aQueryParams(params)}`),
+  // Devuelve el PDF como Blob (o un Error con el detalle si no hay datos)
+  async reporteSostenibilidad(params = {}) {
+    const respuesta = await fetch(`${BASE}/reportes/sostenibilidad.pdf${aQueryParams(params)}`)
+    if (!respuesta.ok) throw new Error(await detalleError(respuesta))
+    return respuesta.blob()
+  },
   obtenerRuta: (id) => pedir(`/rutas/${id}`),
   generarRuta: (datos) =>
     pedir('/rutas', { method: 'POST', body: JSON.stringify(datos) }),
