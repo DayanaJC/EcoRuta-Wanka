@@ -4,7 +4,7 @@
 
 # 03. Registro de riesgos
 
-**Versión:** V_1_2_0 | **Fecha:** 11/09/2026  |  **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 11/09/2026  |  **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -116,14 +116,5 @@ Los nuevos impedimentos del Sprint 1 se registran en *03 Implementación/02 Regi
 
 ---
 
----
-
-## Historial de versiones
-
-| Versión | Fecha | Descripción |
-| --- | --- | --- |
-| V_1_0_0 | 11/09/2026 | Registro inicial de riesgos RSK-01 a RSK-14. |
-| V_1_1_0 | 27/09/2026 | CC-01: nuevos RSK-15 y RSK-16; actualización de RSK-01 y RSK-10. |
-| V_1_2_0 | 02/10/2026 | CC-02: revisión de riesgos al cierre del Sprint 1 (RSK-16 materializado y cerrado; RSK-15 vigente). |
 
 [⬅ Volver al README](../../README.md)

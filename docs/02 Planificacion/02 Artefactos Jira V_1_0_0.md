@@ -14,7 +14,7 @@
 
 En este documento se presentan las evidencias de la configuración del proyecto **EcoRuta-Wanka** en Jira Software utilizando la metodología Scrum.
 
-Las evidencias muestran la organización del proyecto, las historias de usuario, el Sprint 1, el tablero de trabajo y la versión del proyecto.
+Las evidencias muestran la organización del proyecto, las historias de usuario, el Sprint 1 y el Sprint 2, el tablero de trabajo y la versión del proyecto.
 
 ---
 
@@ -24,16 +24,19 @@ Las evidencias muestran la organización del proyecto, las historias de usuario,
 | ------------------------- | -------------------------- |
 | Proyecto                  | EcoRuta-Wanka              |
 | Metodología               | Scrum                      |
-| Sprint                    | EW Sprint 1                |
-| Duración del Sprint 1     | 11/09/2026 – 25/09/2026    |
+| Sprint 1                  | EW Sprint 1                |
+| Duración del Sprint 1     | 10/09/2026 – 25/09/2026    |
 | Story Points del Sprint 1 | 23                         |
+| Sprint 2                  | EW Sprint 2                |
+| Duración del Sprint 2     | 28/09/2026 – 08/10/2026    |
+| Story Points del Sprint 2 | 29                         |
 | Release                   | V1.0.0 - MVP EcoRuta Wanka |
 
 ---
 
 ## 3. Épicas del proyecto
 
-El proyecto está organizado en seis épicas:
+El proyecto está organizado en cinco épicas:
 
 | ID    | Épica                                       |
 | ----- | ------------------------------------------- |
@@ -42,7 +45,6 @@ El proyecto está organizado en seis épicas:
 | EP-03 | Motor de optimización y generación de rutas |
 | EP-04 | Seguimiento y visualización de rutas        |
 | EP-05 | Sostenibilidad, indicadores y reportes      |
-| EP-06 | Acceso seguro y control por roles           |
 
 ---
 
@@ -58,37 +60,58 @@ La siguiente captura muestra el **Roadmap de EcoRuta-Wanka**, donde se pueden ob
 
 ### 4.2 Evidencia 2: Backlog priorizado
 
-La captura muestra las **10 Historias de Usuario del proyecto en el Backlog**, antes de seleccionar las historias que formarían parte del Sprint 1.
+La captura muestra las **9 Historias de Usuario del proyecto en el Backlog de Jira**, organizadas de acuerdo con la planificación de los Sprints.
 
 ![Evidencia 2: Backlog Priorizado](../06%20Otros/evidencias/Evidencia%202%20Backlog%20Priorizado.png)
 
-Las tres historias seleccionadas para el Sprint 1 fueron:
+Las historias de usuario se distribuyeron de la siguiente manera:
 
-* **US-001 – Gestión de flota vehicular:** 5 SP
-* **US-002 – Gestión de pedidos de reparto:** 5 SP
-* **US-003 – Generación de rutas optimizadas por vehículo:** 13 SP
+* **Sprint 1:** US-001, US-002 y US-003 — **23 Story Points**.
 
-**Total: 23 Story Points.**
+* **Sprint 2:** US-004, US-005, US-006 y US-008 — **29 Story Points**.
+
+Las historias **US-007 y US-009** permanecen en el Backlog para una planificación posterior.
+
+En total, el proyecto cuenta con **9 Historias de Usuario**.
 
 ---
 
 ### 4.3 Evidencia 3: Sprint Planning y Sprint Goal
 
-La captura muestra la planificación del **Sprint 1**, con las tres historias seleccionadas y su estimación.
+La captura muestra la planificación de los **Sprints 1 y 2** del proyecto en Jira, con las historias de usuario asignadas y su estimación.
 
 ![Evidencia 3: Sprint Planning & Sprint Goal](../06%20Otros/evidencias/Evidencia%203%20Sprint%20Planning%20%26%20Sprint%20Goal.png)
 
-**Sprint Goal:**
+La planificación de los Sprints se organizó de la siguiente manera:
+
+* **Sprint 1:** US-001, US-002 y US-003 — **23 Story Points**.
+
+* **Sprint 2:** US-004, US-005, US-006 y US-008 — **29 Story Points**.
+
+**Sprint Goal del Sprint 1:**
 
 > "Implementar la gestión básica de vehículos y pedidos para disponer de información válida que permita generar rutas optimizadas de reparto."
+
+**Sprint Goal del Sprint 2:**
+
+> "Ampliar las funcionalidades del sistema mediante la visualización de rutas en el mapa, la incorporación de indicadores de sostenibilidad, la generación de reportes en PDF y la gestión y asignación de conductores."
 
 ---
 
 ### 4.4 Evidencia 4: Tablero Scrum
 
-La siguiente captura muestra el **tablero Scrum del Sprint 1**, donde se pueden observar las historias y su estado de trabajo.
+La siguiente captura muestra el **tablero Scrum del proyecto**, donde se puede observar el estado de las historias de usuario y el avance alcanzado durante los Sprints.
 
 ![Evidencia 4: Tablero Scrum Activo](../06%20Otros/evidencias/Evidencia%204%20Tablero%20Scrum%20Activo.png)
+
+Las historias de usuario completadas se encuentran en la columna **Done**.
+
+Las historias completadas son:
+
+* **Sprint 1:** US-001, US-002 y US-003.
+* **Sprint 2:** US-004, US-005, US-006 y US-008.
+
+Las historias **US-007 y US-009** permanecen en el Backlog para una planificación posterior.
 
 El tablero utiliza las siguientes columnas:
 
@@ -107,44 +130,70 @@ La captura muestra la versión creada para la primera entrega del proyecto.
 Las historias consideradas para esta versión son:
 
 * US-001
+
 * US-002
+
 * US-003
 
 ---
 
-## 5. Historias del Sprint 1
+## 5. Historias de los Sprints
+
+### 5.1 Historias del Sprint 1
 
 | Historia                                              | Épica | Story Points |
 | ----------------------------------------------------- | ----- | -----------: |
 | US-001 – Gestión de flota vehicular                   | EP-01 |            5 |
 | US-002 – Gestión de pedidos de reparto                | EP-02 |            5 |
 | US-003 – Generación de rutas optimizadas por vehículo | EP-03 |           13 |
-| **Total**                                             |       |       **23** |
+| **Total Sprint 1**                                    |       |       **23** |
 
-Estas tres historias forman parte del Sprint 1 y permiten iniciar el desarrollo de las funciones relacionadas con vehículos, pedidos y generación de rutas.
+Estas tres historias forman parte del Sprint 1 y permitieron desarrollar las funciones relacionadas con vehículos, pedidos y generación de rutas.
+
+### 5.2 Historias del Sprint 2
+
+| Historia                                              | Épica | Story Points |
+| ----------------------------------------------------- | ----- | -----------: |
+| US-004 – Visualización de rutas en mapa interactivo   | EP-04 |            8 |
+| US-005 – Dashboard de indicadores de sostenibilidad   | EP-05 |            8 |
+| US-006 – Reporte de sostenibilidad en PDF             | EP-05 |            5 |
+| US-008 – Registro y asignación de conductores a rutas | EP-01 |            8 |
+| **Total Sprint 2**                                    |       |       **29** |
+
+Estas cuatro historias forman parte del Sprint 2 y permiten ampliar el sistema mediante la visualización de rutas, los indicadores de sostenibilidad, los reportes en PDF y la gestión de conductores.
+
+Las historias **US-007** y **US-009** permanecen en el Backlog para una planificación posterior.
 
 ---
 
 ## 6. Resumen
 
-| Elemento               | Resultado                  |
-| ---------------------- | -------------------------- |
-| Proyecto               | EcoRuta-Wanka              |
-| Metodología            | Scrum                      |
-| Épicas                 | 6                          |
-| Historias de Usuario   | 10                         |
-| Historias del Sprint 1 | 3                          |
-| Story Points           | 23                         |
-| Sprint Goal            | Configurado                |
-| Release                | V1.0.0 - MVP EcoRuta Wanka |
-| Evidencias             | 5                          |
+| Elemento                  | Resultado                  |
+| ------------------------- | -------------------------- |
+| Proyecto                  | EcoRuta-Wanka              |
+| Metodología               | Scrum                      |
+| Épicas                    | 5                          |
+| Historias de Usuario      | 9                          |
+| Historias del Sprint 1    | 3                          |
+| Story Points del Sprint 1 | 23                         |
+| Historias del Sprint 2    | 4                          |
+| Story Points del Sprint 2 | 29                         |
+| Sprint Goal               | Configurado                |
+| Release                   | V1.0.0 - MVP EcoRuta Wanka |
+| Evidencias                | 5                          |
 
 ---
 
 ## 7. Conclusión
 
-La configuración de EcoRuta-Wanka en Jira permite organizar las historias de usuario, agruparlas por épicas, planificar el Sprint 1 y visualizar el avance del trabajo mediante el tablero Scrum.
+La configuración de EcoRuta-Wanka en Jira permite organizar las historias de usuario, agruparlas por épicas, planificar el Sprint 1 y el Sprint 2 y visualizar el avance del trabajo mediante el tablero Scrum.
 
-Las cinco evidencias presentadas muestran la configuración realizada en Jira y sirven como respaldo de la planificación del proyecto.
+El **Sprint 1** considera las historias **US-001, US-002 y US-003**, con un total de **23 Story Points**.
+
+El **Sprint 2** considera las historias **US-004, US-005, US-006 y US-008**, con un total de **29 Story Points**, para ampliar las funcionalidades desarrolladas en el Sprint 1.
+
+Las historias **US-007 y US-009** permanecen en el Backlog para una planificación posterior.
+
+Las cinco evidencias presentadas muestran la configuración realizada en Jira y sirven como respaldo de la planificación y seguimiento del proyecto.
 
 [Volver al README principal](../../README.md)

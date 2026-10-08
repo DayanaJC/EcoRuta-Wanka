@@ -4,7 +4,7 @@
 
 # 01. Transformando a ágil
 
-**Versión:** V_1_2_0 | **Fecha:** 11/09/2026  |  **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 11/09/2026  |  **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
@@ -16,7 +16,7 @@ EcoRuta Wanka transforma los requisitos definidos durante la etapa inicial del p
 
 La transformación considera:
 
-* **Requisitos funcionales (RF-01 a RF-10):** se organizan en seis épicas y diez Historias de Usuario.
+* **Requisitos funcionales (RF-01 a RF-09):** se organizan en cinco épicas y nueve Historias de Usuario.
 * **Requisitos no funcionales (RNF-01 a RNF-09):** se convierten en Enablers, criterios de aceptación o criterios transversales del Definition of Done.
 * **Reglas de negocio:** se utilizan como condiciones de aceptación de las historias relacionadas.
 * **Arquitectura:** las historias técnicas consideran la **arquitectura cliente-servidor** con el patrón **MVC con capa de servicios** definida para el proyecto (CC-01).
@@ -30,7 +30,7 @@ La transformación mantiene la trazabilidad entre los requisitos iniciales y los
 
 ### 2.1 De requisitos funcionales a épicas
 
-Los diez requisitos funcionales se agrupan en seis épicas de acuerdo con la relación entre sus funcionalidades.
+Los nueve requisitos funcionales se agrupan en cinco épicas de acuerdo con la relación entre sus funcionalidades.
 
 | Épica                                                   | Requisitos relacionados |
 | ------------------------------------------------------- | ----------------------- |
@@ -39,7 +39,6 @@ Los diez requisitos funcionales se agrupan en seis épicas de acuerdo con la rel
 | **EP-03 – Motor de optimización y generación de rutas** | RF-03, RF-07            |
 | **EP-04 – Seguimiento y visualización de rutas**        | RF-04                   |
 | **EP-05 – Sostenibilidad, indicadores y reportes**      | RF-05, RF-06            |
-| **EP-06 – Acceso seguro y control por roles**           | RF-10                   |
 
 ---
 
@@ -81,7 +80,6 @@ Las principales relaciones son:
 
 | Regla                                   | Historia relacionada |
 | --------------------------------------- | -------------------- |
-| RN-001 Acceso seguro al sistema         | US-010               |
 | RN-002 Capacidad del vehículo           | US-003               |
 | RN-003 Datos válidos para generar rutas | US-002, US-003       |
 | RN-004 Vehículos disponibles            | US-001, US-003       |
@@ -92,7 +90,6 @@ Las principales relaciones son:
 | RN-009 Asignación de conductores        | US-008               |
 | RN-010 Preferencias de entrega          | US-009               |
 | RN-011 Indicadores de sostenibilidad    | US-005, US-006       |
-| RN-012 Control de información según rol | US-010               |
 
 ---
 
@@ -109,7 +106,6 @@ Las principales relaciones son:
 | RF-07 | EP-03 | US-007      | Re-optimización dinámica ante incidentes de tránsito | Alta      |           13 |
 | RF-08 | EP-01 | US-008      | Registro y asignación de conductores a rutas         | Alta      |            8 |
 | RF-09 | EP-02 | US-009      | Preferencias de entrega de clientes/bodegas          | Media     |            5 |
-| RF-10 | EP-06 | US-010      | Autenticación y control de acceso por roles          | Alta      |            8 |
 
 ---
 
@@ -172,20 +168,6 @@ Agrupa las funcionalidades relacionadas con los indicadores de sostenibilidad y 
 
 **Valor de negocio:**
 Permite consultar información sobre distancia recorrida, consumo estimado y emisiones de CO₂ para evaluar el comportamiento sostenible de las operaciones.
-
----
-
-### EP-06 – Acceso seguro y control por roles
-
-**Descripción:**
-Agrupa las funcionalidades relacionadas con la autenticación y el acceso a las funciones del sistema según el rol del usuario.
-
-**Requisito relacionado:** RF-10.
-
-**Roles considerados:** Administrador, Operador, Conductor y Cliente/Bodega.
-
-**Valor de negocio:**
-Permite proteger la información y controlar las funciones disponibles para cada tipo de usuario.
 
 ---
 
@@ -505,49 +487,6 @@ Escenario: Considerar una preferencia en una ruta
 
 ---
 
-## US-010 – Autenticación y control de acceso por roles
-
-**ID:** US-010
-**Título:** Autenticación y control de acceso por roles
-**Épica:** EP-06 – Acceso seguro y control por roles
-**Requisito fuente:** RF-10
-**Prioridad:** Alta
-**Story Points:** 8
-
-**Historia:**
-
-> Como **usuario del sistema**,
-> quiero **autenticarme y acceder a las funciones correspondientes a mi rol**,
-> para **utilizar el sistema de forma segura**.
-
-### Roles
-
-* Administrador.
-* Operador.
-* Conductor.
-* Cliente/Bodega.
-
-### Criterios de aceptación
-
-```gherkin
-Escenario: Iniciar sesión con credenciales válidas
-  Dado un usuario registrado con credenciales válidas
-  Cuando ingresa sus credenciales
-  Entonces el sistema permite el acceso y muestra las funciones correspondientes a su rol
-
-Escenario: Rechazar credenciales inválidas
-  Dado un usuario que ingresa credenciales incorrectas
-  Cuando intenta iniciar sesión
-  Entonces el sistema rechaza el acceso
-
-Escenario: Denegar una función no autorizada
-  Dado un usuario autenticado con un rol determinado
-  Cuando intenta acceder a una función que no corresponde a su rol
-  Entonces el sistema deniega el acceso a dicha función
-```
-
----
-
 # 6. Historias Técnicas — Enablers
 
 Los Enablers representan actividades técnicas necesarias para cumplir los requisitos no funcionales y mantener la calidad del producto.
@@ -765,7 +704,7 @@ Una Historia de Usuario o Enabler se considera terminado cuando cumple los sigui
 | **O2 – Cumplimiento de entregas y condiciones de reparto** | EP-02, EP-03, EP-04 | US-002, US-003, US-004, US-007, US-009 |
 | **O3 – Reducción de costos de operación**                  | EP-03, EP-05        | US-003, US-005                         |
 | **O4 – Desarrollo de las funcionalidades principales**     | EP-01, EP-02, EP-03 | US-001, US-002, US-003, US-008         |
-| **O5 – Usabilidad y calidad del sistema**                  | EP-04, EP-06        | US-004, US-009, US-010, EN-003         |
+| **O5 – Usabilidad y calidad del sistema**                  | EP-04                | US-004, US-009, EN-003              |
 
 ---
 
@@ -782,7 +721,6 @@ Los elementos definidos en este documento se utilizan como base para la configur
 | EP-03 | Motor de optimización y generación de rutas |
 | EP-04 | Seguimiento y visualización de rutas        |
 | EP-05 | Sostenibilidad, indicadores y reportes      |
-| EP-06 | Acceso seguro y control por roles           |
 
 ### Historias de Usuario
 
@@ -797,7 +735,6 @@ Los elementos definidos en este documento se utilizan como base para la configur
 | US-007 | Re-optimización dinámica ante incidentes de tránsito |           13 |
 | US-008 | Registro y asignación de conductores a rutas         |            8 |
 | US-009 | Preferencias de entrega de clientes/bodegas          |            5 |
-| US-010 | Autenticación y control de acceso por roles          |            8 |
 
 ---
 
@@ -807,7 +744,7 @@ De acuerdo con la planificación realizada en Jira, el primer Sprint utiliza las
 
 **Sprint:** EW Sprint 1
 
-**Periodo:** 11/09/2026 – 25/09/2026 (planificado). Por el cambio de stack CC-01, el Sprint se amplió hasta el 02/10/2026 y cerró con las tres historias completadas (ver *03 Implementación*).
+**Periodo:** 10/09/2026 – 25/09/2026
 
 **Sprint Goal:**
 
@@ -821,6 +758,30 @@ De acuerdo con la planificación realizada en Jira, el primer Sprint utiliza las
 | **Total**                                             |       |       **23** |
 
 Estas tres historias conforman **23 Story Points** para el Sprint 1.
+
+---
+
+### Priorización para Sprint 2
+
+De acuerdo con la planificación realizada en Jira, el segundo Sprint continúa el desarrollo a partir de las funcionalidades del Sprint 1.
+
+**Sprint:** EW Sprint 2
+
+**Periodo:** 28/09/2026 – 08/10/2026
+
+**Sprint Goal:**
+
+> **“Ampliar las funcionalidades del sistema mediante la visualización de rutas en el mapa, la incorporación de indicadores de sostenibilidad, la generación de reportes en PDF y la gestión y asignación de conductores.”**
+
+| Historia                                                | Épica | Story Points |
+| ------------------------------------------------------- | ----- | -----------: |
+| US-004 – Visualización de rutas en mapa interactivo      | EP-04 |            8 |
+| US-005 – Dashboard de indicadores de sostenibilidad      | EP-05 |            8 |
+| US-006 – Reporte de sostenibilidad en PDF                | EP-05 |            5 |
+| US-008 – Registro y asignación de conductores a rutas    | EP-01 |            8 |
+| **Total**                                               |       |       **29** |
+
+Estas cuatro historias conforman **29 Story Points** para el Sprint 2. Las historias **US-007 – Re-optimización dinámica ante incidentes de tránsito** y **US-009 – Preferencias de entrega de clientes/bodegas** permanecen pendientes para los siguientes Sprints.
 
 ---
 
@@ -872,7 +833,7 @@ Las principales restricciones consideradas durante la transformación ágil son:
 
 La transformación ágil permite pasar de los requisitos definidos en la etapa inicial a una estructura organizada de **Épicas, Historias de Usuario y Enablers**.
 
-Los diez requisitos funcionales se relacionan con seis épicas y diez Historias de Usuario. Los requisitos no funcionales se incorporan mediante Enablers, criterios de aceptación y criterios transversales del Definition of Done.
+Los nueve requisitos funcionales se relacionan con cinco épicas y nueve Historias de Usuario. Los requisitos no funcionales se incorporan mediante Enablers, criterios de aceptación y criterios transversales del Definition of Done.
 
 La planificación mantiene la trazabilidad con las reglas de negocio, objetivos del proyecto, arquitectura cliente-servidor (MVC) y restricciones identificadas.
 
@@ -880,16 +841,8 @@ Los elementos resultantes sirven como base para la configuración de **Jira Soft
 
 El Sprint 1 queda conformado por **US-001, US-002 y US-003**, con un total de **23 Story Points**, y tiene como objetivo disponer de la información básica de vehículos y pedidos necesaria para generar rutas optimizadas de reparto.
 
----
+El Sprint 2 queda conformado por **US-004, US-005, US-006 y US-008**, con un total de **29 Story Points**, y amplía las funcionalidades del sistema mediante la visualización de rutas en el mapa, los indicadores de sostenibilidad, los reportes en PDF y la gestión y asignación de conductores.
 
----
-
-## Historial de versiones
-
-| Versión | Fecha | Descripción |
-| --- | --- | --- |
-| V_1_0_0 | 11/09/2026 | Épicas, historias de usuario, DoD y priorización del Sprint 1. |
-| V_1_1_0 | 27/09/2026 | CC-01: Enabler EN-006 y relación con la arquitectura cliente-servidor y MVC. |
-| V_1_2_0 | 02/10/2026 | CC-02: periodo real del Sprint 1 (ampliado hasta el 02/10/2026). |
+---|
 
 [⬅ Volver al README](../../README.md)
