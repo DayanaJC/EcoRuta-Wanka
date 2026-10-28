@@ -81,6 +81,42 @@ enum EstadoParada {
   @@map("estado_parada")
 }
 
+enum TipoCliente {
+  bodega
+  minimarket
+  restaurante
+  farmacia
+  otro
+
+  @@map("tipo_cliente")
+}
+
+enum EstadoCliente {
+  activo
+  inactivo
+
+  @@map("estado_cliente")
+}
+
+// Incidentes que afectan una ruta en reparto (RF-07)
+enum TipoIncidente {
+  trafico_intenso
+  via_bloqueada
+  accidente
+  lluvia
+  retraso_vehiculo
+  otro
+
+  @@map("tipo_incidente")
+}
+
+enum ResultadoIncidente {
+  reoptimizada
+  sin_cambios
+
+  @@map("resultado_incidente")
+}
+
 enum TipoDia {
   laborable
   fin_semana
@@ -129,6 +165,35 @@ model Conductor {
 
   @@index([estado])
   @@map("conductores")
+}
+
+// Clientes/bodegas y sus preferencias de entrega (RF-09). El pedido se relaciona por
+// código (pedido.cliente_id = cliente.codigo); un pedido de un cliente no registrado
+// se planifica solo con su propia ventana.
+model Cliente {
+  id                  String        @id @default(uuid()) @db.Uuid
+  codigo              String        @unique @db.VarChar(50)
+  nombre              String        @db.VarChar(100)
+  tipo                TipoCliente   @default(bodega)
+  telefono            String?       @db.VarChar(15)
+  direccion           String        @db.VarChar(200)
+  punto_referencia    String        @default("") @db.VarChar(200)
+  latitud             Decimal       @db.Decimal(9, 6)
+  longitud            Decimal       @db.Decimal(9, 6)
+  // Preferencias de entrega
+  ventana_inicio      DateTime      @db.Time(0)
+  ventana_fin         DateTime      @db.Time(0)
+  // Días en que recibe mercadería: 0 = domingo … 6 = sábado
+  dias_recepcion      Int[]         @db.SmallInt
+  tiempo_atencion_min Int           @default(5) @db.SmallInt
+  // Indicaciones para el conductor (acceso, a quién entregar, etc.)
+  indicaciones        String        @default("") @db.VarChar(300)
+  estado              EstadoCliente @default(activo)
+  created_at          DateTime      @default(now()) @db.Timestamptz(3)
+  updated_at          DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@index([estado])
+  @@map("clientes")
 }
 
 model Pedido {
@@ -200,32 +265,36 @@ model Asignacion {
 }
 
 model Ruta {
-  id                      String     @id @default(uuid()) @db.Uuid
-  vehiculo_id             String     @db.Uuid
+  id                         String     @id @default(uuid()) @db.Uuid
+  vehiculo_id                String     @db.Uuid
   // Conductor asignado (RF-08); la ruta puede generarse sin conductor y asignarse después
-  conductor_id            String?    @db.Uuid
-  fecha                   DateTime   @db.Date
-  hora_salida             DateTime   @db.Time(0)
+  conductor_id               String?    @db.Uuid
+  fecha                      DateTime   @db.Date
+  hora_salida                DateTime   @db.Time(0)
   // Hora desde la que el vehículo está disponible (la salida real puede ser posterior)
-  hora_disponible         DateTime?  @db.Time(0)
-  distancia_estimada_km   Decimal?   @db.Decimal(7, 2)
+  hora_disponible            DateTime?  @db.Time(0)
+  distancia_estimada_km      Decimal?   @db.Decimal(7, 2)
   // Distancia recorriendo los pedidos en el orden elegido por el operador (antes de optimizar)
-  distancia_sin_optimizar_km Decimal? @db.Decimal(7, 2)
-  tiempo_estimado_min     Int?
-  factor_trafico_aplicado Decimal?   @db.Decimal(4, 2)
-  geometria               Json?
-  estado                  EstadoRuta @default(generada)
+  distancia_sin_optimizar_km Decimal?   @db.Decimal(7, 2)
+  tiempo_estimado_min        Int?
+  factor_trafico_aplicado    Decimal?   @db.Decimal(4, 2)
+  geometria                  Json?
+  estado                     EstadoRuta @default(generada)
   // Inicio y fin reales del reparto
-  iniciada_at             DateTime?  @db.Timestamptz(3)
-  completada_at           DateTime?  @db.Timestamptz(3)
+  iniciada_at                DateTime?  @db.Timestamptz(3)
+  completada_at              DateTime?  @db.Timestamptz(3)
   // Llegada real del vehículo al almacén (la registra el simulador; en la fase 2, el conductor)
-  regreso_at              DateTime?  @db.Timestamptz(3)
-  created_at              DateTime   @default(now()) @db.Timestamptz(3)
-  updated_at              DateTime   @updatedAt @db.Timestamptz(3)
+  regreso_at                 DateTime?  @db.Timestamptz(3)
+  // Última re-optimización por incidente (RF-07): cuándo se hizo y desde qué hora se replanificó
+  reoptimizada_at            DateTime?  @db.Timestamptz(3)
+  hora_replanificacion       DateTime?  @db.Time(0)
+  created_at                 DateTime   @default(now()) @db.Timestamptz(3)
+  updated_at                 DateTime   @updatedAt @db.Timestamptz(3)
 
-  vehiculo  Vehiculo     @relation(fields: [vehiculo_id], references: [id])
-  conductor Conductor?   @relation(fields: [conductor_id], references: [id])
-  paradas   RutaParada[]
+  vehiculo   Vehiculo        @relation(fields: [vehiculo_id], references: [id])
+  conductor  Conductor?      @relation(fields: [conductor_id], references: [id])
+  paradas    RutaParada[]
+  incidentes IncidenteRuta[]
 
   @@index([vehiculo_id])
   @@index([conductor_id])
@@ -234,13 +303,15 @@ model Ruta {
 }
 
 model RutaParada {
-  id                    String    @id @default(uuid()) @db.Uuid
-  ruta_id               String    @db.Uuid
-  pedido_id             String    @db.Uuid
-  orden                 Int       @db.SmallInt
-  hora_estimada_llegada DateTime? @db.Time(0)
+  id                    String       @id @default(uuid()) @db.Uuid
+  ruta_id               String       @db.Uuid
+  pedido_id             String       @db.Uuid
+  orden                 Int          @db.SmallInt
+  hora_estimada_llegada DateTime?    @db.Time(0)
   // Minutos que el vehículo espera a que abra la ventana del cliente
-  espera_min            Int       @default(0) @db.SmallInt
+  espera_min            Int          @default(0) @db.SmallInt
+  // Segundos de manejo planificados desde el punto anterior (almacén, parada previa o posición al re-optimizar)
+  viaje_planificado_s   Int?
   // Resultado de la visita
   estado                EstadoParada @default(pendiente)
   entregado_at          DateTime?    @db.Timestamptz(3)
@@ -256,6 +327,32 @@ model RutaParada {
   @@unique([ruta_id, orden])
   @@index([pedido_id])
   @@map("ruta_paradas")
+}
+
+// Incidente registrado durante el reparto y resultado de la revisión de la ruta (RF-07)
+model IncidenteRuta {
+  id               String             @id @default(uuid()) @db.Uuid
+  ruta_id          String             @db.Uuid
+  tipo             TipoIncidente
+  descripcion      String             @default("") @db.VarChar(200)
+  // Minutos que el vehículo queda detenido por el incidente
+  retraso_min      Int                @default(0) @db.SmallInt
+  // Multiplicador de velocidad aplicado al resto del recorrido (< 1 = más lento)
+  factor_velocidad Decimal            @db.Decimal(3, 2)
+  // Posición del vehículo al registrar el incidente
+  latitud          Decimal            @db.Decimal(9, 6)
+  longitud         Decimal            @db.Decimal(9, 6)
+  // Hora desde la que se revisó la ruta (hora del incidente)
+  hora_referencia  DateTime           @db.Time(0)
+  resultado        ResultadoIncidente
+  // Comparación antes / después de la revisión
+  resumen          Json
+  created_at       DateTime           @default(now()) @db.Timestamptz(3)
+
+  ruta Ruta @relation(fields: [ruta_id], references: [id], onDelete: Cascade)
+
+  @@index([ruta_id])
+  @@map("incidentes_ruta")
 }
 
 model FactorTrafico {

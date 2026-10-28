@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ETIQUETAS_PRIORIDAD } from '../utils/formatos.js'
+import { ETIQUETAS_PRIORIDAD, formatearDias } from '../utils/formatos.js'
 import { bultoVacio, convertirMedidas, EditorBultos } from './EditorBultos.jsx'
 import { SelectorUbicacion } from './SelectorUbicacion.jsx'
-import { Cargando, CampoGrupo } from './ui.jsx'
+import { Aviso, Cargando, CampoGrupo } from './ui.jsx'
 
 const VACIO = {
   cliente_id: '',
@@ -27,13 +27,36 @@ const desdePedido = (p) =>
       }
     : { ...VACIO, bultos: [bultoVacio()] }
 
-export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardando }) {
+// Datos del pedido que se copian del cliente registrado (RF-09)
+const desdeCliente = (c) => ({
+  cliente_id: c.codigo,
+  cliente_nombre: c.nombre,
+  direccion: c.direccion,
+  punto_referencia: c.punto_referencia ?? '',
+  latitud: c.latitud,
+  longitud: c.longitud,
+  ventana_entrega_inicio: c.ventana_inicio,
+  ventana_entrega_fin: c.ventana_fin,
+  tiempo_servicio_min: String(c.tiempo_atencion_min ?? 5),
+})
+
+export function PedidoFormulario({ pedidoInicial, clientes = [], onGuardar, onCancelar, guardando }) {
   const [form, setForm] = useState(() => desdePedido(pedidoInicial))
   // Unidad en la que el operador escribe las medidas de los bultos (se guardan en cm)
   const [unidadMedida, setUnidadMedida] = useState('cm')
   const [intentoEnviar, setIntentoEnviar] = useState(false)
 
   const cambiar = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }))
+  const activos = clientes.filter((c) => c.estado === 'activo')
+  const cliente = activos.find((c) => c.codigo === form.cliente_id.trim().toUpperCase())
+  // Al elegir un cliente registrado en un pedido nuevo se completan sus datos y su horario preferido
+  const cambiarCodigo = (e) => {
+    const codigo = e.target.value
+    const elegido = !pedidoInicial && activos.find((c) => c.codigo === codigo.trim().toUpperCase())
+    setForm((f) => (elegido ? { ...f, ...desdeCliente(elegido) } : { ...f, cliente_id: codigo }))
+  }
+  const fueraDePreferencia =
+    cliente && (form.ventana_entrega_fin <= cliente.ventana_inicio || form.ventana_entrega_inicio >= cliente.ventana_fin)
   const posicion = form.latitud != null ? [form.latitud, form.longitud] : null
   const fijarPosicion = ([lat, lon]) => setForm((f) => ({ ...f, latitud: Number(lat.toFixed(6)), longitud: Number(lon.toFixed(6)) }))
 
@@ -47,7 +70,7 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
     setIntentoEnviar(true)
     if (errores.ventana || errores.ubicacion) return
     onGuardar({
-      cliente_id: form.cliente_id.trim(),
+      cliente_id: cliente ? cliente.codigo : form.cliente_id.trim(),
       cliente_nombre: form.cliente_nombre.trim(),
       direccion: form.direccion.trim(),
       punto_referencia: form.punto_referencia.trim(),
@@ -73,15 +96,41 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
     <form className="tarjeta" onSubmit={enviar} noValidate={false}>
       <div className="tarjeta-cuerpo formulario">
         <fieldset className="seccion-form">
-          <legend>Cliente</legend>
+          <legend>
+            Cliente
+            {activos.length > 0 && <small>Elige un cliente registrado para usar su dirección y su horario de recepción.</small>}
+          </legend>
           <div className="campos">
             <CampoGrupo etiqueta="Código del cliente" requerido htmlFor="cliente_id">
-              <input id="cliente_id" className="campo" placeholder="CLI-0001" value={form.cliente_id} onChange={cambiar('cliente_id')} required minLength={3} />
+              <input
+                id="cliente_id"
+                className="campo"
+                placeholder="CLI-0001"
+                value={form.cliente_id}
+                onChange={cambiarCodigo}
+                list="clientes-registrados"
+                autoComplete="off"
+                required
+                minLength={3}
+              />
+              <datalist id="clientes-registrados">
+                {activos.map((c) => (
+                  <option key={c.id} value={c.codigo}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </datalist>
             </CampoGrupo>
             <CampoGrupo etiqueta="Nombre del cliente o bodega" requerido htmlFor="cliente_nombre">
               <input id="cliente_nombre" className="campo" placeholder="Comercial Huancayo" value={form.cliente_nombre} onChange={cambiar('cliente_nombre')} required minLength={3} />
             </CampoGrupo>
           </div>
+          {cliente && (
+            <Aviso tipo="info">
+              <strong>Cliente registrado:</strong> recibe {formatearDias(cliente.dias_recepcion).toLowerCase()}, de {cliente.ventana_inicio} a {cliente.ventana_fin}.
+              {cliente.indicaciones && ` Indicaciones: ${cliente.indicaciones}`}
+            </Aviso>
+          )}
         </fieldset>
 
         <fieldset className="seccion-form">
@@ -141,6 +190,13 @@ export function PedidoFormulario({ pedidoInicial, onGuardar, onCancelar, guardan
                 required
               />
             </CampoGrupo>
+            {fueraDePreferencia && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <Aviso tipo="alerta">
+                  La ventana no coincide con el horario en que el cliente recibe ({cliente.ventana_inicio} – {cliente.ventana_fin}): este pedido no podrá incluirse en una ruta.
+                </Aviso>
+              </div>
+            )}
             <CampoGrupo etiqueta="Tiempo de entrega" htmlFor="servicio" ayuda="Minutos que toma descargar y entregar.">
               <div className="campo-unidad">
                 <input id="servicio" className="campo" type="number" min="0" max="240" value={form.tiempo_servicio_min} onChange={cambiar('tiempo_servicio_min')} />

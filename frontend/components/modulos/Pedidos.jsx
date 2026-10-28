@@ -78,6 +78,7 @@ export function Pedidos({ ubicacion, datos, cargando, recargar, notificar, confi
         <PedidoFormulario
           key={pedido?.id ?? 'nuevo'}
           pedidoInicial={pedido}
+          clientes={datos.clientes}
           onGuardar={guardar}
           onCancelar={() => window.history.back()}
           guardando={ocupado}

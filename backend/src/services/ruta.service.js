@@ -1,5 +1,6 @@
-// Servicio de rutas (RF-03): valida los datos, aplica el factor de tráfico (si está habilitado),
-// solicita el orden óptimo a la API de optimización y guarda la ruta.
+// Servicio de rutas (RF-03): valida los datos, aplica las preferencias de los clientes (RF-09)
+// y el factor de tráfico (si está habilitado), solicita el orden óptimo a la API de optimización
+// y guarda la ruta. También re-optimiza el tramo restante ante incidentes (RF-07).
 
 import {
   BultoNoCabeError,
@@ -13,10 +14,12 @@ import {
   RutaNoOptimizableError,
   RutaNotFoundError,
   RutaSinDatosError,
+  RutaSinPendientesError,
   VehiculoNoDisponibleError,
   VehiculoNotFoundError,
 } from "../errors/errores.js";
-import { horaASegundos, horaLocal, hoyEn, instanteLocal, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { fechaLocal, horaASegundos, horaLocal, hoyEn, instanteLocal, segundosAHora, tipoDia } from "../utils/tiempo.js";
+import { aplicarPreferencias, ventanasConPreferencias } from "./cliente.service.js";
 import { verificarConductorDisponible } from "./conductor.service.js";
 import { bultosQueNoCaben, capacidadVolumenM3, describirBulto } from "./carga.js";
 import { programarHorario } from "./optimizacion/horario.js";
@@ -29,9 +32,27 @@ export const ESTADOS_RUTA_ACTIVA = ["generada", "en_reparto"];
 const TRANSICIONES_RUTA = { generada: ["en_reparto", "cancelada"], en_reparto: ["completada", "cancelada"] };
 const MOTIVOS_SIMULADOS = ["Cliente ausente", "Local cerrado", "Dirección no encontrada"];
 const ETIQUETA_RUTA = { generada: "generada", en_reparto: "en reparto", completada: "completada", cancelada: "cancelada" };
+// Multiplicador de velocidad del resto del recorrido según el incidente (< 1 = más lento)
+export const FACTOR_INCIDENTE = { trafico_intenso: 0.7, via_bloqueada: 0.8, accidente: 0.75, lluvia: 0.85, retraso_vehiculo: 1, otro: 1 };
+const FIN_DEL_DIA_S = 24 * 3600 - 60;
+
+// Segundos de manejo planificados de cada tramo (por orden de parada) y del regreso al almacén.
+// Las rutas nuevas los guardan (viaje_planificado_s); en las anteriores se derivan del horario:
+// llegada = hora de entrega estimada - espera, y el tramo empieza al terminar la parada anterior.
+export function tramosPlanificados(ruta, servicioS) {
+  let finAnterior = horaASegundos(ruta.hora_salida);
+  const viajeS = {};
+  for (const p of ruta.paradas) {
+    const inicio = p.hora_estimada_llegada ? horaASegundos(p.hora_estimada_llegada) : finAnterior;
+    viajeS[p.orden] = p.viaje_planificado_s ?? Math.max(0, inicio - (p.espera_min ?? 0) * 60 - finAnterior);
+    finAnterior = inicio + servicioS(p.pedido_id);
+  }
+  const regresoS = Math.max(0, horaASegundos(ruta.hora_salida) + (ruta.tiempo_estimado_min ?? 0) * 60 - finAnterior);
+  return { viajeS, regresoS };
+}
 
 export function crearRutaService(
-  { rutas, vehiculos, pedidos, factoresTrafico, conductores },
+  { rutas, vehiculos, pedidos, factoresTrafico, conductores, clientes },
   { optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15, reloj = () => new Date(), aleatorio = Math.random },
 ) {
   const obtener = async (id) => {
@@ -158,21 +179,15 @@ export function crearRutaService(
         pedidosPorId = await porId(ruta.pedido_ids);
       }
 
-      // Tramos planificados (segundos): manejo desde el punto anterior hasta cada parada y el regreso.
-      // llegada = hora de entrega estimada - espera; el tramo empieza al terminar la parada anterior.
+      // Tramos planificados (segundos): manejo desde el punto anterior hasta cada parada y el regreso
       const servicioS = (pedidoId) => (pedidosPorId[pedidoId]?.tiempo_servicio_min ?? 5) * 60;
-      let finAnterior = horaASegundos(ruta.hora_salida);
-      const viajeS = {};
-      for (const p of ruta.paradas) {
-        const inicio = p.hora_estimada_llegada ? horaASegundos(p.hora_estimada_llegada) : finAnterior;
-        viajeS[p.orden] = Math.max(0, inicio - (p.espera_min ?? 0) * 60 - finAnterior);
-        finAnterior = inicio + servicioS(p.pedido_id);
-      }
-      const regresoS = Math.max(0, horaASegundos(ruta.hora_salida) + (ruta.tiempo_estimado_min ?? 0) * 60 - finAnterior);
+      const { viajeS, regresoS } = tramosPlanificados(ruta, servicioS);
 
-      // El reloj arranca en la salida real o en el último registro (si ya se registraron paradas)
+      // El reloj arranca en la salida real, en el último registro o, si la ruta se re-optimizó
+      // por un incidente, en la hora desde la que se replanificó (el vehículo estuvo detenido)
       const registros = ruta.paradas.map((p) => p.entregado_at).filter(Boolean).map((t) => new Date(t).getTime());
-      let reloj = Math.max(new Date(ruta.iniciada_at ?? instanteDe(ruta.hora_salida)).getTime(), ...registros);
+      const replanificada = ruta.hora_replanificacion ? [instanteDe(ruta.hora_replanificacion)] : [];
+      let reloj = Math.max(new Date(ruta.iniciada_at ?? instanteDe(ruta.hora_salida)).getTime(), ...registros, ...replanificada);
       const resultados = [];
       for (const parada of pendientes(ruta)) {
         const pedido = pedidosPorId[parada.pedido_id];
@@ -242,7 +257,7 @@ export function crearRutaService(
       const faltantes = ids.filter((id) => !encontrados.some((p) => p.id === id));
       if (faltantes.length) throw new PedidoNotFoundError(`No existen los pedidos: ${faltantes.join(", ")}.`);
       // Mantener el orden de selección del operador (sirve de referencia)
-      const lista = ids.map((id) => encontrados.find((p) => p.id === id));
+      let lista = ids.map((id) => encontrados.find((p) => p.id === id));
 
       const noDisponibles = lista.filter((p) => ESTADOS_TERMINALES.includes(p.estado));
       if (noDisponibles.length) {
@@ -263,6 +278,9 @@ export function crearRutaService(
           `Estos pedidos ya están en otra ruta activa: ${enOtraRuta.map((p) => p.cliente_nombre).join(", ")}. Cancela esa ruta o espera a que se resuelvan.`,
         );
       }
+
+      // RF-09: días de recepción y horario preferido de cada cliente registrado
+      lista = await aplicarPreferencias({ clientes }, lista, dia);
 
       // RN-002: la carga total no puede superar la capacidad del vehículo
       const pesoTotal = lista.reduce((suma, p) => suma + p.peso_kg, 0);
@@ -360,7 +378,162 @@ export function crearRutaService(
           pedido_id: p.id,
           hora_estimada_llegada: segundosAHora(p.entrega_s),
           espera_min: Math.round(p.espera_s / 60),
+          viaje_planificado_s: Math.round(resultado.paradas[i].viaje_s),
         })),
+      });
+    },
+
+    // RF-07: registra un incidente en una ruta en reparto y revisa el resto del recorrido.
+    // Proyecta el plan actual con las nuevas condiciones (retraso y velocidad); si alguna entrega
+    // pendiente queda fuera de su ventana (o el operador lo pide), re-optimiza las paradas
+    // pendientes desde la posición del vehículo. Si no hay afectación, mantiene la planificación.
+    async registrarIncidente(id, { tipo, descripcion = "", retraso_min = 0, hora, latitud, longitud, forzar = false }) {
+      const ruta = await obtener(id);
+      if (ruta.estado !== "en_reparto") {
+        throw new RutaEstadoInvalidoError(
+          `Solo se registran incidentes en rutas en reparto (esta ruta está ${ETIQUETA_RUTA[ruta.estado]}).` +
+            (ruta.estado === "generada" ? " Si cambiaron las condiciones antes de salir, cancela la ruta y genera una nueva." : ""),
+        );
+      }
+      const restantes = pendientes(ruta);
+      if (!restantes.length) throw new RutaSinPendientesError("La ruta ya no tiene entregas pendientes.");
+      const pedidosPorId = await porId(ruta.pedido_ids);
+      const ventanas = await ventanasConPreferencias({ clientes }, restantes.map((p) => pedidosPorId[p.pedido_id]));
+      const servicioS = (pedidoId) => (pedidosPorId[pedidoId]?.tiempo_servicio_min ?? 5) * 60;
+      const nombre = (pedidoId) => pedidosPorId[pedidoId]?.cliente_nombre ?? "Pedido";
+
+      // Hora del incidente: la indicada, la actual si la ruta es de hoy, o la del último registro.
+      // Nunca antes de la salida ni del último registro.
+      const atendidas = ruta.paradas.filter((p) => (p.estado ?? "pendiente") !== "pendiente");
+      const horaDe = (iso) => horaLocal(new Date(iso), zonaHoraria);
+      const minimas = [ruta.hora_salida, ruta.iniciada_at && horaDe(ruta.iniciada_at), ...atendidas.map((p) => p.entregado_at && horaDe(p.entregado_at))];
+      const horaActual = fechaLocal(reloj(), zonaHoraria) === ruta.fecha ? horaLocal(reloj(), zonaHoraria) : null;
+      const horaRef = [hora ?? horaActual, ...minimas].filter(Boolean).sort().at(-1);
+      const inicioS = horaASegundos(horaRef) + retraso_min * 60;
+      if (inicioS > FIN_DEL_DIA_S) throw new RutaNoOptimizableError("Con ese retraso el reparto pasaría al día siguiente: no se puede replanificar.");
+      const factor = FACTOR_INCIDENTE[tipo] ?? 1;
+
+      // Posición del vehículo: la indicada o la última parada atendida (o el almacén si aún no atendió ninguna)
+      const ultima = atendidas.at(-1);
+      const posicion = latitud != null ? { latitud, longitud } : ultima ? pedidosPorId[ultima.pedido_id] : almacen;
+
+      // Horario de un orden de paradas desde la hora replanificada (espera si llega antes de la ventana)
+      const proyectar = (paradas, regresoS) => {
+        let t = inicioS;
+        const resultado = paradas.map(({ pedido_id, viaje_s }) => {
+          const v = ventanas[pedido_id];
+          const llegada = t + viaje_s;
+          const entrega = Math.max(llegada, horaASegundos(v.inicio));
+          t = entrega + servicioS(pedido_id);
+          return { pedido_id, viaje_s, entrega_s: entrega, espera_s: entrega - llegada, tarde: entrega > horaASegundos(v.fin) };
+        });
+        return { paradas: resultado, fin_s: t + regresoS };
+      };
+      const describir = (plan) => ({
+        paradas: plan.paradas.map((p) => ({ pedido_id: p.pedido_id, cliente: nombre(p.pedido_id), hora: segundosAHora(p.entrega_s), fuera_ventana: p.tarde })),
+        regreso: segundosAHora(plan.fin_s),
+        fuera_ventana: plan.paradas.filter((p) => p.tarde).map((p) => nombre(p.pedido_id)),
+      });
+
+      // El plan actual con las nuevas condiciones: mismos tramos, más lentos según el incidente
+      const tramos = tramosPlanificados(ruta, servicioS);
+      const actual = proyectar(
+        restantes.map((p) => ({ pedido_id: p.pedido_id, viaje_s: tramos.viajeS[p.orden] / factor })),
+        tramos.regresoS / factor,
+      );
+      const incidente = {
+        tipo, descripcion, retraso_min, factor_velocidad: factor,
+        latitud: posicion.latitud, longitud: posicion.longitud, hora_referencia: horaRef,
+      };
+
+      if (!actual.paradas.some((p) => p.tarde) && !forzar) {
+        return rutas.replanificar(id, {
+          incidente: {
+            ...incidente,
+            resultado: "sin_cambios",
+            resumen: {
+              mensaje:
+                "El incidente no deja ninguna entrega fuera de su ventana: se mantiene la planificación. " +
+                `Regreso al almacén estimado a las ${segundosAHora(actual.fin_s)}.`,
+              antes: describir(actual),
+              despues: null,
+            },
+          },
+        });
+      }
+
+      // Re-optimización del tramo restante: sale de la posición actual a la hora replanificada y vuelve al almacén
+      const vehiculo = await vehiculos.getById(ruta.vehiculo_id);
+      const lista = restantes.map((p) => ({
+        ...pedidosPorId[p.pedido_id],
+        ventana_entrega_inicio: ventanas[p.pedido_id].inicio,
+        ventana_entrega_fin: ventanas[p.pedido_id].fin,
+      }));
+      const optimizar = (pedidosRuta) =>
+        optimizador.optimizarRuta({ almacen, inicio: posicion, vehiculo, pedidos: pedidosRuta, horaSalida: segundosAHora(inicioS), factorVelocidad: factor });
+      let resultado = await optimizar(lista);
+      if (resultado.no_asignados.length) {
+        // Las que ya no llegan a tiempo se entregan igual (tarde): se relaja su ventana hasta el fin del día
+        const tarde = new Set(resultado.no_asignados);
+        resultado = await optimizar(lista.map((p) => (tarde.has(p.id) ? { ...p, ventana_entrega_inicio: "00:00", ventana_entrega_fin: "23:59" } : p)));
+        if (resultado.no_asignados.length) {
+          throw new RutaNoOptimizableError(`No se pudo replanificar la entrega de: ${resultado.no_asignados.map(nombre).join(", ")}.`);
+        }
+      }
+      const nuevo = proyectar(resultado.paradas, resultado.regreso_s);
+
+      // Distancia total = lo ya recorrido (almacén → paradas atendidas → posición) + el tramo replanificado
+      let recorridoM = 0;
+      if (ultima || latitud != null) {
+        // Sin puntos repetidos seguidos (la posición suele ser la última parada atendida)
+        const puntos = [almacen, ...atendidas.map((p) => pedidosPorId[p.pedido_id]), posicion].filter(
+          (p, i, todos) => i === 0 || p.latitud !== todos[i - 1].latitud || p.longitud !== todos[i - 1].longitud,
+        );
+        try {
+          recorridoM = puntos.length > 1 ? await optimizador.distanciaRecorrido(puntos) : 0;
+        } catch {
+          recorridoM = null;
+        }
+      }
+      const distancia = recorridoM == null ? ruta.distancia_estimada_km : Number(((recorridoM + resultado.distancia_m) / 1000).toFixed(2));
+
+      const ordenCambiado = restantes.map((p) => p.pedido_id).join() !== resultado.paradas.map((p) => p.pedido_id).join();
+      const despues = describir(nuevo);
+      return rutas.replanificar(id, {
+        ruta: {
+          distancia_estimada_km: distancia,
+          tiempo_estimado_min: Math.round((nuevo.fin_s - horaASegundos(ruta.hora_salida)) / 60),
+          geometria: resultado.geometria,
+          reoptimizada_at: reloj().toISOString(),
+          hora_replanificacion: segundosAHora(inicioS),
+        },
+        paradas: [
+          ...atendidas.map(({ orden, ...p }, i) => ({ ...p, orden: i + 1 })),
+          ...nuevo.paradas.map((p, i) => ({
+            orden: atendidas.length + i + 1,
+            pedido_id: p.pedido_id,
+            hora_estimada_llegada: segundosAHora(p.entrega_s),
+            espera_min: Math.round(p.espera_s / 60),
+            viaje_planificado_s: Math.round(p.viaje_s),
+            estado: "pendiente",
+          })),
+        ],
+        incidente: {
+          ...incidente,
+          resultado: "reoptimizada",
+          resumen: {
+            mensaje:
+              `Ruta actualizada desde las ${segundosAHora(inicioS)}: ${restantes.length} parada(s) pendiente(s) ` +
+              `${ordenCambiado ? "reordenadas" : "en el mismo orden, con nuevos horarios"}. ` +
+              `Regreso estimado a las ${despues.regreso} (con el plan anterior: ${segundosAHora(actual.fin_s)}).` +
+              (despues.fuera_ventana.length ? ` Llegarán fuera de su ventana: ${despues.fuera_ventana.join(", ")}.` : ""),
+            antes: describir(actual),
+            despues,
+            orden_cambiado: ordenCambiado,
+            distancia_antes_km: ruta.distancia_estimada_km,
+            distancia_despues_km: distancia,
+          },
+        },
       });
     },
   };

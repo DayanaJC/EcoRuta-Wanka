@@ -106,6 +106,24 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
       return `Reparto simulado: ${p.aTiempo} de ${p.total} entregas a tiempo${p.noEntregadas ? `, ${p.noEntregadas} no entregada(s)` : ''}.`
     })
 
+  // RF-07: devuelve true si se registró (para cerrar el formulario)
+  const registrarIncidente = async (cuerpo) => {
+    setOcupado(true)
+    try {
+      const r = await api.registrarIncidente(ruta.id, cuerpo)
+      const ultimo = r.incidentes?.at(-1)
+      notificar('exito', ultimo?.resumen?.mensaje ?? 'Incidente registrado.')
+      await recargar('rutas', 'pedidos')
+      setVersion((v) => v + 1)
+      return true
+    } catch (e) {
+      notificar('error', e.message)
+      return false
+    } finally {
+      setOcupado(false)
+    }
+  }
+
   const asignarConductor = (conductorId) =>
     ejecutar(
       () => api.asignarConductor(ruta.id, conductorId),
@@ -189,6 +207,8 @@ export function Rutas({ ubicacion, datos, cargando, recargar, notificar, confirm
           onCancelar={cancelar}
           onRegistrarEntrega={registrarEntrega}
           onSimular={simular}
+          onRegistrarIncidente={registrarIncidente}
+          clientesPorCodigo={Object.fromEntries(datos.clientes.map((c) => [c.codigo, c]))}
           gestionando={ocupado}
         />
       </>

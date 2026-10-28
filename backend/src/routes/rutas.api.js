@@ -23,6 +23,14 @@ export function crearRouterApi(c) {
   conductores.patch("/:id/estado", validar(e.cambiarEstadoConductor), c.conductores.cambiarEstado);
   conductores.delete("/:id", c.conductores.desactivar);
 
+  // Clientes/bodegas y sus preferencias de entrega (RF-09)
+  const clientes = Router();
+  clientes.post("/", validar(e.clienteCrear), c.clientes.crear);
+  clientes.get("/", validar(e.filtroClientes, "query"), c.clientes.listar);
+  clientes.get("/:id", c.clientes.obtener);
+  clientes.put("/:id", validar(e.clienteActualizar), c.clientes.actualizar);
+  clientes.patch("/:id/estado", validar(e.cambiarEstadoCliente), c.clientes.cambiarEstado);
+
   const pedidos = Router();
   pedidos.post("/", validar(e.pedidoCrear), c.pedidos.crear);
   pedidos.get("/", validar(e.filtroPedidos, "query"), c.pedidos.listar);
@@ -50,6 +58,8 @@ export function crearRouterApi(c) {
   rutas.post("/:id/simular", validar(e.simularReparto), c.rutas.simular);
   // Conductor de la ruta (RF-08); { conductor_id: null } lo quita
   rutas.patch("/:id/conductor", validar(e.asignarConductor), c.rutas.asignarConductor);
+  // Incidente durante el reparto: revisa la ruta y la re-optimiza si hace falta (RF-07)
+  rutas.post("/:id/incidentes", validar(e.registrarIncidente), c.rutas.registrarIncidente);
   rutas.delete("/:id", c.rutas.cancelar);
 
   const factores = Router();
@@ -65,6 +75,7 @@ export function crearRouterApi(c) {
 
   api.use("/vehiculos", vehiculos);
   api.use("/conductores", conductores);
+  api.use("/clientes", clientes);
   api.use("/pedidos", pedidos);
   api.use("/asignaciones", asignaciones);
   api.use("/rutas", rutas);

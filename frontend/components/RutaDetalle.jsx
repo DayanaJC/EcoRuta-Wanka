@@ -4,12 +4,14 @@ import dynamic from 'next/dynamic'
 import { BadgeEstadoParada, BadgeEstadoRuta } from './Badges.jsx'
 import { AntesDespues } from './AntesDespues.jsx'
 import { ConductorRuta } from './ConductorRuta.jsx'
+import { IncidentesRuta } from './IncidentesRuta.jsx'
 import { Aviso } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import { capacidadVolumenM3 } from '../utils/carga.js'
 import { enlacesGoogleMaps } from '../utils/googleMaps.js'
 import {
   ETIQUETAS_REGISTRADO_POR,
+  ETIQUETAS_TIPO_INCIDENTE,
   ETIQUETAS_TIPO_VEHICULO,
   formatearDuracion,
   formatearHora,
@@ -154,13 +156,21 @@ export function RutaDetalle({
   onRegistrarEntrega,
   onSimular,
   onAsignarConductor,
+  onRegistrarIncidente,
+  clientesPorCodigo = {},
   gestionando,
 }) {
   const [imprevistos, setImprevistos] = useState(false)
   const paradas = (ruta.paradas ?? []).map((p) => ({ ...pedidosPorId[p.pedido_id], ...p }))
   const conUbicacion = paradas.filter((p) => p.latitud !== undefined)
-  const almacen = ruta.geometria?.[0]
-  const enlacesGoogle = conUbicacion.length === paradas.length ? enlacesGoogleMaps(almacen, conUbicacion) : []
+  // El trazado siempre termina en el almacén; tras una re-optimización empieza en la posición del vehículo
+  // y Google Maps solo guía por las paradas pendientes
+  const almacen = ruta.geometria?.at(-1)
+  const reoptimizada = Boolean(ruta.reoptimizada_at)
+  const porRecorrer = reoptimizada ? conUbicacion.filter((p) => p.estado === 'pendiente') : conUbicacion
+  const enlacesGoogle =
+    conUbicacion.length === paradas.length && porRecorrer.length ? enlacesGoogleMaps(almacen, porRecorrer, reoptimizada ? ruta.geometria?.[0] : almacen) : []
+  const ultimoIncidente = reoptimizada ? [...(ruta.incidentes ?? [])].reverse().find((i) => i.resultado === 'reoptimizada') : null
   const regreso = sumarMinutos(ruta.hora_salida, ruta.tiempo_estimado_min)
   const carga = paradas.reduce((s, p) => s + (p.peso_kg ?? 0), 0)
   const siguiente = SIGUIENTE[ruta.estado]
@@ -282,6 +292,15 @@ export function RutaDetalle({
 
       {ruta.estado === 'cancelada' && <Aviso tipo="info">Esta ruta fue cancelada.</Aviso>}
 
+      {ultimoIncidente && (
+        <Aviso tipo="alerta">
+          <strong>Ruta re-optimizada</strong> por un incidente de las {ultimoIncidente.hora_referencia} ({(ETIQUETAS_TIPO_INCIDENTE[ultimoIncidente.tipo] ?? ultimoIncidente.tipo).toLowerCase()}): las
+          paradas pendientes se replanificaron desde las {ruta.hora_replanificacion}. El mapa muestra el recorrido que falta.
+        </Aviso>
+      )}
+
+      <IncidentesRuta ruta={ruta} onRegistrar={onRegistrarIncidente} gestionando={gestionando} />
+
       <AntesDespues ruta={ruta} vehiculo={vehiculo} />
 
       {ajustada && (
@@ -324,6 +343,9 @@ export function RutaDetalle({
                         {(p.bultos ?? []).reduce((s, b) => s + b.cantidad, 0)} bulto(s) · ventana {formatearVentana(p)}
                         {p.punto_referencia && ` · ${p.punto_referencia}`}
                       </div>
+                    )}
+                    {clientesPorCodigo[p.cliente_id]?.indicaciones && (
+                      <div className="hito-detalle">Indicaciones: {clientesPorCodigo[p.cliente_id].indicaciones}</div>
                     )}
                     {(p.bultos ?? []).some((b) => !b.apilable) && (
                       <div className="hito-detalle hito-espera">

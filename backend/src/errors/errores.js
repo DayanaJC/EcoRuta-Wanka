@@ -58,6 +58,14 @@ export class ConductorExistenteError extends Conflicto {}
 export class ConductorNoDisponibleError extends Conflicto {}
 export class ConductorConRutasError extends Conflicto {}
 
+// Clientes y preferencias de entrega (RF-09)
+export class ClienteNotFoundError extends NoEncontrado {}
+export class ClienteExistenteError extends Conflicto {}
+export class PreferenciaEntregaError extends NoProcesable {}
+
+// Incidentes y re-optimización (RF-07)
+export class RutaSinPendientesError extends Conflicto {}
+
 // Indicadores y reportes de sostenibilidad (RF-05, RF-06)
 export class PeriodoInvalidoError extends NoProcesable {}
 export class SinDatosError extends NoEncontrado {}
