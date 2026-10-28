@@ -44,6 +44,17 @@ describe("crearClienteOrs", () => {
     expect(enviado.vehicles[0]).toMatchObject({ capacity: [1000000, 3168], speed_factor: 0.7, start: [-75.2104, -12.0681], time_window: [28800, 86399] });
   });
 
+  it("al re-optimizar sale desde la posición del vehículo y vuelve al almacén", async () => {
+    let enviado;
+    const fetchImpl = async (url, opciones) => {
+      enviado = JSON.parse(opciones.body);
+      return respuestaJson({ routes: [{ distance: 0, geometry: "", steps: [{ type: "start", duration: 0 }, { type: "end", duration: 0 }] }], unassigned: [] })();
+    };
+    const inicio = { latitud: -12.05, longitud: -75.19 };
+    await crearClienteOrs({ apiKey: "k", fetchImpl }).optimizarRuta({ almacen, inicio, vehiculo, pedidos, horaSalida: "11:30", factorVelocidad: 0.8 });
+    expect(enviado.vehicles[0]).toMatchObject({ start: [-75.19, -12.05], end: [-75.2104, -12.0681], time_window: [41400, 86399] });
+  });
+
   it("devuelve el orden y el manejo de cada tramo (step.duration es acumulado)", async () => {
     // VROOM retrasa la salida (arrival): solo se usan el orden y los tiempos de manejo
     const fetchImpl = respuestaJson({

@@ -93,6 +93,20 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
     }),
+  // Clientes/bodegas y sus preferencias de entrega (RF-09)
+  listarClientes: (params = {}) => pedir(`/clientes${aQueryParams(params)}`),
+  crearCliente: (datos) =>
+    pedir('/clientes', { method: 'POST', body: JSON.stringify(datos) }),
+  actualizarCliente: (id, datos) =>
+    pedir(`/clientes/${id}`, { method: 'PUT', body: JSON.stringify(datos) }),
+  cambiarEstadoCliente: (id, estado) =>
+    pedir(`/clientes/${id}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado }),
+    }),
+  // Incidente en una ruta en reparto: la revisa y la re-optimiza si hace falta (RF-07)
+  registrarIncidente: (rutaId, datos) =>
+    pedir(`/rutas/${rutaId}/incidentes`, { method: 'POST', body: JSON.stringify(datos) }),
   // params: { desde, hasta, vehiculo_id, conductor_id, geometria: 'true' }
   listarRutas: (params = {}) => pedir(`/rutas${aQueryParams(params)}`),
   // conductor_id null = quitar el conductor

@@ -17,6 +17,42 @@ export const ETIQUETAS_ESTADO_CONDUCTOR = {
   inactivo: 'Inactivo',
 }
 
+export const ETIQUETAS_ESTADO_CLIENTE = {
+  activo: 'Activo',
+  inactivo: 'Inactivo',
+}
+
+export const ETIQUETAS_TIPO_CLIENTE = {
+  bodega: 'Bodega',
+  minimarket: 'Minimarket',
+  restaurante: 'Restaurante',
+  farmacia: 'Farmacia',
+  otro: 'Otro',
+}
+
+// Días de recepción: 0 = domingo … 6 = sábado (como en la API)
+export const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0]
+
+// [1,2,3,4,5,6] -> "Lun a Sáb"; [1,3,5] -> "Lun, Mié, Vie"
+export function formatearDias(dias = []) {
+  const lista = ORDEN_DIAS.filter((d) => dias.includes(d))
+  if (lista.length === 7) return 'Todos los días'
+  const posiciones = lista.map((d) => ORDEN_DIAS.indexOf(d))
+  const seguidos = lista.length > 2 && posiciones.every((p, i) => i === 0 || p === posiciones[i - 1] + 1)
+  return seguidos ? `${DIAS_SEMANA[lista[0]]} a ${DIAS_SEMANA[lista.at(-1)]}` : lista.map((d) => DIAS_SEMANA[d]).join(', ')
+}
+
+// Incidentes durante el reparto (RF-07)
+export const ETIQUETAS_TIPO_INCIDENTE = {
+  trafico_intenso: 'Tráfico intenso',
+  via_bloqueada: 'Vía bloqueada o desvío',
+  accidente: 'Accidente en la vía',
+  lluvia: 'Lluvia o mal clima',
+  retraso_vehiculo: 'Retraso del vehículo (avería, carga)',
+  otro: 'Otro',
+}
+
 export const ETIQUETAS_ESTADO_ASIGNACION = {
   asignada: 'Asignada',
   cancelada: 'Cancelada',
@@ -65,6 +101,7 @@ export const TONOS = {
   pedido: { pendiente: 'azul', en_ruta: 'ambar', entregado: 'verde', cancelado: 'gris' },
   vehiculo: { activo: 'verde', inactivo: 'gris' },
   conductor: { activo: 'verde', inactivo: 'gris' },
+  cliente: { activo: 'verde', inactivo: 'gris' },
   asignacion: { asignada: 'verde', cancelada: 'gris' },
   ruta: { generada: 'azul', en_reparto: 'ambar', completada: 'verde', cancelada: 'gris' },
   parada: { pendiente: 'gris', entregada: 'verde', no_entregada: 'rojo' },

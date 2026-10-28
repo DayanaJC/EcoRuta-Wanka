@@ -31,6 +31,7 @@ export function crearRepositoriosMemoria() {
   const p = tabla();
   const a = tabla();
   const r = tabla();
+  const cl = tabla();
   const factores = [];
 
   return {
@@ -46,6 +47,19 @@ export function crearRepositoriosMemoria() {
       crear: (datos) => c.crear({ telefono: null, licencia: null, estado: "activo", ...datos }),
       getByDni: async (dni) => c.todas().find((x) => x.dni === dni) ?? null,
       listar: async ({ estado } = {}) => c.todas().filter((x) => !estado || x.estado === estado),
+    },
+    clientes: {
+      ...cl,
+      crear: (datos) => cl.crear({ telefono: null, punto_referencia: "", indicaciones: "", estado: "activo", ...datos }),
+      getByCodigo: async (codigo) => cl.todas().find((x) => x.codigo === codigo) ?? null,
+      getPorCodigos: async (codigos) => cl.todas().filter((x) => codigos.includes(x.codigo)),
+      listar: async ({ estado, busqueda } = {}) => {
+        const texto = busqueda?.trim().toLowerCase();
+        return cl
+          .todas()
+          .filter((x) => !estado || x.estado === estado)
+          .filter((x) => !texto || [x.codigo, x.nombre, x.direccion].join(" ").toLowerCase().includes(texto));
+      },
     },
     pedidos: {
       ...p,
@@ -76,12 +90,22 @@ export function crearRepositoriosMemoria() {
           .filter((x) => (!vehiculo_id || x.vehiculo_id === vehiculo_id) && (!conductor_id || x.conductor_id === conductor_id)),
       listarPorVehiculo: async (id) => r.todas().filter((x) => x.vehiculo_id === id),
       crearConParadas: async (datos) =>
-        r.crear({ conductor_id: null, ...datos, paradas: datos.paradas.map((x) => ({ estado: "pendiente", ...x })), pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
+        r.crear({ conductor_id: null, incidentes: [], ...datos, paradas: datos.paradas.map((x) => ({ estado: "pendiente", ...x })), pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
       aplicarCambios: async (id, { ruta = {}, paradas = [], pedidos: cambiosPedidos = [] }) => {
         for (const { id: pedidoId, ...campos } of cambiosPedidos) await p.actualizar(pedidoId, campos);
         const actual = await r.getById(id);
         const nuevas = actual.paradas.map((x) => ({ ...x, ...(paradas.find((c) => c.orden === x.orden) ?? {}) }));
         return r.actualizar(id, { ...ruta, paradas: nuevas });
+      },
+      replanificar: async (id, { ruta = {}, paradas, incidente }) => {
+        const actual = await r.getById(id);
+        const nuevas = paradas ? paradas.map((x) => ({ entregado_at: null, ...x })) : actual.paradas;
+        return r.actualizar(id, {
+          ...ruta,
+          paradas: nuevas,
+          pedido_ids: nuevas.map((x) => x.pedido_id),
+          incidentes: [...actual.incidentes, { id: randomUUID(), ruta_id: id, ...incidente, created_at: ahora() }],
+        });
       },
     },
     factoresTrafico: {

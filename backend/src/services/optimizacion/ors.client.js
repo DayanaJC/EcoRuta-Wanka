@@ -66,12 +66,13 @@ export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
     },
 
     /**
-     * @param {{ almacen: {latitud:number, longitud:number}, vehiculo: object, pedidos: object[],
-     *           horaSalida: string, factorVelocidad: number }} datos
+     * @param {{ almacen: {latitud:number, longitud:number}, inicio?: {latitud:number, longitud:number},
+     *           vehiculo: object, pedidos: object[], horaSalida: string, factorVelocidad: number }} datos
+     *   inicio: punto de partida si no es el almacén (posición del vehículo al re-optimizar)
      * @returns {{ paradas: {pedido_id:string, viaje_s:number}[], regreso_s:number, no_asignados: string[],
      *             distancia_m:number, geometria: number[][] }}
      */
-    async optimizarRuta({ almacen, vehiculo, pedidos, horaSalida, factorVelocidad }) {
+    async optimizarRuta({ almacen, inicio = almacen, vehiculo, pedidos, horaSalida, factorVelocidad }) {
       if (!apiKey) throw new OptimizacionNoConfiguradaError("El servicio de optimización no está configurado (falta ORS_API_KEY).");
 
       const deposito = [almacen.longitud, almacen.latitud];
@@ -88,7 +89,7 @@ export function crearClienteOrs({ apiKey, fetchImpl = fetch }) {
           {
             id: 1,
             profile: "driving-car",
-            start: deposito,
+            start: [inicio.longitud, inicio.latitud],
             end: deposito,
             capacity: [aGramos(vehiculo.capacidad_carga_kg), litrosCapacidad(capacidadVolumenM3(vehiculo))],
             time_window: [horaASegundos(horaSalida), FIN_DEL_DIA],

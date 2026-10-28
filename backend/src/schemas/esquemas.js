@@ -139,6 +139,54 @@ export const filtroPedidos = z.object({
   busqueda: z.string().optional(),
 });
 
+// ---------- Clientes y preferencias de entrega (RF-09) ----------
+
+export const TIPOS_CLIENTE = ["bodega", "minimarket", "restaurante", "farmacia", "otro"];
+export const ESTADOS_CLIENTE = ["activo", "inactivo"];
+
+const camposCliente = {
+  codigo: z
+    .string({ error: "El código es obligatorio." })
+    .trim()
+    .transform((v) => v.toUpperCase())
+    .refine((v) => /^[A-Z0-9-]{3,50}$/.test(v), "Código inválido: de 3 a 50 letras, dígitos o guiones (ejemplo: CLI-0001)."),
+  nombre: texto(3, 100),
+  tipo: z.enum(TIPOS_CLIENTE),
+  telefono: camposConductor.telefono,
+  direccion: texto(5, 200),
+  punto_referencia: z.string().trim().max(200),
+  latitud: z.number().gte(-90).lte(90),
+  longitud: z.number().gte(-180).lte(180),
+  ventana_inicio: hora,
+  ventana_fin: hora,
+  // 0 = domingo … 6 = sábado
+  dias_recepcion: z
+    .array(z.number().int().gte(0).lte(6))
+    .min(1, "Elige al menos un día de recepción.")
+    .transform((dias) => [...new Set(dias)].sort((a, b) => a - b)),
+  tiempo_atencion_min: z.number().int().gte(0).lte(240),
+  indicaciones: z.string().trim().max(300),
+  estado: z.enum(ESTADOS_CLIENTE),
+};
+
+export const clienteCrear = z.object({
+  ...camposCliente,
+  tipo: camposCliente.tipo.default("bodega"),
+  telefono: opcional(camposCliente.telefono.default(null)),
+  punto_referencia: camposCliente.punto_referencia.default(""),
+  dias_recepcion: camposCliente.dias_recepcion.default([1, 2, 3, 4, 5, 6]),
+  tiempo_atencion_min: camposCliente.tiempo_atencion_min.default(5),
+  indicaciones: camposCliente.indicaciones.default(""),
+  estado: camposCliente.estado.default("activo"),
+});
+// El código no cambia: es el que enlaza al cliente con sus pedidos
+export const clienteActualizar = z
+  .object({ ...camposCliente, telefono: opcional(camposCliente.telefono) })
+  .omit({ codigo: true })
+  .partial();
+export const cambiarEstadoCliente = z.object({ estado: z.enum(ESTADOS_CLIENTE) });
+export const filtroClientes = z.object({ estado: z.enum(ESTADOS_CLIENTE).optional(), busqueda: z.string().optional() });
+
 // ---------- Asignaciones ----------
 
 const id = z.string().trim().min(1, "El id no puede estar vacío.").max(100);
@@ -198,6 +246,28 @@ export const simularReparto = z.object({
   // Probabilidad (0 a 1) de que una parada no se pueda entregar
   probabilidad_no_entrega: z.number().gte(0).lte(1).default(0),
 });
+
+// ---------- Incidentes y re-optimización (RF-07) ----------
+
+export const TIPOS_INCIDENTE = ["trafico_intenso", "via_bloqueada", "accidente", "lluvia", "retraso_vehiculo", "otro"];
+export const registrarIncidente = z
+  .object({
+    tipo: z.enum(TIPOS_INCIDENTE),
+    descripcion: z.string().trim().max(200).default(""),
+    // Minutos que el vehículo queda detenido
+    retraso_min: z.number().int().gte(0).lte(240).default(0),
+    // Hora del incidente; sin ella se usa la hora actual (o la del último registro si la ruta no es de hoy)
+    hora: hora.optional(),
+    // Posición del vehículo; sin ella, la última parada atendida (o el almacén)
+    latitud: z.number().gte(-90).lte(90).optional(),
+    longitud: z.number().gte(-180).lte(180).optional(),
+    // true = re-optimizar aunque ninguna entrega quede fuera de su ventana
+    forzar: z.boolean().default(false),
+  })
+  .refine((v) => (v.latitud == null) === (v.longitud == null), {
+    message: "Indica la latitud y la longitud juntas.",
+    path: ["latitud"],
+  });
 
 // ---------- Geocodificación ----------
 

@@ -51,6 +51,43 @@ const aConductor = (c) =>
     updated_at: iso(c.updated_at),
   };
 
+const aCliente = (c) =>
+  c && {
+    id: c.id,
+    codigo: c.codigo,
+    nombre: c.nombre,
+    tipo: c.tipo,
+    telefono: c.telefono,
+    direccion: c.direccion,
+    punto_referencia: c.punto_referencia,
+    latitud: num(c.latitud),
+    longitud: num(c.longitud),
+    ventana_inicio: dateAHora(c.ventana_inicio),
+    ventana_fin: dateAHora(c.ventana_fin),
+    dias_recepcion: c.dias_recepcion,
+    tiempo_atencion_min: c.tiempo_atencion_min,
+    indicaciones: c.indicaciones,
+    estado: c.estado,
+    created_at: iso(c.created_at),
+    updated_at: iso(c.updated_at),
+  };
+
+const aIncidente = (i) =>
+  i && {
+    id: i.id,
+    ruta_id: i.ruta_id,
+    tipo: i.tipo,
+    descripcion: i.descripcion,
+    retraso_min: i.retraso_min,
+    factor_velocidad: num(i.factor_velocidad),
+    latitud: num(i.latitud),
+    longitud: num(i.longitud),
+    hora_referencia: dateAHora(i.hora_referencia),
+    resultado: i.resultado,
+    resumen: i.resumen,
+    created_at: iso(i.created_at),
+  };
+
 const aPedido = (p) =>
   p && {
     id: p.id,
@@ -107,6 +144,7 @@ const aRuta = (r, { conGeometria = true } = {}) => {
       pedido_id: p.pedido_id,
       hora_estimada_llegada: dateAHora(p.hora_estimada_llegada),
       espera_min: p.espera_min ?? 0,
+      viaje_planificado_s: p.viaje_planificado_s ?? null,
       estado: p.estado,
       entregado_at: iso(p.entregado_at),
       dentro_ventana: p.dentro_ventana,
@@ -125,6 +163,9 @@ const aRuta = (r, { conGeometria = true } = {}) => {
     iniciada_at: iso(r.iniciada_at),
     completada_at: iso(r.completada_at),
     regreso_at: iso(r.regreso_at),
+    reoptimizada_at: iso(r.reoptimizada_at),
+    hora_replanificacion: dateAHora(r.hora_replanificacion),
+    incidentes: (r.incidentes ?? []).map(aIncidente),
     created_at: iso(r.created_at),
     updated_at: iso(r.updated_at),
   };
@@ -144,6 +185,14 @@ const aFactor = (f) =>
 const aFilaPedido = (campos) => {
   const { bultos, ...fila } = campos;
   for (const c of ["ventana_entrega_inicio", "ventana_entrega_fin"]) {
+    if (fila[c] !== undefined) fila[c] = horaADate(fila[c]);
+  }
+  return fila;
+};
+
+const aFilaCliente = (campos) => {
+  const fila = { ...campos };
+  for (const c of ["ventana_inicio", "ventana_fin"]) {
     if (fila[c] !== undefined) fila[c] = horaADate(fila[c]);
   }
   return fila;
@@ -209,6 +258,24 @@ export function crearRepositorios(prisma) {
       ),
   };
 
+  const clientes = {
+    getById: async (id) => (esUuid(id) ? aCliente(await prisma.cliente.findUnique({ where: { id } })) : null),
+    getByCodigo: async (codigo) => aCliente(await prisma.cliente.findUnique({ where: { codigo } })),
+    getPorCodigos: async (codigos) => (await prisma.cliente.findMany({ where: { codigo: { in: codigos } } })).map(aCliente),
+    listar: async ({ estado, busqueda } = {}) => {
+      const texto = busqueda?.trim();
+      const where = {
+        ...(estado ? { estado } : {}),
+        ...(texto
+          ? { OR: ["codigo", "nombre", "direccion"].map((campo) => ({ [campo]: { contains: texto, mode: "insensitive" } })) }
+          : {}),
+      };
+      return (await prisma.cliente.findMany({ where, orderBy: { nombre: "asc" } })).map(aCliente);
+    },
+    crear: async (datos) => aCliente(await prisma.cliente.create({ data: aFilaCliente(datos) })),
+    actualizar: async (id, campos) => aCliente(await prisma.cliente.update({ where: { id }, data: aFilaCliente(campos) })),
+  };
+
   const asignaciones = {
     getById: async (id) => (esUuid(id) ? aAsignacion(await prisma.asignacion.findUnique({ where: { id } })) : null),
     listar: async () => (await prisma.asignacion.findMany({ orderBy: { fecha_asignacion: "desc" } })).map(aAsignacion),
@@ -232,7 +299,7 @@ export function crearRepositorios(prisma) {
     actualizar: async (id, campos) => aAsignacion(await prisma.asignacion.update({ where: { id }, data: campos })),
   };
 
-  const incluirParadas = { paradas: { orderBy: { orden: "asc" } } };
+  const incluirParadas = { paradas: { orderBy: { orden: "asc" } }, incidentes: { orderBy: { created_at: "asc" } } };
   const rutas = {
     getById: async (id) => (esUuid(id) ? aRuta(await prisma.ruta.findUnique({ where: { id }, include: incluirParadas })) : null),
     // Filtros opcionales: periodo (fecha de la ruta), vehículo y conductor
@@ -266,6 +333,7 @@ export function crearRepositorios(prisma) {
                 orden: p.orden,
                 hora_estimada_llegada: p.hora_estimada_llegada ? horaADate(p.hora_estimada_llegada) : null,
                 espera_min: p.espera_min ?? 0,
+                viaje_planificado_s: p.viaje_planificado_s ?? null,
               })),
             },
           },
@@ -280,6 +348,36 @@ export function crearRepositorios(prisma) {
         ...paradas.map(({ orden, ...data }) => prisma.rutaParada.update({ where: { ruta_id_orden: { ruta_id: id, orden } }, data })),
         ...cambiosPedidos.map(({ id: pedidoId, ...data }) => prisma.pedido.update({ where: { id: pedidoId }, data })),
         ...(Object.keys(ruta).length ? [prisma.ruta.update({ where: { id }, data: ruta })] : []),
+      ]);
+      return aRuta(await prisma.ruta.findUnique({ where: { id }, include: incluirParadas }));
+    },
+    // Re-optimización (RF-07): en UNA transacción reemplaza las paradas (las ya atendidas se
+    // conservan con su resultado; las pendientes llegan con su nuevo orden y horario),
+    // actualiza la ruta y guarda el incidente que la originó.
+    replanificar: async (id, { ruta = {}, paradas, incidente }) => {
+      await prisma.$transaction([
+        ...(paradas
+          ? [
+              prisma.rutaParada.deleteMany({ where: { ruta_id: id } }),
+              prisma.rutaParada.createMany({
+                data: paradas.map(({ hora_estimada_llegada, entregado_at, ...p }) => ({
+                  ...p,
+                  ruta_id: id,
+                  hora_estimada_llegada: hora_estimada_llegada ? horaADate(hora_estimada_llegada) : null,
+                  entregado_at: entregado_at ? new Date(entregado_at) : null,
+                })),
+              }),
+            ]
+          : []),
+        ...(Object.keys(ruta).length
+          ? [
+              prisma.ruta.update({
+                where: { id },
+                data: { ...ruta, ...(ruta.hora_replanificacion ? { hora_replanificacion: horaADate(ruta.hora_replanificacion) } : {}) },
+              }),
+            ]
+          : []),
+        prisma.incidenteRuta.create({ data: { ...incidente, ruta_id: id, hora_referencia: horaADate(incidente.hora_referencia) } }),
       ]);
       return aRuta(await prisma.ruta.findUnique({ where: { id }, include: incluirParadas }));
     },
@@ -299,5 +397,5 @@ export function crearRepositorios(prisma) {
 
   const salud = { ping: async () => prisma.$queryRaw`SELECT 1` };
 
-  return { vehiculos, conductores, pedidos, asignaciones, rutas, factoresTrafico, salud };
+  return { vehiculos, conductores, clientes, pedidos, asignaciones, rutas, factoresTrafico, salud };
 }

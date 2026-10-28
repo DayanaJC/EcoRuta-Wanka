@@ -24,11 +24,12 @@ function urlDirecciones(puntos) {
 /**
  * @param {[number, number]} almacen  [lat, lon] de salida y regreso
  * @param {{ latitud: number, longitud: number }[]} paradas  en el orden optimizado
+ * @param {[number, number]} [inicio]  [lat, lon] de salida si no es el almacén (ruta re-optimizada)
  * @returns {{ etiqueta: string, url: string }[]}
  */
-export function enlacesGoogleMaps(almacen, paradas) {
-  if (!almacen || paradas.length === 0) return []
-  const puntos = [almacen, ...paradas.map((p) => [p.latitud, p.longitud]), almacen]
+export function enlacesGoogleMaps(almacen, paradas, inicio = almacen) {
+  if (!almacen || !inicio || paradas.length === 0) return []
+  const puntos = [inicio, ...paradas.map((p) => [p.latitud, p.longitud]), almacen]
   const porTramo = MAX_PARADAS_INTERMEDIAS + 1 // puntos que avanza cada enlace
 
   const enlaces = []
@@ -38,7 +39,7 @@ export function enlacesGoogleMaps(almacen, paradas) {
   }
 
   const total = paradas.length + 1 // índice del regreso al almacén
-  const nombre = (i) => (i === 0 || i === total ? 'almacén' : `parada ${i}`)
+  const nombre = (i) => (i === 0 ? (inicio === almacen ? 'almacén' : 'posición actual') : i === total ? 'almacén' : `parada ${i}`)
   return enlaces.map((e, i) => ({
     etiqueta: enlaces.length === 1 ? 'Abrir ruta en Google Maps' : `Tramo ${i + 1}: ${nombre(e.desde)} → ${nombre(e.hasta)}`,
     url: e.url,

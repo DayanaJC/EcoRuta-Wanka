@@ -30,6 +30,10 @@ export const segundosAHora = (seg) => {
 export const hoyEn = (zonaHoraria) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: zonaHoraria, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
+// Fecha local "YYYY-MM-DD" de un instante en la zona indicada
+export const fechaLocal = (instante, zonaHoraria) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: zonaHoraria, year: "numeric", month: "2-digit", day: "2-digit" }).format(instante);
+
 // "laborable" (lunes a viernes) o "fin_semana"
 export const tipoDia = (yyyymmdd) => {
   const dia = fechaADate(yyyymmdd).getUTCDay();

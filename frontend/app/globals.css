@@ -1573,7 +1573,7 @@ textarea {
     inset: auto 0 0 0;
     z-index: 50;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
     background: var(--superficie);
     border-top: 1px solid var(--borde);
@@ -1892,4 +1892,36 @@ textarea {
   .dialogo-mapa-pie .boton {
     flex: 1;
   }
+}
+
+/* ---------------- Incidentes y re-optimización (RF-07) ---------------- */
+
+.incidente {
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--gris-400);
+  border-radius: var(--radio);
+}
+
+.incidente-reoptimizada {
+  border-left-color: var(--ambar, #d97706);
+}
+
+.incidente-sin_cambios {
+  border-left-color: var(--marca-600);
+}
+
+.incidente-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.incidente .tabla th,
+.incidente .tabla td {
+  padding: 6px 10px;
+  font-size: 0.85rem;
 }

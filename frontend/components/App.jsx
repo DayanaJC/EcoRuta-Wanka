@@ -3,9 +3,10 @@
 // Estructura general: barra lateral, datos compartidos, avisos y confirmaciones.
 // Cada módulo se encarga de su propia lista, formulario y detalle.
 
-import { ChartColumn, IdCard, Leaf, Package, Route, Truck } from 'lucide-react'
+import { ChartColumn, IdCard, Leaf, Package, Route, Store, Truck } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../services/api.js'
+import { Clientes } from './modulos/Clientes.jsx'
 import { Conductores } from './modulos/Conductores.jsx'
 import { Pedidos } from './modulos/Pedidos.jsx'
 import { Sostenibilidad } from './modulos/Sostenibilidad.jsx'
@@ -19,6 +20,7 @@ import { DialogoConfirmacion, Toasts } from './ui.jsx'
 // - Asignaciones: { id: 'asignaciones', etiqueta: 'Asignaciones', icono: Link2, componente: Asignaciones }.
 const MODULOS = [
   { id: 'pedidos', etiqueta: 'Pedidos', icono: Package, componente: Pedidos },
+  { id: 'clientes', etiqueta: 'Clientes', icono: Store, componente: Clientes },
   { id: 'vehiculos', etiqueta: 'Vehículos', icono: Truck, componente: Vehiculos },
   { id: 'conductores', etiqueta: 'Conductores', icono: IdCard, componente: Conductores },
   { id: 'rutas', etiqueta: 'Rutas', icono: Route, componente: Rutas },
@@ -29,12 +31,13 @@ const CARGADORES = {
   pedidos: () => api.listarPedidos(),
   vehiculos: () => api.listarVehiculos(),
   conductores: () => api.listarConductores(),
+  clientes: () => api.listarClientes(),
   asignaciones: () => api.listarAsignaciones(),
   rutas: () => api.listarRutas(),
 }
 
 function useDatos(notificar) {
-  const [datos, setDatos] = useState({ pedidos: [], vehiculos: [], conductores: [], asignaciones: [], rutas: [] })
+  const [datos, setDatos] = useState({ pedidos: [], vehiculos: [], conductores: [], clientes: [], asignaciones: [], rutas: [] })
   const [cargando, setCargando] = useState(true)
 
   const recargar = useCallback(

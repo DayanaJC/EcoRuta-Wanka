@@ -8,6 +8,7 @@ import { crearControladores } from "./controllers/controladores.js";
 import { manejarErrores, rutaNoEncontrada } from "./middlewares/errores.js";
 import { crearRouterApi } from "./routes/rutas.api.js";
 import { crearAsignacionService } from "./services/asignacion.service.js";
+import { crearClienteService } from "./services/cliente.service.js";
 import { crearConductorService } from "./services/conductor.service.js";
 import { crearIndicadoresService } from "./services/indicadores.service.js";
 import { crearPedidoService } from "./services/pedido.service.js";
@@ -31,6 +32,7 @@ export function crearApp({
   const servicios = {
     vehiculos: crearVehiculoService(repos),
     conductores: crearConductorService(repos),
+    clientes: crearClienteService(repos),
     indicadores,
     reportes: crearReporteService({ indicadores, zonaHoraria, reloj }),
     pedidos: crearPedidoService(repos),
