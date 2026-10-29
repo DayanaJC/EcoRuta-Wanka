@@ -15,20 +15,19 @@
 
 ## 1. Resumen Ejecutivo de Quality Gate
 
-El **Quality Gate** es la "nota de aprobado o desaprobado" que SonarQube le pone al código.
+El análisis de SonarQube Cloud permitió evaluar la calidad del código fuente de EcoRuta Wanka mediante métricas de cobertura, duplicación, confiabilidad, seguridad y mantenibilidad.
 
-- **Estado del Quality Gate:** **No calculado todavía.** SonarQube Cloud solo lo calcula a partir del segundo análisis, y este fue el primero. Según sus reglas, con los resultados de hoy **no aprobaría**, por el único error de funcionamiento encontrado (nota D en confiabilidad). Una vez corregido, debería aprobar.
-- **Porcentaje de Cobertura de Pruebas (Coverage):** **87,55 %**. Es la parte del código que las pruebas automáticas revisan. Se midió ejecutando las 109 pruebas del proyecto en GitHub, y **las 109 pasaron**. La meta del proyecto es al menos 80 %, así que se cumple.
-- **Duplicación de Código:** **0,3 %**. Casi no hay código repetido; el máximo aceptado es 3 %.
+- **Estado del Quality Gate:** Pendiente de confirmación. El primer análisis no proporcionó un resultado definitivo del Quality Gate.
+- **Porcentaje de cobertura de pruebas (Coverage):** 87,55 %.
+- **Duplicación de código:** 0,3 %.
+- **Pruebas automatizadas:** 109 pruebas ejecutadas y aprobadas.
+- **Deuda técnica estimada:** 2 horas y 40 minutos.
 
-**Notas por tema** (de A = muy bien a E = muy mal):
+Los resultados muestran una cobertura superior al objetivo mínimo del 80 % y una duplicación inferior al límite de referencia del 3 %. Sin embargo, se identificaron un bug de severidad alta, una vulnerabilidad de severidad baja y 16 observaciones de mantenibilidad que requieren revisión.
 
-| Tema | Nota | Qué significa |
-| ---- | :--: | ------------- |
-| Confiabilidad (¿falla el programa?) | **D** | Hay 1 error que conviene corregir. |
-| Seguridad | **B** | Hay 1 detalle menor de seguridad. |
-| Mantenibilidad (¿es fácil de cambiar?) | **A** | El código está ordenado y es fácil de mantener. |
-| Puntos sensibles de seguridad revisados | **A** | No se encontró ninguno. |
+Por ello, se deben aplicar las correcciones correspondientes y ejecutar un nuevo análisis para confirmar que el Quality Gate cumpla los criterios de aprobación.
+
+**Evidencias:**
 
 ![Evidencia 24: Resumen de SonarQube Cloud](../../06%20Otros/evidencias/Evidencia%2024%20Resumen%20de%20SonarQube%20Cloud.jpg)
 
@@ -38,13 +37,26 @@ El **Quality Gate** es la "nota de aprobado o desaprobado" que SonarQube le pone
 
 ## 2. Métricas Principales
 
-| Categoría | Cantidad Detectada | Severidad (Bloqueante / Alta / Media / Baja) |
-| :-------- | :----------------- | :------------------------------------------- |
-| **Bugs** (errores que pueden hacer fallar el programa) | 1 | 1 Alta |
-| **Vulnerabilidades** (puntos débiles de seguridad) | 1 | 1 Baja |
-| **Code Smells** (código que funciona, pero se puede escribir mejor) | 16 | 13 Bloqueantes y 3 Medias |
-| **Security Hotspots** (partes sensibles que hay que revisar a mano) | 0 | — |
-| **Total** | **18 observaciones** | |
+Los resultados del análisis se resumen en la siguiente tabla:
+
+| Categoría | Cantidad detectada | Severidad |
+|---|:---:|---|
+| **Bugs** | 1 | Alta |
+| **Vulnerabilidades** | 1 | Baja |
+| **Code Smells** | 16 | 13 bloqueantes y 3 medias, según el registro inicial |
+| **Security Hotspots** | 0 | Sin observaciones |
+| **Total de observaciones** | **18** | |
+
+### Interpretación de los resultados
+
+- **Bugs:** Se detectó un posible error en la comparación y ordenamiento de horas en el archivo `ruta.service.js`, línea 411.
+- **Vulnerabilidades:** Se identificó la exposición de información tecnológica del servidor mediante la cabecera `X-Powered-By` en `server.js`.
+- **Code Smells:** Se encontraron observaciones relacionadas con las aserciones de las pruebas automatizadas y la accesibilidad de algunos componentes de la interfaz.
+- **Security Hotspots:** No se registraron puntos sensibles pendientes de revisión en el análisis realizado.
+
+Las cantidades y severidades corresponden al registro inicial de SonarQube Cloud y deben verificarse con el informe original antes del cierre definitivo.
+
+**Evidencia:**
 
 ![Evidencia 25: Observaciones de SonarQube Cloud](../../06%20Otros/evidencias/Evidencia%2025%20Observaciones%20de%20SonarQube%20Cloud.jpg)
 
@@ -52,16 +64,67 @@ El **Quality Gate** es la "nota de aprobado o desaprobado" que SonarQube le pone
 
 ## 3. Plan de Remediación y Deuda Técnica
 
-- **Deuda Técnica Estimada:** **2h 40min.** Es el tiempo que, según SonarQube, tomaría corregir las 18 observaciones.
-- **Principales hallazgos y acciones correctivas:**
+**Deuda técnica estimada:** 2 horas y 40 minutos.
 
-  1. **Error al ordenar las horas** (Bug – Alta), en `ruta.service.js`, línea 411. Para elegir la hora de un incidente, el sistema ordena una lista de horas como si fueran texto. Hoy funciona porque las horas tienen el formato "08:05", pero podría fallar si el formato cambia. **Corrección:** indicar de forma explícita cómo comparar las horas. *Responsable: Henry · 10 min.*
-  2. **Pruebas sin verificación visible** (13 Code Smells – Bloqueante), en los archivos de pruebas. SonarQube no reconoce la forma corta de verificar el resultado (`.expect(422)`) y cree que esas 13 pruebas no comprueban nada. En realidad sí lo hacen y pasan. **Corrección:** escribir la verificación de forma explícita, por ejemplo `expect(respuesta.status).toBe(422)`, para que la herramienta la reconozca. *Responsable: Henry · 2h 10min.*
-  3. **Detalles de accesibilidad en pantallas** (3 Code Smells – Media). Dos campos se seleccionan solos al abrir la pantalla (`autoFocus` en `ConductorRuta.jsx` y `RutaDetalle.jsx`), lo que confunde a quien usa lector de pantalla. Además, en `ui.jsx`, las filas grises que aparecen mientras cargan las tablas están ocultas para el lector de pantalla, pero SonarQube las marca como elementos que se pueden seleccionar. **Corrección:** quitar la selección automática y ajustar esas filas de carga. *Responsable: Dayana · 15 min.*
-  4. **El servidor revela qué tecnología usa** (Vulnerabilidad – Baja), en `server.js`. Cada respuesta indica que el servidor usa Express, lo que le da pistas a un atacante. **Corrección:** ocultar ese dato con `app.disable("x-powered-by")`. *Responsable: Henry · 5 min.*
+La deuda técnica representa el tiempo estimado para corregir las observaciones detectadas durante el análisis. Para atenderlas, se establece el siguiente plan de remediación:
 
-**Orden de trabajo:** primero el error de las horas (punto 1), porque es lo único que impide aprobar el Quality Gate. Después, la seguridad (punto 4), la accesibilidad (punto 3) y las pruebas (punto 2). Cuando se suban las correcciones a la rama principal, SonarQube Cloud volverá a analizar el código solo y calculará el Quality Gate.
+### 3.1. Principales hallazgos y acciones correctivas
+
+**1. Error en la comparación de horas**
+
+- **Hallazgo:** Posible error al ordenar las horas de los incidentes.
+- **Ubicación:** `ruta.service.js`, línea 411.
+- **Severidad:** Alta.
+- **Acción correctiva:** Implementar una comparación explícita que permita ordenar las horas cronológicamente y validar el resultado mediante pruebas.
+- **Responsable:** Henry.
+- **Tiempo estimado:** 10 minutos.
+- **Estado:** Pendiente de corrección y validación.
+
+**2. Verificación de resultados en las pruebas automatizadas**
+
+- **Hallazgo:** SonarQube no reconoce determinadas aserciones abreviadas y registra 13 observaciones en los archivos de pruebas.
+- **Acción correctiva:** Revisar las verificaciones y utilizar aserciones explícitas, como `expect(respuesta.status).toBe(422)`, cuando corresponda. Ejecutar nuevamente las pruebas para comprobar los resultados.
+- **Responsable:** Henry.
+- **Tiempo estimado:** 2 horas y 10 minutos.
+- **Estado:** Pendiente de revisión y validación.
+
+**3. Accesibilidad de los componentes de la interfaz**
+
+- **Hallazgo:** Se detectaron tres observaciones relacionadas con la selección automática de campos y los elementos de carga.
+- **Ubicación:** `ConductorRuta.jsx`, `RutaDetalle.jsx` y `ui.jsx`.
+- **Acción correctiva:** Revisar el uso de `autoFocus` y ajustar los elementos de carga para mejorar su comportamiento y accesibilidad.
+- **Responsable:** Dayana.
+- **Tiempo estimado:** 15 minutos.
+- **Estado:** Pendiente de corrección y validación.
+
+**4. Exposición de información tecnológica del servidor**
+
+- **Hallazgo:** La cabecera `X-Powered-By` puede revelar el uso de Express.
+- **Ubicación:** `server.js`.
+- **Severidad:** Baja.
+- **Acción correctiva:** Incorporar `app.disable("x-powered-by")` y verificar que la cabecera ya no se incluya en las respuestas del servidor.
+- **Responsable:** Henry.
+- **Tiempo estimado:** 5 minutos.
+- **Estado:** Pendiente de corrección y validación.
+
+### 3.2. Verificación final
+
+Una vez implementadas las correcciones, se deberá:
+
+1. Ejecutar las pruebas automatizadas y confirmar que todas finalicen correctamente.
+2. Verificar que la cobertura se mantenga en un mínimo del 80 %.
+3. Comprobar que la duplicación de código permanezca por debajo del 3 %.
+4. Confirmar que los hallazgos corregidos ya no aparezcan como incidencias abiertas.
+5. Ejecutar un nuevo análisis de SonarQube Cloud en la rama `main`.
+6. Verificar que el Quality Gate muestre el estado **PASSED** y guardar la evidencia del resultado final.
+
+### Conclusión
+
+La evaluación de calidad de código de EcoRuta Wanka presenta resultados favorables en cobertura de pruebas y duplicación de código. No obstante, se requiere atender las observaciones identificadas y verificar los resultados mediante un nuevo análisis.
+
+La aprobación definitiva del Quality Gate quedará sujeta a la validación de las correcciones y a la obtención del estado **PASSED** en SonarQube Cloud.
 
 ---
 
 [Volver al README principal](../../../README.md)
+
