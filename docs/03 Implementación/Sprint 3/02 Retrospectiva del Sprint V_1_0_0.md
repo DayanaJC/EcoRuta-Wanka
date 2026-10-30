@@ -27,38 +27,40 @@
 - Se completaron las **2 historias de usuario planificadas**, alcanzando los **18 de 18 puntos**.
 - Se finalizaron las **9 de 9 historias de usuario** previstas para el proyecto.
 - Se implementaron pruebas automáticas para verificar los criterios de aceptación, alcanzando un total de **109 pruebas**.
-- Se realizaron verificaciones de calidad para identificar posibles errores y mejorar el funcionamiento del sistema.
+- Se realizaron verificaciones de calidad mediante SonarQube para identificar posibles errores y mejorar el funcionamiento del sistema.
+- Se completó la integración entre la interfaz y el servidor, verificando el correcto intercambio de datos.
+- Se subieron los cambios y las evidencias correspondientes al repositorio durante el Sprint.
 
 ## ¿Qué podemos hacer mejor?
 
 ### Personas
 
-El equipo mantuvo una buena organización, pero el conocimiento sobre la reorganización de rutas se concentra principalmente en un integrante. Como mejora, se compartirán los conocimientos necesarios para que ambos puedan comprender y mantener esta funcionalidad.
+El equipo mantuvo una buena organización y colaboración durante el Sprint. Ambos integrantes participaron en el desarrollo de las actividades y se logró avanzar con los objetivos establecidos. Como oportunidad de mejora, se buscará fortalecer el conocimiento compartido sobre la reorganización de rutas para facilitar su mantenimiento y futuras modificaciones.
 
 ### Relaciones
 
-La integración entre la interfaz y el servidor requirió algunos ajustes al final del desarrollo. Como mejora, se coordinarán desde el inicio los datos que intercambiarán ambos componentes para facilitar su integración.
+La integración entre la interfaz y el servidor se realizó satisfactoriamente, incluyendo los ajustes necesarios para asegurar el correcto intercambio de datos. Como mejora, se mantendrá una coordinación temprana sobre los datos y formatos que utilizarán ambos componentes en futuros desarrollos.
 
 ### Procesos
 
-Las principales actividades se completaron, aunque algunos cambios se subieron al repositorio al final del Sprint y quedaron pendientes actualizaciones de la documentación. Se procurará mantener actualizado el README y Jira con los resultados finales.
+Las principales actividades se completaron satisfactoriamente, incluyendo los cambios correspondientes, que fueron subidos al repositorio durante el Sprint. Asimismo, se actualizaron las evidencias y la documentación relacionada. Como mejora, se mantendrá actualizado el README y Jira para reflejar los resultados finales y los avances realizados.
 
 ### Herramientas
 
-SonarQube se utilizó en una etapa avanzada del Sprint y algunas pantallas todavía requieren pruebas automáticas. Como mejora, se revisará la calidad del código y se priorizarán las pruebas de las pantallas principales.
+SonarQube se utilizó satisfactoriamente para evaluar la calidad del código durante el Sprint. Se revisaron las métricas y se identificaron algunos aspectos que pueden mejorarse. Como siguiente paso, se continuará revisando la calidad del código y se reforzarán las pruebas automáticas de las pantallas principales.
 
-## Acciones a realizar
+## Acciones de mejora
 
 | Acción | Responsable | Fecha |
 |---|---|---|
-| Documentar el funcionamiento de la reorganización de rutas y compartir los conocimientos con el equipo. | Arroyo Canchari Henry | 04/11/2026 |
-| Actualizar el README y Jira con los resultados finales del Sprint 3. | Javier Curi Dayana | 31/10/2026 |
-| Revisar la calidad del código y reforzar las pruebas de las pantallas principales. | Ambos integrantes | 06/11/2026 |
-| Verificar el cumplimiento de las acciones de mejora y registrar las observaciones finales. | Ambos integrantes | 06/11/2026 |
+| Compartir conocimientos sobre el funcionamiento de la reorganización de rutas para facilitar su mantenimiento. | Ambos integrantes | 04/11/2026 |
+| Mantener actualizados el README y Jira con los resultados y evidencias del Sprint 3. | Javier Curi Dayana | 31/10/2026 |
+| Revisar las métricas de calidad del código en SonarQube y reforzar las pruebas automáticas de las pantallas principales. | Ambos integrantes | 06/11/2026 |
+| Verificar el cumplimiento de las acciones de mejora y registrar los resultados finales. | Ambos integrantes | 06/11/2026 |
 
 ## Compromiso de mejora
 
-Al encontrarse el proyecto en su etapa final, el equipo se compromete a completar la documentación pendiente, verificar el funcionamiento de las funcionalidades implementadas y realizar los últimos ajustes necesarios. De esta manera, se busca entregar EcoRuta Wanka de forma organizada, manteniendo la calidad del sistema y el cumplimiento de los requisitos establecidos.
+Al encontrarse el proyecto en su etapa final, el equipo se compromete a mantener la documentación actualizada, fortalecer el conocimiento compartido y verificar la calidad de las funcionalidades implementadas. Asimismo, se realizarán las revisiones finales para asegurar que EcoRuta Wanka cumpla con los requisitos establecidos y se encuentre en condiciones adecuadas para su entrega.
 
 ---
 
