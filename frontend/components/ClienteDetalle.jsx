@@ -2,7 +2,7 @@ import { Phone, Power, PowerOff } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { BadgeEstado, BadgeEstadoCliente } from './Badges.jsx'
 import { navegar } from './navegacion.js'
-import { Aviso, EstadoVacio } from './ui.jsx'
+import { Aviso, EstadoVacio, filaClic } from './ui.jsx'
 import { ETIQUETAS_TIPO_CLIENTE, formatearDias, formatearFecha, formatearKg, formatearVentana } from '../utils/formatos.js'
 
 const MapaSelector = dynamic(() => import('./MapaSelector.jsx'), {
@@ -126,7 +126,7 @@ export function ClienteDetalle({ cliente, pedidos, onCambiarEstado, gestionando 
               </thead>
               <tbody>
                 {ordenados.map((p) => (
-                  <tr key={p.id} className="fila-clic" onClick={() => navegar({ vista: 'pedidos', accion: 'ver', id: p.id })}>
+                  <tr key={p.id} {...filaClic(() => navegar({ vista: 'pedidos', accion: 'ver', id: p.id }))}>
                     <td data-etiqueta="Registrado">{formatearFecha(p.created_at)}</td>
                     <td data-etiqueta="Ventana" className="num">
                       {formatearVentana(p)}

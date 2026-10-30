@@ -46,7 +46,9 @@ export function crearApp({
         try {
           await repos.salud.ping();
         } catch (e) {
-          db = { connected: false, message: e.message };
+          // El detalle del error queda en el log; al cliente no se le exponen datos de la conexión
+          console.error("[health]", e);
+          db = { connected: false };
         }
         return {
           status: db.connected ? "ok" : "error",

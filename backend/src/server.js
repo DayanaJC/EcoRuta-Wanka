@@ -25,6 +25,8 @@ const api = crearApp({
 });
 
 const app = express();
+// Sin la cabecera X-Powered-By, que revela que el servidor usa Express
+app.disable("x-powered-by");
 app.use(api);
 
 if (!process.env.VERCEL) {

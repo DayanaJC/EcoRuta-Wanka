@@ -1,7 +1,7 @@
 import { Phone, Power, PowerOff } from 'lucide-react'
 import { BadgeEstadoConductor, BadgeEstadoRuta } from './Badges.jsx'
 import { navegar } from './navegacion.js'
-import { Aviso, EstadoVacio } from './ui.jsx'
+import { Aviso, EstadoVacio, filaClic } from './ui.jsx'
 import { formatearDuracion, formatearFecha, formatearFechaCorta, formatearKm, sumarMinutos } from '../utils/formatos.js'
 
 export function ConductorDetalle({ conductor, rutas, vehiculosPorId, onCambiarEstado, gestionando }) {
@@ -80,7 +80,7 @@ export function ConductorDetalle({ conductor, rutas, vehiculosPorId, onCambiarEs
             <table className="tabla">
               <tbody>
                 {ordenadas.slice(0, 8).map((r) => (
-                  <tr key={r.id} className="fila-clic" onClick={() => navegar({ vista: 'rutas', accion: 'ver', id: r.id })}>
+                  <tr key={r.id} {...filaClic(() => navegar({ vista: 'rutas', accion: 'ver', id: r.id }))}>
                     <td>
                       <div className="texto-principal">{formatearFechaCorta(r.fecha)}</div>
                       <div className="texto-secundario num">

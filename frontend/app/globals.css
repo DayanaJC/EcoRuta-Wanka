@@ -17,7 +17,8 @@
   --gris-900: #0f172a;
   --gris-700: #334155;
   --gris-600: #475569;
-  --gris-500: #64748b;
+  /* Oscurecido desde #64748b para llegar a 4.5:1 sobre el fondo (WCAG 1.4.3) */
+  --gris-500: #5b6b80;
   --gris-400: #94a3b8;
   --gris-300: #cbd5e1;
   --gris-200: #e2e8f0;
@@ -290,12 +291,13 @@ textarea {
 }
 
 .boton-primario {
-  background: var(--marca-600);
+  /* marca-700: el blanco sobre marca-600 solo llegaba a 3.3:1 (WCAG 1.4.3) */
+  background: var(--marca-700);
   color: #fff;
 }
 
 .boton-primario:hover:not(:disabled) {
-  background: var(--marca-700);
+  background: var(--marca-800);
 }
 
 .boton-secundario {

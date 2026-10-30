@@ -1,7 +1,7 @@
 import { Power, PowerOff } from 'lucide-react'
 import { BadgeEstadoRuta, BadgeEstadoVehiculo } from './Badges.jsx'
 import { navegar } from './navegacion.js'
-import { Aviso, EstadoVacio } from './ui.jsx'
+import { Aviso, EstadoVacio, filaClic } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import {
   ETIQUETAS_TIPO_VEHICULO,
@@ -87,7 +87,7 @@ export function VehiculoDetalle({ vehiculo, rutas, onCambiarEstado, gestionando 
             <table className="tabla">
               <tbody>
                 {rutas.slice(0, 6).map((r) => (
-                  <tr key={r.id} className="fila-clic" onClick={() => navegar({ vista: 'rutas', accion: 'ver', id: r.id })}>
+                  <tr key={r.id} {...filaClic(() => navegar({ vista: 'rutas', accion: 'ver', id: r.id }))}>
                     <td>
                       <div className="texto-principal">{formatearFechaCorta(r.fecha)}</div>
                       <div className="texto-secundario num">

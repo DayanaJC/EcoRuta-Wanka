@@ -35,10 +35,25 @@ export function EstadoVacio({ icono: Icono, titulo, descripcion, children }) {
   )
 }
 
+// Props de una fila de tabla que abre un detalle: además del clic, se puede
+// enfocar con Tab y abrir con Enter o Espacio (WCAG 2.1.1 Teclado).
+export function filaClic(accion) {
+  return {
+    className: 'fila-clic',
+    tabIndex: 0,
+    onClick: accion,
+    onKeyDown: (e) => {
+      if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+      e.preventDefault()
+      accion()
+    },
+  }
+}
+
 // Filas "esqueleto" mientras cargan los datos de una tabla
 export function FilasCargando({ columnas, filas = 4 }) {
   return Array.from({ length: filas }, (_, i) => (
-    <tr key={i} aria-hidden>
+    <tr key={i} role="presentation" aria-hidden="true">
       {Array.from({ length: columnas }, (_, j) => (
         <td key={j}>
           <span className="esqueleto" style={{ width: `${50 + ((i + j) % 3) * 20}%` }} />

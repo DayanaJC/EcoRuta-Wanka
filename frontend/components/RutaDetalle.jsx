@@ -57,7 +57,6 @@ function AccionesParada({ parada, onRegistrar, gestionando }) {
           minLength={3}
           maxLength={200}
           required
-          autoFocus
           aria-label={`Motivo de no entrega de la parada ${parada.orden}`}
         />
         <button type="submit" className="boton boton-peligro boton-sm" disabled={gestionando}>

@@ -1,7 +1,7 @@
 import { Route } from 'lucide-react'
 import { useState } from 'react'
 import { BadgeEstadoRuta } from './Badges.jsx'
-import { EstadoVacio, FilasCargando } from './ui.jsx'
+import { EstadoVacio, filaClic, FilasCargando } from './ui.jsx'
 import { IconoVehiculo } from './VehiculoLista.jsx'
 import { ETIQUETAS_ESTADO_RUTA, formatearDuracion, formatearFechaCorta, formatearKm } from '../utils/formatos.js'
 
@@ -57,7 +57,7 @@ export function RutaLista({ rutas, vehiculosPorId, conductoresPorId = {}, cargan
                 filtradas.map((r) => {
                   const v = vehiculosPorId[r.vehiculo_id]
                   return (
-                    <tr key={r.id} className="fila-clic" onClick={() => onVer(r)}>
+                    <tr key={r.id} {...filaClic(() => onVer(r))}>
                       <td data-etiqueta="Fecha">
                         <div>
                           <div className="texto-principal">{formatearFechaCorta(r.fecha)}</div>
