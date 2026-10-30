@@ -42,7 +42,9 @@ export function AntesDespues({ ruta, vehiculo }) {
         <table className="tabla tabla-responsiva">
           <thead>
             <tr>
-              <th></th>
+              <th>
+                <span className="sr-only">Indicador</span>
+              </th>
               <th>Antes · orden elegido</th>
               <th>Después · ruta optimizada</th>
               <th>Ahorro</th>

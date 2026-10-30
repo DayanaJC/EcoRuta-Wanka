@@ -69,13 +69,13 @@ function FormularioIncidente({ onRegistrar, onCerrar, gestionando }) {
 }
 
 // Comparación de horarios antes / después de la revisión
-function Comparacion({ resumen }) {
+function Comparacion({ resumen, etiqueta }) {
   const despuesPorPedido = Object.fromEntries((resumen.despues?.paradas ?? []).map((p, i) => [p.pedido_id, { ...p, orden: i + 1 }]))
   const filas = resumen.despues ? resumen.despues.paradas : resumen.antes.paradas
   const antesPorPedido = Object.fromEntries(resumen.antes.paradas.map((p, i) => [p.pedido_id, { ...p, orden: i + 1 }]))
   const hora = (p) => (p ? <span className={p.fuera_ventana ? 'texto-rojo' : undefined}>{p.hora}{p.fuera_ventana ? ' · fuera de ventana' : ''}</span> : '—')
   return (
-    <div className="tabla-envoltorio">
+    <div className="tabla-envoltorio" tabIndex={0} role="region" aria-label={`Comparación del plan anterior y el nuevo · ${etiqueta}`}>
       <table className="tabla">
         <thead>
           <tr>
@@ -149,7 +149,7 @@ export function IncidentesRuta({ ruta, onRegistrar, gestionando }) {
               {i.descripcion && ` · ${i.descripcion}`}
             </div>
             <p style={{ margin: '8px 0' }}>{i.resumen?.mensaje}</p>
-            {i.resumen?.antes && <Comparacion resumen={i.resumen} />}
+            {i.resumen?.antes && <Comparacion resumen={i.resumen} etiqueta={`${i.hora_referencia} ${ETIQUETAS_TIPO_INCIDENTE[i.tipo] ?? i.tipo}`} />}
           </article>
         ))}
       </div>

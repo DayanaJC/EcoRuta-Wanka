@@ -8,7 +8,7 @@ import { ETIQUETAS_TIPO_VEHICULO, formatearFechaCorta, formatearNumero, hoyEnLim
 import { BadgeEstadoRuta } from '../Badges.jsx'
 import { GraficoCo2 } from '../GraficoCo2.jsx'
 import { navegar } from '../navegacion.js'
-import { Cargando, EncabezadoPagina, EstadoVacio } from '../ui.jsx'
+import { Cargando, EncabezadoPagina, EstadoVacio, filaClic } from '../ui.jsx'
 
 const PERIODOS = [
   ['7d', 'Últimos 7 días'],
@@ -296,7 +296,7 @@ export function Sostenibilidad({ datos, notificar }) {
                 </thead>
                 <tbody>
                   {ind.rutas.map((r) => (
-                    <tr key={r.id} className="fila-clic" onClick={() => navegar({ vista: 'rutas', accion: 'ver', id: r.id })}>
+                    <tr key={r.id} {...filaClic(() => navegar({ vista: 'rutas', accion: 'ver', id: r.id }))}>
                       <td data-etiqueta="Fecha">
                         <div>
                           <div className="texto-principal">{formatearFechaCorta(r.fecha)}</div>

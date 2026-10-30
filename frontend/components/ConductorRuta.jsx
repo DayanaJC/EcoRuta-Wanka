@@ -74,7 +74,6 @@ export function ConductorRuta({ ruta, conductores, rutas, onAsignar, gestionando
               value={elegido}
               onChange={(e) => setElegido(e.target.value)}
               aria-label="Elegir conductor"
-              autoFocus
               required
             >
               <option value="">{activos.length ? 'Elige un conductor…' : 'No hay otros conductores activos'}</option>

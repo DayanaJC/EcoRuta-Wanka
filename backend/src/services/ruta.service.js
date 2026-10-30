@@ -408,7 +408,7 @@ export function crearRutaService(
       const horaDe = (iso) => horaLocal(new Date(iso), zonaHoraria);
       const minimas = [ruta.hora_salida, ruta.iniciada_at && horaDe(ruta.iniciada_at), ...atendidas.map((p) => p.entregado_at && horaDe(p.entregado_at))];
       const horaActual = fechaLocal(reloj(), zonaHoraria) === ruta.fecha ? horaLocal(reloj(), zonaHoraria) : null;
-      const horaRef = [hora ?? horaActual, ...minimas].filter(Boolean).sort().at(-1);
+      const horaRef = [hora ?? horaActual, ...minimas].filter(Boolean).sort((x, y) => x.localeCompare(y)).at(-1);
       const inicioS = horaASegundos(horaRef) + retraso_min * 60;
       if (inicioS > FIN_DEL_DIA_S) throw new RutaNoOptimizableError("Con ese retraso el reparto pasaría al día siguiente: no se puede replanificar.");
       const factor = FACTOR_INCIDENTE[tipo] ?? 1;

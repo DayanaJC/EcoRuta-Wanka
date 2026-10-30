@@ -1,7 +1,7 @@
 import { Clock, Link2, Package, Route, Truck } from 'lucide-react'
 import { BadgeEstadoRuta } from '../Badges.jsx'
 import { navegar } from '../navegacion.js'
-import { EncabezadoPagina, EstadoVacio } from '../ui.jsx'
+import { EncabezadoPagina, EstadoVacio, filaClic } from '../ui.jsx'
 import { formatearDuracion, formatearFechaCorta, formatearKg, formatearKm, hoyEnLima } from '../../utils/formatos.js'
 
 function Indicador({ icono: Icono, tono, valor, etiqueta, extra, cargando }) {
@@ -115,7 +115,7 @@ export function Resumen({ datos, cargando }) {
             <table className="tabla">
               <tbody>
                 {rutasActivas.map((r) => (
-                  <tr key={r.id} className="fila-clic" onClick={() => navegar({ vista: 'rutas', accion: 'ver', id: r.id })}>
+                  <tr key={r.id} {...filaClic(() => navegar({ vista: 'rutas', accion: 'ver', id: r.id }))}>
                     <td>
                       <div className="texto-principal">{placa(r.vehiculo_id)}</div>
                       <div className="texto-secundario">
