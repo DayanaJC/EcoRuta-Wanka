@@ -1,1 +1,28 @@
-{"name": "Cobertura de pruebas", "on": {"push": {"branches": ["calidad-sprint3"]}, "workflow_dispatch": {}}, "jobs": {"pruebas": {"runs-on": "ubuntu-latest", "env": {"DATABASE_URL": "postgresql://u:p@localhost:5432/db"}, "defaults": {"run": {"working-directory": "backend"}}, "steps": [{"uses": "actions/checkout@v4"}, {"uses": "actions/setup-node@v4", "with": {"node-version": "22"}}, {"run": "npm ci"}, {"run": "npx vitest run --coverage --coverage.reporter=text --coverage.reporter=json-summary"}, {"run": "cat coverage/coverage-summary.json"}]}}}
+name: Calidad (pruebas + SonarQube Cloud)
+'on':
+  push:
+    branches:
+    - calidad-sprint3
+  workflow_dispatch: {}
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://u:p@localhost:5432/db
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - run: npm ci
+      working-directory: backend
+    - run: npx vitest run --coverage --coverage.reporter=text --coverage.reporter=lcov
+      working-directory: backend
+    - run: sed -i -E 's#^SF:([^/])#SF:backend/\1#' backend/coverage/lcov.info && head -3 backend/coverage/lcov.info
+    - uses: SonarSource/sonarqube-scan-action@v5
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: -Dsonar.organization=dayanajc -Dsonar.projectKey=DayanaJC_EcoRuta-Wanka -Dsonar.branch.name=main -Dsonar.sources=backend/src,frontend -Dsonar.tests=backend/tests -Dsonar.exclusions=**/node_modules/**,**/.next/**,backend/prisma/migrations/** -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info -Dsonar.coverage.exclusions=frontend/**,backend/src/server.js,backend/src/db/**
