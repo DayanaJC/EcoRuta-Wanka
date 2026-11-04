@@ -1,4 +1,3 @@
-
 # EcoRuta Wanka
 
 **Optimizador de rutas sostenibles de última milla — Huancayo, Junín**
@@ -9,7 +8,7 @@
 
 **Herramienta:** SonarQube Cloud (versión en línea y gratuita de SonarQube), con las reglas estándar "Sonar way".
 
-**Qué se revisó:** todo el código del repositorio github.com/DayanaJC/EcoRuta-Wanka, rama principal (`main`), versión `e8e117f` (cierre del Sprint 3). Son 93 archivos y unas 11 000 líneas de código.
+**Qué se revisó:** el código del repositorio github.com/DayanaJC/EcoRuta-Wanka, rama principal (`main`), correspondiente al análisis identificado con el commit `9680f63d`. Se analizaron aproximadamente 9 700 líneas de código.
 
 ---
 
@@ -17,19 +16,22 @@
 
 El análisis de SonarQube Cloud permitió evaluar la calidad del código fuente de EcoRuta Wanka mediante métricas de cobertura, duplicación, confiabilidad, seguridad y mantenibilidad.
 
-- **Estado del Quality Gate:** Pendiente de confirmación. El primer análisis no proporcionó un resultado definitivo del Quality Gate.
-- **Porcentaje de cobertura de pruebas (Coverage):** 87,55 %.
-- **Duplicación de código:** 0,3 %.
-- **Pruebas automatizadas:** 109 pruebas ejecutadas y aprobadas.
-- **Deuda técnica estimada:** 2 horas y 40 minutos.
+- **Estado del Quality Gate:** **PASSED (Aprobado)**. El proyecto superó las condiciones establecidas por SonarQube Cloud para la aprobación de la puerta de calidad.
+- **Porcentaje de cobertura de pruebas (Coverage):** **77,4 %**.
+- **Duplicación de código:** **0,3 %**.
+- **Cuestiones abiertas de seguridad:** 1 (calificación B).
+- **Cuestiones abiertas de fiabilidad:** 4 (calificación D).
+- **Cuestiones abiertas de mantenibilidad:** 15 (calificación A).
+- **Problemas aceptados:** 0.
+- **Puntos críticos de seguridad:** 0 (indicador obsoleto).
 
-Los resultados muestran una cobertura superior al objetivo mínimo del 80 % y una duplicación inferior al límite de referencia del 3 %. Sin embargo, se identificaron un bug de severidad alta, una vulnerabilidad de severidad baja y 16 observaciones de mantenibilidad que requieren revisión.
+Los resultados muestran una duplicación de código de 0,3 %, inferior al límite de referencia del 3 %. Asimismo, la cobertura alcanzó el 77,4 %, aunque todavía se encuentra por debajo del objetivo mínimo del 80 % establecido para el proyecto.
 
-Por ello, se deben aplicar las correcciones correspondientes y ejecutar un nuevo análisis para confirmar que el Quality Gate cumpla los criterios de aprobación.
+En cuanto a las calificaciones, la seguridad obtuvo una B, la fiabilidad una D y la mantenibilidad una A. Esto evidencia que, aunque el Quality Gate fue aprobado, todavía existen observaciones que deben revisarse y corregirse para mejorar la calidad general del código.
 
 **Evidencias:**
 
-![Evidencia 24: Resumen de SonarQube Cloud](../../06%20Otros/evidencias/Evidencia%2024%20Resumen%20de%20SonarQube%20Cloud.jpg)
+![Evidencia 24: Resumen de SonarQube Cloud](../../06%20Otros/evidencias/Evidencia%2024%20Resumen%20de%20SonarQube%20Cloud.png)
 
 ![Evidencia 26: Pruebas y cobertura](../../06%20Otros/evidencias/Evidencia%2026%20Pruebas%20y%20cobertura.jpg)
 
@@ -54,7 +56,9 @@ Los resultados del análisis se resumen en la siguiente tabla:
 - **Code Smells:** Se encontraron observaciones relacionadas con las aserciones de las pruebas automatizadas y la accesibilidad de algunos componentes de la interfaz.
 - **Security Hotspots:** No se registraron puntos sensibles pendientes de revisión en el análisis realizado.
 
-Las cantidades y severidades corresponden al registro inicial de SonarQube Cloud y deben verificarse con el informe original antes del cierre definitivo.
+Adicionalmente, SonarQube Cloud presenta 1 cuestión abierta en seguridad, 4 en fiabilidad y 15 en mantenibilidad. Estas cantidades corresponden a las categorías de evaluación mostradas en el resumen de la herramienta.
+
+Las observaciones identificadas deben revisarse y atenderse para continuar mejorando la calidad del proyecto.
 
 **Evidencia:**
 
@@ -112,19 +116,20 @@ La deuda técnica representa el tiempo estimado para corregir las observaciones 
 Una vez implementadas las correcciones, se deberá:
 
 1. Ejecutar las pruebas automatizadas y confirmar que todas finalicen correctamente.
-2. Verificar que la cobertura se mantenga en un mínimo del 80 %.
+2. Verificar que la cobertura alcance como mínimo el 80 % establecido para el proyecto.
 3. Comprobar que la duplicación de código permanezca por debajo del 3 %.
 4. Confirmar que los hallazgos corregidos ya no aparezcan como incidencias abiertas.
 5. Ejecutar un nuevo análisis de SonarQube Cloud en la rama `main`.
-6. Verificar que el Quality Gate muestre el estado **PASSED** y guardar la evidencia del resultado final.
+6. Verificar que el Quality Gate mantenga el estado **PASSED** y guardar la evidencia del resultado final.
 
 ### Conclusión
 
-La evaluación de calidad de código de EcoRuta Wanka presenta resultados favorables en cobertura de pruebas y duplicación de código. No obstante, se requiere atender las observaciones identificadas y verificar los resultados mediante un nuevo análisis.
+La evaluación de calidad de código de EcoRuta Wanka obtuvo un resultado **PASSED (Aprobado)** en el Quality Gate de SonarQube Cloud. Entre los resultados obtenidos destacan una duplicación de código de 0,3 % y una cobertura de pruebas de 77,4 %.
 
-La aprobación definitiva del Quality Gate quedará sujeta a la validación de las correcciones y a la obtención del estado **PASSED** en SonarQube Cloud.
+Asimismo, se identificaron observaciones relacionadas con la seguridad, la fiabilidad y la mantenibilidad que requieren atención. Por ello, se establece un plan de remediación orientado a corregir los hallazgos y mejorar la cobertura hasta alcanzar el objetivo del 80 %.
+
+De esta manera, se cuenta con una evaluación favorable de la puerta de calidad y con acciones definidas para continuar fortaleciendo la calidad y el mantenimiento del código fuente de EcoRuta Wanka.
 
 ---
 
 [Volver al README principal](../../../README.md)
-
