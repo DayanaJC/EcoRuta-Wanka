@@ -3,9 +3,15 @@
 // corresponden al escenario simulado de WankaLogística S.A.C.
 // Es idempotente: solo inserta en tablas vacías.
 
-import "dotenv/config";
 import { obtenerPrisma } from "../src/db/prisma.js";
 import { horaADate } from "../src/utils/tiempo.js";
+
+// Node 20.12+ lee el .env sin dotenv; si no existe se usan las variables del entorno
+try {
+  process.loadEnvFile();
+} catch {
+  // sin .env: se usan las variables del entorno disponibles
+}
 
 const prisma = obtenerPrisma();
 

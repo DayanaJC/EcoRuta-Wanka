@@ -65,6 +65,15 @@ export function crearApp({
   app.use(cors({ origin: origenesCors }));
   app.use(express.json({ limit: "100kb" }));
 
+  // Caché HTTP (Green IT): los factores de tráfico casi no cambian (1 día);
+  // el resto se revalida con ETag y responde 304 si no hubo cambios.
+  app.use("/api/v1", (req, res, next) => {
+    if (req.method === "GET") {
+      res.set("Cache-Control", req.path.startsWith("/factores-trafico") ? "public, max-age=86400" : "private, no-cache");
+    }
+    next();
+  });
+
   app.get("/health", controladores.salud);
   app.use("/api/v1", crearRouterApi(controladores));
 

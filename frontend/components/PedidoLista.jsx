@@ -1,4 +1,4 @@
-import { Package, Pencil, Search, XCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Package, Pencil, Search, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { BadgeEstado, BadgePrioridad } from './Badges.jsx'
 import { EstadoVacio, FilasCargando } from './ui.jsx'
@@ -13,11 +13,14 @@ import {
 } from '../utils/formatos.js'
 
 const SEGMENTOS = [['', 'Todos'], ...Object.entries(ETIQUETAS_ESTADO)]
+// Paginación (Green IT): la tabla dibuja 12 filas a la vez
+const POR_PAGINA = 12
 
 export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCancelar }) {
   const [busqueda, setBusqueda] = useState('')
   const [estado, setEstado] = useState('')
   const [prioridad, setPrioridad] = useState('')
+  const [paginaElegida, setPagina] = useState(1)
 
   const texto = normalizar(busqueda.trim())
   const filtrados = pedidos.filter(
@@ -26,11 +29,20 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
       (!prioridad || p.prioridad === prioridad) &&
       (!texto || normalizar([p.cliente_nombre, p.cliente_id, p.direccion, p.punto_referencia].join(' ')).includes(texto)),
   )
+  const paginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
+  const pagina = Math.min(paginaElegida, paginas)
+  const visibles = filtrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
   const hayFiltros = busqueda || estado || prioridad
+  // Al cambiar un filtro se vuelve a la primera página
+  const filtrar = (cambiar) => (valor) => {
+    cambiar(valor)
+    setPagina(1)
+  }
   const limpiar = () => {
     setBusqueda('')
     setEstado('')
     setPrioridad('')
+    setPagina(1)
   }
 
   return (
@@ -44,17 +56,17 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
             placeholder="Buscar cliente, código o dirección…"
             aria-label="Buscar pedidos"
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) => filtrar(setBusqueda)(e.target.value)}
           />
         </div>
         <div className="segmentos" role="group" aria-label="Filtrar por estado">
           {SEGMENTOS.map(([valor, etiqueta]) => (
-            <button key={valor} type="button" className="segmento" aria-pressed={estado === valor} onClick={() => setEstado(valor)}>
+            <button key={valor} type="button" className="segmento" aria-pressed={estado === valor} onClick={() => filtrar(setEstado)(valor)}>
               {etiqueta}
             </button>
           ))}
         </div>
-        <select className="campo" style={{ width: 'auto' }} aria-label="Filtrar por prioridad" value={prioridad} onChange={(e) => setPrioridad(e.target.value)}>
+        <select className="campo" style={{ width: 'auto' }} aria-label="Filtrar por prioridad" value={prioridad} onChange={(e) => filtrar(setPrioridad)(e.target.value)}>
           <option value="">Toda prioridad</option>
           {Object.entries(ETIQUETAS_PRIORIDAD).map(([v, e]) => (
             <option key={v} value={v}>
@@ -64,19 +76,22 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
         </select>
       </div>
 
-      {!cargando && pedidos.length > 0 && (
-        <div className="resultado-filtros">
-          {filtrados.length} de {pedidos.length} pedidos
-          {hayFiltros && (
-            <>
-              {' · '}
-              <button type="button" className="boton boton-fantasma boton-sm" onClick={limpiar}>
-                Limpiar filtros
-              </button>
-            </>
-          )}
-        </div>
-      )}
+      {/* El contenedor existe también mientras carga: reserva su alto y evita el salto (CLS) */}
+      <div className="resultado-filtros">
+        {!cargando && pedidos.length > 0 && (
+          <>
+            {filtrados.length} de {pedidos.length} pedidos
+            {hayFiltros && (
+              <>
+                {' · '}
+                <button type="button" className="boton boton-fantasma boton-sm" onClick={limpiar}>
+                  Limpiar filtros
+                </button>
+              </>
+            )}
+          </>
+        )}
+      </div>
 
       {!cargando && pedidos.length === 0 ? (
         <EstadoVacio icono={Package} titulo="Aún no hay pedidos" descripcion="Registra el primer pedido para poder planificar rutas de reparto.">
@@ -108,9 +123,9 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
             </thead>
             <tbody>
               {cargando ? (
-                <FilasCargando columnas={7} />
+                <FilasCargando columnas={7} filas={POR_PAGINA} />
               ) : (
-                filtrados.map((p) => {
+                visibles.map((p) => {
                   const terminal = ESTADOS_TERMINALES_PEDIDO.includes(p.estado)
                   return (
                     <tr key={p.id} className="fila-clic" onClick={() => onVer(p)}>
@@ -173,6 +188,19 @@ export function PedidoLista({ pedidos, cargando, onNuevo, onVer, onEditar, onCan
               )}
             </tbody>
           </table>
+          {!cargando && paginas > 1 && (
+            <nav className="paginacion" aria-label="Páginas de pedidos">
+              <button type="button" className="boton boton-secundario boton-sm" onClick={() => setPagina(pagina - 1)} disabled={pagina === 1}>
+                <ChevronLeft size={16} aria-hidden /> Anterior
+              </button>
+              <span aria-live="polite">
+                Página {pagina} de {paginas}
+              </span>
+              <button type="button" className="boton boton-secundario boton-sm" onClick={() => setPagina(pagina + 1)} disabled={pagina === paginas}>
+                Siguiente <ChevronRight size={16} aria-hidden />
+              </button>
+            </nav>
+          )}
         </div>
       )}
     </section>

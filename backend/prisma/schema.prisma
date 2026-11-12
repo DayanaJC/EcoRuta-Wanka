@@ -223,6 +223,7 @@ model Pedido {
 
   @@index([estado])
   @@index([prioridad])
+  @@index([estado, created_at(sort: Desc)])
   @@map("pedidos")
 }
 
