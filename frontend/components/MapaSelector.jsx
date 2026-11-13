@@ -4,6 +4,8 @@
 // Se carga solo en el navegador (Leaflet necesita window).
 
 import L from 'leaflet'
+// Estilos de Leaflet solo con el mapa (Green IT): no bloquean el primer renderizado
+import 'leaflet/dist/leaflet.css'
 import { useEffect } from 'react'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 

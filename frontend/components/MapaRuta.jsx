@@ -4,6 +4,8 @@
 // Se carga solo en el navegador (Leaflet necesita window), ver RutaFormulario.jsx.
 
 import L from 'leaflet'
+// Estilos de Leaflet solo con el mapa (Green IT): no bloquean el primer renderizado
+import 'leaflet/dist/leaflet.css'
 import { useEffect } from 'react'
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet'
 
