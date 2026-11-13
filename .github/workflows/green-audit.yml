@@ -42,6 +42,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Neon (plan gratuito) se suspende tras unos minutos sin uso: se "despierta" la API
+      # antes de medir para auditar el rendimiento habitual y no el arranque en frío.
+      - name: Calentar la API publicada
+        run: |
+          API=https://ecoruta-backend.vercel.app
+          curl -s -o /dev/null -w "health %{http_code} %{time_total}s
+" --retry 3 "$API/health" || true
+          for ruta in pedidos vehiculos conductores clientes rutas; do
+            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s
+" --retry 3 "$API/api/v1/$ruta" || true
+          done
       - name: Ejecutar Lighthouse CI
         run: |
           npm install -g @lhci/cli@0.15.1
