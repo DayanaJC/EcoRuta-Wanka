@@ -12,7 +12,7 @@
 
 **Tecnologías del proyecto:** Next.js 16 + React 19 (frontend), Node.js + Express 5 (backend), PostgreSQL (Neon) con Prisma 7 (base de datos) y Vercel (publicación).
 
-**Documento relacionado:** [01 Informe de reducción del impacto ambiental V_1_0_0](01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_0.md)
+**Documento relacionado:** [01 Informe de reducción del impacto ambiental V_1_0_1](01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_1.md)
 
 ---
 
@@ -246,7 +246,7 @@ Para comprobar las normas con datos reales se midió la carga inicial **antes** 
 | Página de pedidos (19 completos → 12 con columnas de tabla) | 13 558 bytes | **4 773 bytes** | 4 773 bytes | NB-01, NB-02 |
 | Consulta repetida sin cambios | 200 con datos | **304** sin cuerpo | **304** sin cuerpo | NB-04 |
 
-**Lectura de los resultados:** la reducción de solicitudes (−58,3 %), la página de pedidos (−64,8 %) y la respuesta 304 coinciden con el informe 01, y el CLS (0,0022) mejora la proyección de 0,02. El JavaScript inicial bajó 21,7 KiB, menos que los 84 KiB de "JavaScript sin utilizar" señalados por Lighthouse, porque gran parte de ese código es el propio React/Next.js y el módulo Pedidos, que es la vista inicial. Los valores definitivos de peso y CO₂ del informe 01 se toman de la auditoría de PageSpeed Insights sobre la versión publicada.
+**Lectura de los resultados:** la reducción de solicitudes (−58,3 %), la página de pedidos (−64,8 %) y la respuesta 304 coinciden con el informe 01, y el CLS (0,0022) mejora la proyección de 0,02. El JavaScript inicial bajó 21,7 KiB, menos que los 84 KiB de "JavaScript sin utilizar" señalados por Lighthouse, porque gran parte de ese código es el propio React/Next.js y el módulo Pedidos, que es la vista inicial. Los valores definitivos de peso y CO₂ se registran en la V_1_0_1 del informe 01 a partir de la auditoría de Lighthouse CI sobre la versión publicada (score 99, LCP 0,86 s, 229,2 KiB, 0,0348 g CO₂e por visita).
 
 **Evidencia 31: Paginación de pedidos (escritorio)**
 
