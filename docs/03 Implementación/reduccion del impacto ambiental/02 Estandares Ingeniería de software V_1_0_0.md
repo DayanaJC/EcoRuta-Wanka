@@ -171,11 +171,9 @@ jobs:
       - name: Calentar la API publicada
         run: |
           API=https://ecoruta-backend.vercel.app
-          curl -s -o /dev/null -w "health %{http_code} %{time_total}s
-" --retry 3 "$API/health" || true
+          curl -s -o /dev/null -w "health %{http_code} %{time_total}s\n" --retry 3 "$API/health" || true
           for ruta in pedidos vehiculos conductores clientes rutas; do
-            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s
-" --retry 3 "$API/api/v1/$ruta" || true
+            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s\n" --retry 3 "$API/api/v1/$ruta" || true
           done
       - name: Ejecutar Lighthouse CI
         run: |
