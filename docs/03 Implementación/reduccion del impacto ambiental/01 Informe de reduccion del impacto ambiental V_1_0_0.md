@@ -2,9 +2,9 @@
 
 **Optimizador de rutas sostenibles de última milla — Huancayo, Junín**
 
-# 01. Informe de reducción del impacto ambiental V_1_0_1
+# 01. Informe de reducción del impacto ambiental V_1_0_0
 
-**Versión:** V_1_0_1 | **Fecha:** 13/11/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 13/11/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Nombre del proyecto:** EcoRuta Wanka
 
@@ -12,7 +12,7 @@
 
 **Tecnologías del proyecto:** Next.js 16 + React 19 (frontend), Node.js + Express 5 (backend), PostgreSQL con Prisma (base de datos) y Vercel (publicación).
 
-**Cambios de la versión V_1_0_1 (13/11/2026):** los valores DESPUÉS de las secciones 1.4, 1.5 y 1.6, que en la V_1_0_0 eran proyectados, se reemplazan por valores **medidos** con Lighthouse CI sobre la versión publicada (workflow `green-audit.yml`, Evidencias 33 y 34) y con una comparación local ANTES/DESPUÉS en condiciones idénticas. El cálculo de CO₂ se rehace con el peso medido.
+**Nota sobre las mediciones (13/11/2026):** los valores DESPUÉS de las secciones 1.4, 1.5 y 1.6 se midieron con Lighthouse CI sobre la versión publicada (workflow `green-audit.yml`, Evidencias 33 y 34) y con una comparación local ANTES/DESPUÉS en condiciones idénticas; el cálculo de CO₂ usa el peso medido.
 
 ---
 
@@ -367,6 +367,41 @@ También se realizaron estos ajustes:
 - Las listas se guardan durante 30 segundos.
 - Cuando se realiza una modificación, se limpia la información guardada para obtener los datos actualizados.
 
+**ANTES — `backend/src/aplicacion.js`** (commit `8cbaf93`): las respuestas GET no indicaban ninguna política de caché.
+
+```js
+const app = express();
+app.disable("x-powered-by");
+app.use(cors({ origin: origenesCors }));
+app.use(express.json({ limit: "100kb" }));
+
+app.get("/health", controladores.salud);
+app.use("/api/v1", crearRouterApi(controladores));
+```
+
+**ANTES — `frontend/services/api.js`** (commit `8cbaf93`): cada lectura volvía a pedir los datos al servidor, aunque no hubieran cambiado, y enviaba `Content-Type` incluso en los GET.
+
+```js
+async function pedir(ruta, opciones = {}) {
+  const controlador = new AbortController()
+  const id = setTimeout(() => controlador.abort(), TIMEOUT_MS)
+
+  try {
+    const respuesta = await fetch(`${BASE}${ruta}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opciones,
+      signal: controlador.signal,
+    })
+
+    if (!respuesta.ok) throw new Error(await detalleError(respuesta))
+    if (respuesta.status === 204) return null
+    return respuesta.json()
+  } finally {
+    clearTimeout(id)
+  }
+}
+```
+
 **DESPUÉS — `backend/src/aplicacion.js`**
 
 ```js
@@ -406,19 +441,41 @@ if (guardado && Date.now() - guardado.hora < CACHE_MS) {
 
 #### 8. Optimización de APIs (Compresión)
 
-**Diagnóstico:** Se comprobó que Vercel ya comprime las respuestas del servidor utilizando Brotli. Por ejemplo, la lista de pedidos pasa de 13 558 a 2 877 bytes después de la compresión.
+**Diagnóstico:** En la guía de referencia (MERN) esta optimización consiste en activar el middleware `compression` de Express. En EcoRuta Wanka el backend se publica en Vercel, que ya comprime con Brotli todas las respuestas cuando el navegador lo admite (`Accept-Encoding: br`). Por ello, la evidencia de esta área no es un cambio de código, sino la comparación medida de la misma respuesta **sin compresión (ANTES)** y **con compresión Brotli (DESPUÉS)**.
 
-**Implementación:** No fue necesario instalar la librería `compression`, porque Vercel ya realiza esta tarea automáticamente.
-
-También se mantuvo un límite de 100 kB para los datos recibidos por el servidor.
-
-**Código actual — `backend/src/aplicacion.js`**
+**Implementación:** No se instaló `compression` (principio YAGNI: la plataforma ya cumple esa función). Se mantiene el límite de 100 kB para los cuerpos JSON que recibe el servidor:
 
 ```js
+// backend/src/aplicacion.js
 app.use(express.json({ limit: "100kb" }));
 ```
 
-**Resultado:** Se aprovecha la compresión que ofrece Vercel sin agregar otra librería al proyecto. Si en el futuro el sistema se publica en un servidor propio que no tenga compresión, se podrá agregar una configuración adicional.
+**ANTES — respuesta sin compresión** (`Accept-Encoding: identity`):
+
+```text
+$ curl -s -o /dev/null -H "Accept-Encoding: identity" \
+    -w "%{size_download} bytes\n" https://ecoruta-backend.vercel.app/api/v1/pedidos
+13558 bytes
+```
+
+**DESPUÉS — respuesta con Brotli** (`Accept-Encoding: br, gzip`):
+
+```text
+$ curl -s -D - -o /dev/null -H "Accept-Encoding: br, gzip" \
+    -w "%{size_download} bytes\n" https://ecoruta-backend.vercel.app/api/v1/pedidos
+Content-Encoding: br
+2877 bytes
+```
+
+**Resultados medidos el 13/11/2026 sobre la API publicada:**
+
+| Endpoint | Sin compresión (ANTES) | Con Brotli (DESPUÉS) | Reducción |
+|---|---:|---:|---:|
+| `GET /api/v1/pedidos` (lista completa) | 13 558 bytes | 2 877 bytes | −78,8 % |
+| `GET /api/v1/pedidos?pagina=1&limite=12` | 4 773 bytes | 1 244 bytes | −73,9 % |
+| `GET /api/v1/rutas` | 14 219 bytes | 2 848 bytes | −80,0 % |
+
+**Resultado:** todas las respuestas JSON viajan comprimidas con Brotli (cabecera `Content-Encoding: br`) y se transfieren entre 73,9 % y 80,0 % menos bytes, sin agregar dependencias. Si el sistema se publicara en un servidor propio sin compresión, se agregaría el middleware `compression` según la norma NB-05 del documento 02.
 
 ---
 
@@ -495,9 +552,9 @@ Para aislar el efecto del código, se compilaron las dos versiones con `next bui
 
 Los resultados locales confirman la tendencia de producción: menos datos, menos JavaScript, menos solicitudes y una tabla estable mientras carga.
 
-#### 1.4.2 Comparación con los valores proyectados de la V_1_0_0
+#### 1.4.2 Comparación con los valores proyectados inicialmente
 
-| Medida | Proyectado (V_1_0_0) | Medido (V_1_0_1) | Observación |
+| Medida | Proyectado | Medido | Observación |
 |---|---:|---:|---|
 | Peso total | 174 KiB | 229,2 KiB | La proyección restaba los 84 KiB de "JavaScript sin utilizar"; gran parte de ese código pertenece a React/Next.js y al módulo inicial (Pedidos), que siguen siendo necesarios. La reducción real del JavaScript fue de 21,6 KiB. |
 | CLS | 0,02 | 0,0038 | Mejor que lo proyectado: las filas de espera reservan el espacio final de la tabla. |
