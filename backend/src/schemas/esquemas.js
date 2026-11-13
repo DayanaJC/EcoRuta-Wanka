@@ -137,6 +137,9 @@ export const filtroPedidos = z.object({
   estado: z.enum(ESTADOS_PEDIDO).optional(),
   prioridad: z.enum(PRIORIDADES).optional(),
   busqueda: z.string().optional(),
+  // Paginación opcional (Green IT): sin `pagina` se devuelve la lista completa
+  pagina: z.coerce.number().int().min(1).optional(),
+  limite: z.coerce.number().int().min(1).max(50).default(12),
 });
 
 // ---------- Clientes y preferencias de entrega (RF-09) ----------

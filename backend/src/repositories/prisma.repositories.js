@@ -120,6 +120,40 @@ const aPedido = (p) =>
     updated_at: iso(p.updated_at),
   };
 
+// Columnas que necesita la tabla de pedidos (listado paginado, Green IT):
+// sin coordenadas, medidas de bultos ni marcas de auditoría.
+const columnasListadoPedido = {
+  id: true,
+  cliente_id: true,
+  cliente_nombre: true,
+  direccion: true,
+  punto_referencia: true,
+  peso_kg: true,
+  volumen_m3: true,
+  ventana_entrega_inicio: true,
+  ventana_entrega_fin: true,
+  prioridad: true,
+  estado: true,
+  created_at: true,
+  bultos: { select: { cantidad: true } },
+};
+
+const aPedidoListado = (p) => ({
+  id: p.id,
+  cliente_id: p.cliente_id,
+  cliente_nombre: p.cliente_nombre,
+  direccion: p.direccion,
+  punto_referencia: p.punto_referencia,
+  peso_kg: num(p.peso_kg),
+  volumen_m3: num(p.volumen_m3),
+  bultos: p.bultos.map((b) => ({ cantidad: b.cantidad })),
+  ventana_entrega_inicio: dateAHora(p.ventana_entrega_inicio),
+  ventana_entrega_fin: dateAHora(p.ventana_entrega_fin),
+  prioridad: p.prioridad,
+  estado: p.estado,
+  created_at: iso(p.created_at),
+});
+
 const aAsignacion = (a) =>
   a && {
     id: a.id,
@@ -225,7 +259,7 @@ export function crearRepositorios(prisma) {
     getById: async (id) => (esUuid(id) ? aPedido(await prisma.pedido.findUnique({ where: { id }, include: conBultos })) : null),
     getMuchos: async (ids) =>
       (await prisma.pedido.findMany({ where: { id: { in: ids.filter(esUuid) } }, include: conBultos })).map(aPedido),
-    listar: async ({ estado, prioridad, busqueda } = {}) => {
+    listar: async ({ estado, prioridad, busqueda, pagina, limite = 12 } = {}) => {
       const texto = busqueda?.trim();
       const where = {
         ...(estado ? { estado } : {}),
@@ -238,7 +272,24 @@ export function crearRepositorios(prisma) {
             }
           : {}),
       };
-      return (await prisma.pedido.findMany({ where, include: conBultos, orderBy: { created_at: "desc" } })).map(aPedido);
+      if (!pagina) {
+        return (await prisma.pedido.findMany({ where, include: conBultos, orderBy: { created_at: "desc" } })).map(aPedido);
+      }
+      // Página de `limite` registros con solo las columnas de la tabla
+      const [filas, total] = await prisma.$transaction([
+        prisma.pedido.findMany({
+          where,
+          select: columnasListadoPedido,
+          orderBy: { created_at: "desc" },
+          skip: (pagina - 1) * limite,
+          take: limite,
+        }),
+        prisma.pedido.count({ where }),
+      ]);
+      return {
+        datos: filas.map(aPedidoListado),
+        paginacion: { pagina, limite, total, paginas: Math.max(1, Math.ceil(total / limite)) },
+      };
     },
     crear: async (datos) =>
       aPedido(

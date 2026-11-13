@@ -65,13 +65,18 @@ export function crearRepositoriosMemoria() {
       ...p,
       crear: (datos) => p.crear({ punto_referencia: "", tiempo_servicio_min: 5, estado: "pendiente", ...datos }),
       getMuchos: async (ids) => p.todas().filter((x) => ids.includes(x.id)),
-      listar: async ({ estado, prioridad, busqueda } = {}) => {
+      listar: async ({ estado, prioridad, busqueda, pagina, limite = 12 } = {}) => {
         const texto = busqueda?.trim().toLowerCase();
-        return p
+        const lista = p
           .todas()
           .filter((x) => !estado || x.estado === estado)
           .filter((x) => !prioridad || x.prioridad === prioridad)
           .filter((x) => !texto || [x.cliente_id, x.cliente_nombre, x.direccion, x.punto_referencia].join(" ").toLowerCase().includes(texto));
+        if (!pagina) return lista;
+        return {
+          datos: lista.slice((pagina - 1) * limite, pagina * limite),
+          paginacion: { pagina, limite, total: lista.length, paginas: Math.max(1, Math.ceil(lista.length / limite)) },
+        };
       },
     },
     asignaciones: {

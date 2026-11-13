@@ -2,6 +2,11 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'
 const TIMEOUT_MS = 15000
 
+// Caché de lecturas (Green IT): una misma consulta GET se reutiliza 30 s.
+// Cualquier escritura (POST/PUT/PATCH/DELETE) la vacía para no mostrar datos viejos.
+const CACHE_MS = 30_000
+const cache = new Map()
+
 // Mensaje de error de la API ({ detail }) o uno genérico con el código HTTP
 async function detalleError(respuesta) {
   try {
@@ -14,12 +19,19 @@ async function detalleError(respuesta) {
 }
 
 async function pedir(ruta, opciones = {}) {
+  const lectura = (opciones.method ?? 'GET').toUpperCase() === 'GET'
+  if (!lectura) cache.clear()
+  const guardado = lectura ? cache.get(ruta) : null
+  if (guardado && Date.now() - guardado.hora < CACHE_MS) return guardado.datos
+
   const controlador = new AbortController()
   const id = setTimeout(() => controlador.abort(), TIMEOUT_MS)
 
   try {
     const respuesta = await fetch(`${BASE}${ruta}`, {
-      headers: { 'Content-Type': 'application/json' },
+      // Content-Type solo cuando hay cuerpo: un GET sin cabeceras extra es una
+      // petición CORS simple y el navegador no envía el OPTIONS previo.
+      headers: opciones.body ? { 'Content-Type': 'application/json' } : {},
       ...opciones,
       signal: controlador.signal,
     })
@@ -27,7 +39,9 @@ async function pedir(ruta, opciones = {}) {
     if (!respuesta.ok) throw new Error(await detalleError(respuesta))
 
     if (respuesta.status === 204) return null
-    return respuesta.json()
+    const datos = await respuesta.json()
+    if (lectura) cache.set(ruta, { hora: Date.now(), datos })
+    return datos
   } finally {
     clearTimeout(id)
   }

@@ -4,16 +4,29 @@
 // Cada módulo se encarga de su propia lista, formulario y detalle.
 
 import { ChartColumn, IdCard, Leaf, Package, Route, Store, Truck } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { api } from '../services/api.js'
-import { Clientes } from './modulos/Clientes.jsx'
-import { Conductores } from './modulos/Conductores.jsx'
 import { Pedidos } from './modulos/Pedidos.jsx'
-import { Sostenibilidad } from './modulos/Sostenibilidad.jsx'
-import { Rutas } from './modulos/Rutas.jsx'
-import { Vehiculos } from './modulos/Vehiculos.jsx'
 import { navegar, useUbicacion } from './navegacion.js'
 import { DialogoConfirmacion, Toasts } from './ui.jsx'
+
+// Carga diferida (Green IT): Pedidos es la vista inicial; el resto de módulos
+// se descarga solo cuando el usuario lo abre.
+const Clientes = lazy(() => import('./modulos/Clientes.jsx').then((m) => ({ default: m.Clientes })))
+const Vehiculos = lazy(() => import('./modulos/Vehiculos.jsx').then((m) => ({ default: m.Vehiculos })))
+const Conductores = lazy(() => import('./modulos/Conductores.jsx').then((m) => ({ default: m.Conductores })))
+const Rutas = lazy(() => import('./modulos/Rutas.jsx').then((m) => ({ default: m.Rutas })))
+const Sostenibilidad = lazy(() => import('./modulos/Sostenibilidad.jsx').then((m) => ({ default: m.Sostenibilidad })))
+
+function CargandoModulo() {
+  return (
+    <div className="tarjeta" role="status" aria-label="Cargando módulo">
+      <div className="tarjeta-cuerpo">
+        <span className="esqueleto" style={{ width: '40%' }} />
+      </div>
+    </div>
+  )
+}
 
 // Módulos ocultos por ahora (sus archivos siguen en components/modulos/):
 // - Resumen: agregarlo como primer elemento y cambiar VISTA_INICIAL en navegacion.js.
@@ -55,12 +68,12 @@ function useDatos(notificar) {
     [notificar],
   )
 
-  // Carga inicial de todas las colecciones
+  // Carga inicial: las asignaciones solo las usa Rutas y se piden al abrirlo (Green IT)
   useEffect(() => {
     let activo = true
-    const claves = Object.keys(CARGADORES)
+    const claves = Object.keys(CARGADORES).filter((c) => c !== 'asignaciones')
     Promise.all(claves.map((c) => CARGADORES[c]()))
-      .then((r) => activo && setDatos(Object.fromEntries(claves.map((c, i) => [c, r[i]]))))
+      .then((r) => activo && setDatos((prev) => ({ ...prev, ...Object.fromEntries(claves.map((c, i) => [c, r[i]])) })))
       .catch((e) => activo && notificar('error', `No se pudo conectar con el servidor: ${e.message}`))
       .finally(() => activo && setCargando(false))
     return () => {
@@ -91,6 +104,10 @@ export default function App() {
   const { datos, cargando, recargar } = useDatos(notificar)
   const modulo = MODULOS.find((m) => m.id === ubicacion.vista) ?? MODULOS[0]
   const Modulo = modulo.componente
+
+  useEffect(() => {
+    if (modulo.id === 'rutas') recargar('asignaciones')
+  }, [modulo.id, recargar])
 
   const contadores = {
     pedidos: datos.pedidos.filter((p) => p.estado === 'pendiente').length,
@@ -145,15 +162,17 @@ export default function App() {
       </header>
 
       <main className="contenido">
-        <Modulo
-          key={modulo.id}
-          ubicacion={ubicacion}
-          datos={datos}
-          cargando={cargando}
-          recargar={recargar}
-          notificar={notificar}
-          confirmar={confirmar}
-        />
+        <Suspense fallback={<CargandoModulo />}>
+          <Modulo
+            key={modulo.id}
+            ubicacion={ubicacion}
+            datos={datos}
+            cargando={cargando}
+            recargar={recargar}
+            notificar={notificar}
+            confirmar={confirmar}
+          />
+        </Suspense>
       </main>
 
       <nav className="nav-inferior" aria-label="Módulos">
