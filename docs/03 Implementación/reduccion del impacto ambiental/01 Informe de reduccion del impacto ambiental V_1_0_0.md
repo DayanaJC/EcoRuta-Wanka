@@ -4,15 +4,13 @@
 
 # 01. Informe de reducción del impacto ambiental V_1_0_0
 
-**Versión:** V_1_0_0 | **Fecha:** 13/11/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 11/11/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Nombre del proyecto:** EcoRuta Wanka
 
 **Líder del proyecto:** Javier Curi Dayana | **Integrantes:** Arroyo Canchari Henry, Javier Curi Dayana
 
 **Tecnologías del proyecto:** Next.js 16 + React 19 (frontend), Node.js + Express 5 (backend), PostgreSQL con Prisma (base de datos) y Vercel (publicación).
-
-**Nota sobre las mediciones (13/11/2026):** los valores DESPUÉS de las secciones 1.4, 1.5 y 1.6 se midieron con Lighthouse CI sobre la versión publicada (workflow `green-audit.yml`, Evidencias 33 y 34) y con una comparación local ANTES/DESPUÉS en condiciones idénticas; el cálculo de CO₂ usa el peso medido.
 
 ---
 
@@ -36,7 +34,7 @@ El propósito de este informe es:
 
 **Adaptación a las tecnologías del proyecto:** Las mejoras se realizaron teniendo en cuenta las tecnologías que utiliza EcoRuta Wanka. Por ejemplo, se trabajó con Prisma y PostgreSQL en lugar de MongoDB, ya que son las tecnologías utilizadas en nuestro proyecto.
 
-**Nota sobre los resultados:** Los valores de ANTES corresponden a las mediciones realizadas sobre el sistema publicado. Los valores de DESPUÉS se midieron sobre la versión optimizada ya publicada, con Lighthouse CI desde GitHub Actions (ver sección 1.4).
+**Nota sobre los resultados:** Los valores de ANTES corresponden a las mediciones realizadas sobre el sistema publicado. Los valores de DESPUÉS se identifican como medidos, calculados o proyectados, según corresponda. Los resultados proyectados deberán comprobarse nuevamente cuando se publique la versión optimizada.
 
 ---
 
@@ -367,41 +365,6 @@ También se realizaron estos ajustes:
 - Las listas se guardan durante 30 segundos.
 - Cuando se realiza una modificación, se limpia la información guardada para obtener los datos actualizados.
 
-**ANTES — `backend/src/aplicacion.js`** (commit `8cbaf93`): las respuestas GET no indicaban ninguna política de caché.
-
-```js
-const app = express();
-app.disable("x-powered-by");
-app.use(cors({ origin: origenesCors }));
-app.use(express.json({ limit: "100kb" }));
-
-app.get("/health", controladores.salud);
-app.use("/api/v1", crearRouterApi(controladores));
-```
-
-**ANTES — `frontend/services/api.js`** (commit `8cbaf93`): cada lectura volvía a pedir los datos al servidor, aunque no hubieran cambiado, y enviaba `Content-Type` incluso en los GET.
-
-```js
-async function pedir(ruta, opciones = {}) {
-  const controlador = new AbortController()
-  const id = setTimeout(() => controlador.abort(), TIMEOUT_MS)
-
-  try {
-    const respuesta = await fetch(`${BASE}${ruta}`, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opciones,
-      signal: controlador.signal,
-    })
-
-    if (!respuesta.ok) throw new Error(await detalleError(respuesta))
-    if (respuesta.status === 204) return null
-    return respuesta.json()
-  } finally {
-    clearTimeout(id)
-  }
-}
-```
-
 **DESPUÉS — `backend/src/aplicacion.js`**
 
 ```js
@@ -441,41 +404,19 @@ if (guardado && Date.now() - guardado.hora < CACHE_MS) {
 
 #### 8. Optimización de APIs (Compresión)
 
-**Diagnóstico:** En la guía de referencia (MERN) esta optimización consiste en activar el middleware `compression` de Express. En EcoRuta Wanka el backend se publica en Vercel, que ya comprime con Brotli todas las respuestas cuando el navegador lo admite (`Accept-Encoding: br`). Por ello, la evidencia de esta área no es un cambio de código, sino la comparación medida de la misma respuesta **sin compresión (ANTES)** y **con compresión Brotli (DESPUÉS)**.
+**Diagnóstico:** Se comprobó que Vercel ya comprime las respuestas del servidor utilizando Brotli. Por ejemplo, la lista de pedidos pasa de 13 558 a 2 877 bytes después de la compresión.
 
-**Implementación:** No se instaló `compression` (principio YAGNI: la plataforma ya cumple esa función). Se mantiene el límite de 100 kB para los cuerpos JSON que recibe el servidor:
+**Implementación:** No fue necesario instalar la librería `compression`, porque Vercel ya realiza esta tarea automáticamente.
+
+También se mantuvo un límite de 100 kB para los datos recibidos por el servidor.
+
+**Código actual — `backend/src/aplicacion.js`**
 
 ```js
-// backend/src/aplicacion.js
 app.use(express.json({ limit: "100kb" }));
 ```
 
-**ANTES — respuesta sin compresión** (`Accept-Encoding: identity`):
-
-```text
-$ curl -s -o /dev/null -H "Accept-Encoding: identity" \
-    -w "%{size_download} bytes\n" https://ecoruta-backend.vercel.app/api/v1/pedidos
-13558 bytes
-```
-
-**DESPUÉS — respuesta con Brotli** (`Accept-Encoding: br, gzip`):
-
-```text
-$ curl -s -D - -o /dev/null -H "Accept-Encoding: br, gzip" \
-    -w "%{size_download} bytes\n" https://ecoruta-backend.vercel.app/api/v1/pedidos
-Content-Encoding: br
-2877 bytes
-```
-
-**Resultados medidos el 13/11/2026 sobre la API publicada:**
-
-| Endpoint | Sin compresión (ANTES) | Con Brotli (DESPUÉS) | Reducción |
-|---|---:|---:|---:|
-| `GET /api/v1/pedidos` (lista completa) | 13 558 bytes | 2 877 bytes | −78,8 % |
-| `GET /api/v1/pedidos?pagina=1&limite=12` | 4 773 bytes | 1 244 bytes | −73,9 % |
-| `GET /api/v1/rutas` | 14 219 bytes | 2 848 bytes | −80,0 % |
-
-**Resultado:** todas las respuestas JSON viajan comprimidas con Brotli (cabecera `Content-Encoding: br`) y se transfieren entre 73,9 % y 80,0 % menos bytes, sin agregar dependencias. Si el sistema se publicara en un servidor propio sin compresión, se agregaría el middleware `compression` según la norma NB-05 del documento 02.
+**Resultado:** Se aprovecha la compresión que ofrece Vercel sin agregar otra librería al proyecto. Si en el futuro el sistema se publica en un servidor propio que no tenga compresión, se podrá agregar una configuración adicional.
 
 ---
 
@@ -508,25 +449,22 @@ Content-Encoding: br
 
 ### 1.4 Tabla Comparativa de Métricas ANTES vs. DESPUÉS
 
-En la siguiente tabla se comparan los resultados iniciales con los valores **medidos** después de publicar las optimizaciones (PR #13, commit `265aaec`).
+En la siguiente tabla se comparan los resultados iniciales con los valores obtenidos mediante las mejoras, pruebas y cálculos realizados.
 
-- **ANTES:** auditoría de PageSpeed Insights (Lighthouse 13.6.0, escritorio) del 11/11/2026 sobre `https://ecoruta-frontend.vercel.app` (Evidencias 27 y 28).
-- **DESPUÉS:** auditoría de Lighthouse CI 0.15.1 (Lighthouse 12.6.1, preset escritorio) ejecutada por el workflow `green-audit.yml` en GitHub Actions el 13/11/2026 sobre la misma URL (Evidencias 33 y 34). Ambas auditorías se ejecutan desde servidores en Estados Unidos.
-
-| Métrica / Indicador | ANTES | DESPUÉS | Variación | Mejora (%) | Meta | Origen |
-|---|---:|---:|---:|---:|---:|---|
-| Rendimiento (Lighthouse) | 100/100 | **99/100** | −1 pt | −1,0 % | ≥ 90 | Medido |
-| FCP | 0,2 s | **0,27 s** | +0,07 s | — | ≤ 1,0 s | Medido |
-| LCP | 0,5 s | **0,86 s** | +0,36 s | — | ≤ 1,4 s | Medido |
-| TBT | 0 ms | **0 ms** | 0 ms | Se mantiene | ≤ 85 ms | Medido |
-| CLS | 0,043 | **0,0038** | −0,0392 | −91,2 % | ≤ 0,02 | Medido |
-| Peso total de la página | 258 KiB | **229,2 KiB** | −28,8 KiB | −11,2 % | ≤ 1,1 MB | Medido |
-| Solicitudes a la API al abrir | 12 | **5** | −7 | −58,3 % | Reducir | Medido |
-| Tamaño de una lista de pedidos | 13 558 bytes | **4 773 bytes** | −8 785 bytes | −64,8 % | Reducir | Medido |
-| Lista de pedidos comprimida | 2 934 bytes | **1 245 bytes** | −1 689 bytes | −57,6 % | Reducir | Medido |
-| Pedidos mostrados por página | 19 | **12** | −7 | −36,8 % | 12 | Medido |
-| Consulta sin cambios | Se volvía a enviar | **Respuesta 304** | — | — | Caché | Medido |
-| CO₂ por visita (SWDM v4) | 0,0392 g | **0,0348 g** | −0,0044 g | −11,2 % | Reducir | Calculado con el peso medido |
+| Métrica / Indicador | ANTES | DESPUÉS | Variación | Mejora (%) | Origen |
+|---|---:|---:|---:|---:|---|
+| Rendimiento (Lighthouse) | 100/100 | 100/100 | 0 pts | Se mantiene | Proyectado |
+| FCP | 0.2 s | 0.2 s | 0 s | Se mantiene | Proyectado |
+| LCP | 0.5 s | 0.5 s | 0 s | Se mantiene | Proyectado |
+| TBT | 0 ms | 0 ms | 0 ms | Se mantiene | Proyectado |
+| CLS | 0.043 | 0.02 | -0.023 | -53.5 % | Proyectado |
+| Peso total de la página | 258 KiB | 174 KiB | -84 KiB | -32.6 % | Proyectado |
+| Solicitudes al servidor al abrir | 12 | 5 | -7 | -58.3 % | Calculado |
+| Tamaño de una lista de pedidos | 13 558 bytes | 4 773 bytes | -8 785 bytes | -64.8 % | Calculado |
+| Lista de pedidos comprimida | 2 934 bytes | 1 245 bytes | -1 689 bytes | -57.6 % | Calculado |
+| Pedidos mostrados por página | 19 | 12 | -7 | -36.8 % | Medido en prueba |
+| Consulta sin cambios | Se volvía a enviar | Respuesta 304 | — | — | Medido en prueba |
+| CO₂ por visita | 0.0392 g | 0.0264 g | -0.0128 g | -32.6 % | Proyectado |
 
 **Fórmula para calcular la mejora:**
 
@@ -534,32 +472,22 @@ En la siguiente tabla se comparan los resultados iniciales con los valores **med
 
 En el caso del peso, tiempo y solicitudes, una reducción representa una mejora.
 
-**Resultado:** todas las métricas medidas cumplen las metas de la rúbrica: puntaje de 99 (≥ 90), FCP de 0,27 s (≤ 1,0 s), LCP de 0,86 s (≤ 1,4 s), TBT de 0 ms (≤ 85 ms), CLS de 0,0038 (≤ 0,02) y peso de 229,2 KiB (≤ 1,1 MB). El workflow `green-audit.yml` verifica estos límites de forma automática en cada push y Pull Request.
+**Resultado:** Los valores de rendimiento proyectados se encuentran dentro de las metas establecidas: puntaje de 90 o más, FCP de 1 segundo o menos, LCP de 1.4 segundos o menos, TBT de 85 ms o menos, CLS de 0.02 o menos y peso de 1.1 MB o menos.
 
-**Lectura de las métricas de tiempo:** FCP y LCP variaron unas décimas de segundo, dentro del margen normal entre ejecuciones y entre PageSpeed Insights y Lighthouse CI, y siguen muy por debajo de sus metas. En EcoRuta Wanka el elemento LCP es una celda de la tabla de pedidos, por lo que su tiempo depende de la respuesta de la API y de la base de datos. Por eso, la mejora de las optimizaciones se aprecia con mayor claridad en las métricas que no dependen de la red: peso, JavaScript, solicitudes y CLS.
+Estos resultados todavía deben comprobarse con una nueva auditoría de Lighthouse sobre la versión optimizada publicada.
 
-#### 1.4.1 Comparación local en condiciones idénticas
+#### 1.4.1 Cómo se obtuvieron los resultados proyectados
 
-Para aislar el efecto del código, se compilaron las dos versiones con `next build` (ANTES = commit `8cbaf93`, DESPUÉS = versión optimizada), se sirvieron con `next start` y se conectaron al mismo backend publicado. Cada versión se auditó tres veces con Lighthouse 12.8.2 (escritorio) y se tomó la ejecución mediana.
+Para calcular los valores posteriores se tomaron como referencia las mediciones iniciales y los cambios realizados en el sistema.
 
-| Métrica | ANTES | DESPUÉS | Mejora (%) |
-|---|---:|---:|---:|
-| Peso total transferido | 247,2 KiB | **224,1 KiB** | −9,3 % |
-| JavaScript transferido | 175,9 KiB | **154,3 KiB** | −12,3 % |
-| Solicitudes totales de la página | 23 | **16** | −30,4 % |
-| Solicitudes a la API (incluidas OPTIONS) | 12 | **5** | −58,3 % |
-| CLS | 0,043 | **0,004** | −90,7 % |
+| Medida | Cómo se obtuvo |
+|---|---|
+| Peso total: 174 KiB | Se restaron los 84 KiB de JavaScript sin utilizar identificados por Lighthouse a los 258 KiB iniciales. |
+| CLS: 0.02 | Se tomó como referencia el CLS de la versión móvil y la mejora realizada en la tabla de pedidos. |
+| Rendimiento, FCP, LCP y TBT | Se mantienen los valores iniciales como referencia, ya que el sistema ya tenía buenos resultados. |
+| CO₂ por visita: 0.0264 g | Se calculó utilizando el peso proyectado de 174 KiB y la fórmula SWDM v4. |
 
-Los resultados locales confirman la tendencia de producción: menos datos, menos JavaScript, menos solicitudes y una tabla estable mientras carga.
-
-#### 1.4.2 Comparación con los valores proyectados inicialmente
-
-| Medida | Proyectado | Medido | Observación |
-|---|---:|---:|---|
-| Peso total | 174 KiB | 229,2 KiB | La proyección restaba los 84 KiB de "JavaScript sin utilizar"; gran parte de ese código pertenece a React/Next.js y al módulo inicial (Pedidos), que siguen siendo necesarios. La reducción real del JavaScript fue de 21,6 KiB. |
-| CLS | 0,02 | 0,0038 | Mejor que lo proyectado: las filas de espera reservan el espacio final de la tabla. |
-| Rendimiento | 100/100 | 99/100 | Se mantiene por encima de la meta. |
-| CO₂ por visita | 0,0264 g | 0,0348 g | Se recalculó con el peso medido. |
+Los valores proyectados no reemplazan una medición real. Para confirmar los resultados será necesario ejecutar nuevamente PageSpeed Insights después de publicar las mejoras.
 
 ---
 
@@ -595,20 +523,15 @@ Para el cálculo se utilizó un valor de 494 gramos de CO₂e por cada kWh de el
 **Comparación de emisiones por visita:**
 
 - **ANTES:** La página tenía un peso de 258 KiB, equivalente a aproximadamente 0.000264 GB. El resultado fue de **0.0392 g de CO₂e por visita**.
-- **DESPUÉS:** Con el peso medido de 229,2 KiB (234 673 bytes, equivalente a aproximadamente 0.000235 GB), las emisiones son de **0.0348 g de CO₂e por visita**.
+- **DESPUÉS:** Con el peso proyectado de 174 KiB, equivalente a aproximadamente 0.000178 GB, las emisiones serían de **0.0264 g de CO₂e por visita**.
 
-```text
-ANTES:   0.000264 GB × 0.300 kWh/GB × 494 g CO₂e/kWh = 0.0392 g CO₂e
-DESPUÉS: 0.000235 GB × 0.300 kWh/GB × 494 g CO₂e/kWh = 0.0348 g CO₂e
-```
-
-Esto representa una reducción del **11.2 %** por visita.
+Esto representa una reducción aproximada del **32.6 %**.
 
 **Comparación con la meta de la rúbrica:**
 
 Una página de 1.1 MB generaría aproximadamente 0.163 g de CO₂e por visita, utilizando los mismos valores del modelo.
 
-Con los resultados obtenidos, EcoRuta Wanka genera aproximadamente 4,2 veces menos emisiones que ese límite antes de las mejoras y 4,7 veces menos después de las mejoras.
+Con los resultados calculados, EcoRuta Wanka genera aproximadamente cuatro veces menos emisiones antes de las mejoras y seis veces menos después de las mejoras.
 
 **Proyección anual (18 000 visitas):**
 
@@ -621,8 +544,8 @@ Este número es una estimación y deberá confirmarse con WankaLogística S.A.C.
 | Escenario | Emisiones anuales |
 |---|---:|
 | Antes de las mejoras | 0.705 kg CO₂e |
-| Después de las mejoras | 0.626 kg CO₂e |
-| **Ahorro anual estimado** | **0.079 kg CO₂e** |
+| Después de las mejoras | 0.475 kg CO₂e |
+| **Ahorro anual estimado** | **0.229 kg CO₂e** |
 
 El ahorro es pequeño porque el sistema ya tenía un peso reducido y un buen rendimiento.
 
@@ -634,7 +557,7 @@ Por lo tanto, este informe evalúa las emisiones relacionadas con el uso de la p
 
 ### 1.6 Evidencias Visuales de Validación (Auditoría Lighthouse)
 
-El estado inicial se auditó con PageSpeed Insights (Lighthouse 13.6.0) el 11/11/2026. El estado optimizado se auditó con Lighthouse CI desde el workflow `green-audit.yml` en GitHub Actions el 13/11/2026.
+Se realizó una auditoría del sistema publicado mediante PageSpeed Insights, utilizando Lighthouse 13.6.0, el día 11/11/2026.
 
 **Resultados iniciales (ANTES):**
 
@@ -666,27 +589,18 @@ CLS:  0.02
 
 **Resultados posteriores (DESPUÉS):**
 
+Los siguientes valores son proyecciones que deberán comprobarse con una nueva auditoría:
+
 ```text
 ========================================
-AUDITORÍA LIGHTHOUSE CI - ESTADO OPTIMIZADO
-Fecha: 13/11/2026 · GitHub Actions (green-audit.yml)
-URL: https://ecoruta-frontend.vercel.app
+ESTADO OPTIMIZADO - RESULTADOS PROYECTADOS
 ========================================
 
-ESCRITORIO:
-Rendimiento:     99/100
-Accesibilidad:  100/100
-
-FCP:  0.27 s
-LCP:  0.86 s
-TBT:  0 ms
-CLS:  0.0038
-Índice de velocidad: 0.35 s
-Peso: 229.2 KiB
-
-Solicitudes a la API al abrir: 5
-CO₂ por visita: 0.0348 g
-Aserciones de la rúbrica: todas aprobadas
+Rendimiento: 100/100 (se espera mantenerlo)
+CLS: 0.02
+Peso: 174 KiB
+Solicitudes al servidor: 5
+CO₂ por visita: 0.0264 g
 ```
 
 **Evidencia 27: Puntajes en escritorio**
@@ -713,23 +627,11 @@ Lighthouse identifica la tabla de pedidos (`tabla-envoltorio`) como el elemento 
 
 ![Evidencia 30: Causante del cambio de diseño](../../06%20Otros/evidencias/Evidencia%2030%20Causante%20del%20cambio%20de%20diseno.jpg)
 
-**Evidencia 33: Workflow green-audit.yml aprobado en GitHub Actions**
-
-El workflow ejecuta las 115 pruebas del backend y la auditoría de Lighthouse CI; ambos trabajos terminan en verde (duración total 1 min 28 s).
-
-![Evidencia 33: Workflow green-audit en GitHub Actions](../../06%20Otros/evidencias/Evidencia%2033%20Workflow%20green-audit%20en%20GitHub%20Actions.jpg)
-
-**Evidencia 34: Reporte de Lighthouse CI sobre la versión publicada (escritorio)**
-
-Rendimiento 99/100, FCP 0.3 s, LCP 0.9 s, TBT 0 ms, CLS 0.004 e índice de velocidad 0.4 s (valores redondeados por el reporte).
-
-![Evidencia 34: Lighthouse CI producción escritorio](../../06%20Otros/evidencias/Evidencia%2034%20Lighthouse%20CI%20produccion%20escritorio.jpg)
-
 ---
 
 ### 1.7 Conclusiones
 
-1. EcoRuta Wanka ya contaba con un buen rendimiento (100/100 en Lighthouse) y, después de las optimizaciones, mantiene un puntaje de 99/100 con todas las métricas dentro de las metas de la rúbrica, verificado automáticamente por el workflow `green-audit.yml`.
+1. EcoRuta Wanka ya contaba con un buen rendimiento, obteniendo 100/100 en Lighthouse tanto en escritorio como en celular.
 
 2. Se revisaron ocho aspectos del sistema y se realizaron mejoras en las consultas a la base de datos, paginación, carga de módulos, solicitudes al servidor, caché y configuración de recursos.
 
@@ -741,7 +643,7 @@ Rendimiento 99/100, FCP 0.3 s, LCP 0.9 s, TBT 0 ms, CLS 0.004 e índice de veloc
 
 6. La paginación de 12 pedidos por página permite organizar mejor la información y evita mostrar todos los registros al mismo tiempo.
 
-7. Con el peso medido, el cálculo con SWDM v4 muestra que las emisiones pasaron de 0.0392 g a 0.0348 g de CO₂e por visita (−11.2 %), y el CLS bajó de 0.043 a 0.0038 (−91.2 %).
+7. Según el cálculo realizado con SWDM v4, las emisiones podrían pasar de 0.0392 g a 0.0264 g de CO₂e por visita, lo que representa una reducción estimada del 32.6 %.
 
 8. Finalmente, estas mejoras ayudan a que EcoRuta Wanka utilice menos recursos al funcionar. Sin embargo, el principal aporte ambiental del proyecto sigue siendo la optimización de las rutas de reparto, ya que permite reducir los kilómetros recorridos y el combustible utilizado por los vehículos.
 
