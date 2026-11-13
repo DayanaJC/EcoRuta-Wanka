@@ -94,6 +94,8 @@ Se revisaron ocho aspectos del sistema y se realizaron cambios en el código par
 
 **Implementación:** Se modificó la consulta de Prisma para obtener solamente los campos necesarios. También se agregó un índice que permite buscar los pedidos por estado y ordenarlos por fecha.
 
+**Fundamento:** la rúbrica pide «consultas magras e índices». Se apoya en **ISO/IEC 25010** (eficiencia de desempeño, utilización de recursos), en el principio de **eficiencia de hardware** de la GSF y en la **pauta 3.1 de WSG** (transferencia de datos en red). Normas internas NB-01 y NB-03 del documento 02.
+
 **ANTES — `backend/src/repositories/prisma.repositories.js`**
 
 ```js
@@ -134,13 +136,17 @@ const columnasListadoPedido = {
 @@index([estado, created_at(sort: Desc)])
 ```
 
-**Resultado:** El tamaño de la lista de pedidos pasó de **13 558 a 4 773 bytes**, lo que representa una reducción del **64.8 %**.
+**Resultado:** Una página de pedidos de la API (`GET /api/v1/pedidos?pagina=1&limite=12`, solo con las columnas de la tabla) pesa **4 773 bytes**, frente a los **13 558 bytes** de la lista completa con todos los datos de cada pedido (**−64.8 %**).
+
+**Alcance:** la pantalla Pedidos todavía descarga la lista completa, porque el módulo Generar ruta necesita todos los pedidos para calcular las rutas, y pagina la tabla en el navegador (sección 2). Hacer que la tabla consuma la página de la API queda como siguiente mejora.
 
 #### 2. Paginación de Datos en Backend y Frontend (12 registros)
 
 **Diagnóstico:** El sistema mostraba todos los pedidos en una sola lista. Esto podía afectar el rendimiento si la cantidad de registros aumentaba.
 
 **Implementación:** Se agregó la paginación para mostrar los pedidos de 12 en 12. El usuario puede cambiar de página utilizando los botones Anterior y Siguiente.
+
+**Fundamento:** la rúbrica pide «paginación backend/frontend de 12 registros». Se apoya en **ISO/IEC 25010** (eficiencia de desempeño, capacidad), en el principio de **eficiencia energética** de la GSF y en la **pauta 2.1 de WSG** (eficiencia de la experiencia de usuario). Norma interna NB-02.
 
 **ANTES — `backend/src/schemas/esquemas.js`**
 
@@ -204,11 +210,15 @@ La tabla también cuenta con los botones para cambiar de página.
 
 **Prueba realizada con 19 pedidos:** La primera página muestra 12 pedidos y la segunda muestra los 7 restantes. También se verificó que no se acepten números de página menores a 1 ni límites mayores a 50.
 
+**Alcance:** la paginación se implementó en dos niveles. La **API** entrega páginas de hasta 50 registros (12 por defecto) para cualquier cliente que la consuma. La **tabla** muestra 12 pedidos por página sobre la lista que ya tiene el navegador, porque esa misma lista la usa el módulo Generar ruta.
+
 #### 3. Optimización de Imágenes (WebP / AVIF)
 
 **Diagnóstico:** El sistema no utiliza fotografías propias en sus pantallas. Los íconos se muestran mediante código y el mapa utiliza información de OpenStreetMap. Por eso, no se encontraron imágenes pesadas que necesitaran ser reemplazadas.
 
 **Implementación:** Se configuró Next.js para permitir el uso de los formatos AVIF y WebP cuando se agreguen imágenes al proyecto.
+
+**Fundamento:** la rúbrica pide «imágenes WebP/AVIF». Se apoya en la **pauta 1.2 de WSG** (formatos de nueva generación), en **ISO/IEC 25010** (comportamiento temporal) y en el principio de **eficiencia de carbono** de la GSF; la presentación «Dominando Google Lighthouse» indica servir formatos modernos. Norma interna NF-01.
 
 **ANTES — `frontend/next.config.mjs`**
 
@@ -237,6 +247,8 @@ Esta configuración permitirá utilizar imágenes de menor tamaño en caso de qu
 **Diagnóstico:** Los seis módulos del sistema (Pedidos, Clientes, Vehículos, Conductores, Rutas y Sostenibilidad) se cargaban al ingresar, aunque el usuario solamente necesitara uno. Lighthouse identificó **84 KiB de JavaScript sin utilizar**.
 
 **Implementación:** Se modificó la carga de los módulos utilizando `lazy` y `Suspense` de React. Ahora los módulos secundarios se cargan cuando el usuario los abre.
+
+**Fundamento:** la rúbrica pide «React.lazy/Suspense para code splitting». Según la presentación «Dominando Google Lighthouse», el TBT pesa 30 % del puntaje y se reduce con división de código. Se apoya en **ISO/IEC 25010** (mantenibilidad, modularidad), en la **eficiencia de hardware** de la GSF y en la **pauta 2.4 de WSG**. Norma interna NF-03.
 
 **ANTES — `frontend/components/App.jsx`**
 
@@ -298,6 +310,8 @@ También se encontraron archivos que ya no se utilizaban: `frontend/public/icons
 
 **Implementación:** Se reemplazó el uso de `dotenv` por la función disponible en Node.js.
 
+**Fundamento:** la rúbrica pide «sustitución de librerías por APIs nativas». Se apoya en **ISO/IEC 25010** (mantenibilidad, analizabilidad), en la **eficiencia energética** de la GSF, en la **pauta 2.2 de WSG** (código limpio y librerías) y en el principio **YAGNI**. Norma interna NB-08.
+
 **ANTES — `backend/prisma/seed.js`**
 
 ```js
@@ -323,6 +337,8 @@ Los archivos que ya no se utilizan quedaron identificados para su revisión y po
 **Diagnóstico:** Al abrir el sistema se realizaban **12 solicitudes al servidor**. Esto ocurría porque se cargaban las seis listas y, además, el navegador realizaba solicitudes OPTIONS antes de algunas consultas. También se solicitaban las asignaciones de rutas desde el inicio.
 
 **Implementación:** Se modificó el envío de la cabecera `Content-Type` para utilizarla solamente cuando se envían datos. También se cambió la carga de asignaciones para que se realice al ingresar al módulo Rutas.
+
+**Fundamento:** la rúbrica pide «inlining de SVGs» y menos solicitudes. Se apoya en la **pauta 3.2 de WSG** (minimizar solicitudes HTTP), en **ISO/IEC 25010** (comportamiento temporal) y en la **eficiencia de carbono** de la GSF. Normas internas NF-04 y NF-05.
 
 **ANTES — `frontend/services/api.js`**
 
@@ -366,6 +382,8 @@ También se realizaron estos ajustes:
 - Los factores de tráfico se guardan durante un día.
 - Las listas se guardan durante 30 segundos.
 - Cuando se realiza una modificación, se limpia la información guardada para obtener los datos actualizados.
+
+**Fundamento:** la rúbrica pide «cabeceras Cache-Control/ETag y caché en el cliente». Se apoya en la **pauta 2.4 de WSG** (caché determinista), en **ISO/IEC 25010** (comportamiento temporal) y en la **eficiencia energética** de la GSF: no repetir trabajo ya hecho. Normas internas NB-04 y NF-06.
 
 **ANTES — `backend/src/aplicacion.js`** (commit `8cbaf93`): las respuestas GET no indicaban ninguna política de caché.
 
@@ -450,6 +468,8 @@ if (guardado && Date.now() - guardado.hora < CACHE_MS) {
 app.use(express.json({ limit: "100kb" }));
 ```
 
+**Fundamento:** la rúbrica pide «compresión Brotli/Gzip». Se apoya en la **pauta 3.1 de WSG** (reducción de payloads), en **ISO/IEC 25010** (capacidad) y en la **eficiencia de carbono** de la GSF. Normas internas NB-05 y NB-06.
+
 **ANTES — respuesta sin compresión** (`Accept-Encoding: identity`):
 
 ```text
@@ -484,6 +504,8 @@ Content-Encoding: br
 **Diagnóstico:** Lighthouse identificó que la tabla de pedidos era la principal causa del CLS de **0.043** (Evidencia 30). Mientras cargaban los datos, se mostraban cuatro filas de espera y después aparecían los pedidos, haciendo que la tabla cambiara de tamaño.
 
 **Implementación:** Se modificó la cantidad de filas de espera para que coincida con los 12 pedidos que se muestran por página. También se reservó espacio para el texto que indica la cantidad de resultados.
+
+**Fundamento:** la rúbrica fija CLS ≤ 0,02. Según la presentación «Dominando Google Lighthouse», el CLS pesa 25 % del puntaje y se corrige reservando el espacio de lo que carga después. Se apoya en **ISO/IEC 25010** (usabilidad) y en la **pauta 2.1 de WSG**. Norma interna NF-07.
 
 **DESPUÉS — Componente de pedidos**
 
@@ -522,7 +544,7 @@ En la siguiente tabla se comparan los resultados iniciales con los valores **med
 | CLS | 0,043 | **0,0038** | −0,0392 | −91,2 % | ≤ 0,02 | Medido |
 | Peso total de la página | 258 KiB | **229,2 KiB** | −28,8 KiB | −11,2 % | ≤ 1,1 MB | Medido |
 | Solicitudes a la API al abrir | 12 | **5** | −7 | −58,3 % | Reducir | Medido |
-| Tamaño de una lista de pedidos | 13 558 bytes | **4 773 bytes** | −8 785 bytes | −64,8 % | Reducir | Medido |
+| Datos de pedidos: lista completa (ANTES) vs. página de la API de 12 registros (DESPUÉS) | 13 558 bytes | **4 773 bytes** | −8 785 bytes | −64,8 % | Reducir | Medido |
 | Lista de pedidos comprimida | 2 934 bytes | **1 245 bytes** | −1 689 bytes | −57,6 % | Reducir | Medido |
 | Pedidos mostrados por página | 19 | **12** | −7 | −36,8 % | 12 | Medido |
 | Consulta sin cambios | Se volvía a enviar | **Respuesta 304** | — | — | Caché | Medido |
@@ -737,7 +759,7 @@ Rendimiento 99/100, FCP 0.3 s, LCP 0.9 s, TBT 0 ms, CLS 0.004 e índice de veloc
 
 4. Las solicitudes al servidor al abrir el sistema se redujeron de 12 a 5, lo que representa una disminución del 58.3 %.
 
-5. La lista de pedidos pasó de 13 558 a 4 773 bytes, reduciendo su tamaño en un 64.8 %.
+5. Una página de pedidos de la API (12 registros con las columnas de la tabla) pesa 4 773 bytes frente a los 13 558 bytes de la lista completa (−64.8 %).
 
 6. La paginación de 12 pedidos por página permite organizar mejor la información y evita mostrar todos los registros al mismo tiempo.
 

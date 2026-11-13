@@ -40,7 +40,7 @@ El informe 01 documenta las ocho optimizaciones aplicadas a EcoRuta Wanka y su e
 | Característica | Subcaracterística | Cómo la atienden las refactorizaciones |
 |---|---|---|
 | **Eficiencia de desempeño** | Comportamiento temporal | Las solicitudes al abrir el sistema bajaron de 12 a 5 y se eliminaron las consultas OPTIONS previas, lo que reduce la latencia de la carga inicial. Las consultas repetidas sin cambios responden 304 sin cuerpo. |
-| | Utilización de recursos | La página de pedidos pasó de 13 558 a 4 773 bytes (−64,8 %) al seleccionar solo las columnas necesarias. El JavaScript inicial bajó 21,7 KiB con la carga diferida. |
+| | Utilización de recursos | Una página de pedidos de la API pesa 4 773 bytes frente a los 13 558 de la lista completa (−64,8 %), al seleccionar solo las columnas de la tabla. El JavaScript inicial bajó 21,7 KiB con la carga diferida. |
 | | Capacidad | La paginación (máximo 50 registros por solicitud) y el índice `(estado, created_at DESC)` mantienen el tiempo de respuesta estable aunque crezca el número de pedidos. |
 | **Mantenibilidad** | Modularidad | Arquitectura por capas (rutas → controladores → servicios → repositorios) y módulos de interfaz cargados de forma independiente con `React.lazy`. |
 | | Reusabilidad | Un único cliente HTTP (`pedir()`), componentes compartidos (`FilasCargando`, `EstadoVacio`) y esquemas Zod reutilizados para crear y actualizar. |
@@ -243,7 +243,7 @@ Para comprobar las normas con datos reales se midió la carga inicial **antes** 
 | CLS | 0,0469 | **0,0022** | **0,0022** | NF-07 |
 | JavaScript transferido | 175,9 KiB | **154,2 KiB** | 156,6 KiB | NF-03 |
 | Peso total transferido | 273,0 KiB | **251,6 KiB** | **229,2 KiB** | NB-05, NF-03 |
-| Página de pedidos (19 completos → 12 con columnas de tabla) | 13 558 bytes | **4 773 bytes** | 4 773 bytes | NB-01, NB-02 |
+| Datos de pedidos: lista completa → página de la API (12 con columnas de tabla) | 13 558 bytes | **4 773 bytes** | 4 773 bytes | NB-01, NB-02 |
 | Consulta repetida sin cambios | 200 con datos | **304** sin cuerpo | **304** sin cuerpo | NB-04 |
 
 **Lectura de los resultados:** la reducción de solicitudes (−58,3 %), la página de pedidos (−64,8 %) y la respuesta 304 coinciden con el informe 01, y el CLS (0,0022) mejora la proyección de 0,02. El JavaScript inicial bajó 21,7 KiB, menos que los 84 KiB de "JavaScript sin utilizar" señalados por Lighthouse, porque gran parte de ese código es el propio React/Next.js y el módulo Pedidos, que es la vista inicial. Los valores definitivos de peso y CO₂ se registran en la sección 1.4 del informe 01 a partir de la auditoría de Lighthouse CI sobre la versión publicada (score 99, LCP 0,86 s, 229,2 KiB, 0,0348 g CO₂e por visita).
@@ -297,7 +297,7 @@ El código de las optimizaciones y el workflow de CI se integraron a `main` medi
 2. La matriz de mapeo directo cubre las ocho optimizaciones, más la mejora de estabilidad visual, y vincula cada una con su estándar y con la norma interna que la mantiene.
 3. Las normas Backend (NB-01 a NB-08) y Frontend (NF-01 a NF-08) se apoyan en **Clean Code, SOLID, DRY y YAGNI**, adaptadas de MERN a PostgreSQL con Prisma.
 4. El workflow **`green-audit.yml`** ejecuta las pruebas y una auditoría de **Lighthouse CI** con los límites de la rúbrica en cada push y Pull Request, de modo que una regresión de rendimiento se detecta antes de integrarse.
-5. La medición antes/después confirma la reducción de solicitudes (12 → 5), la estabilidad visual (CLS 0,0469 → 0,0022) y la página de pedidos más liviana (13 558 → 4 773 bytes), también en la versión publicada.
+5. La medición antes/después confirma la reducción de solicitudes (12 → 5), la estabilidad visual (CLS 0,0469 → 0,0022) y la página de pedidos de la API más liviana (13 558 → 4 773 bytes), también en la versión publicada.
 
 ---
 
