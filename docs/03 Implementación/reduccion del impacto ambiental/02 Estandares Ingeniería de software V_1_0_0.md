@@ -40,7 +40,7 @@ El informe 01 documenta las ocho optimizaciones aplicadas a EcoRuta Wanka y su e
 | Característica | Subcaracterística | Cómo la atienden las refactorizaciones |
 |---|---|---|
 | **Eficiencia de desempeño** | Comportamiento temporal | Las solicitudes al abrir el sistema bajaron de 12 a 5 y se eliminaron las consultas OPTIONS previas, lo que reduce la latencia de la carga inicial. Las consultas repetidas sin cambios responden 304 sin cuerpo. |
-| | Utilización de recursos | La página de pedidos pasó de 13 558 a 4 773 bytes (−64,8 %) al seleccionar solo las columnas necesarias. El JavaScript inicial bajó 21,7 KiB con la carga diferida. |
+| | Utilización de recursos | El tamaño de una lista de pedidos pasó de 13 558 a 4 773 bytes (−64,8 %) al seleccionar solo las columnas necesarias. La carga diferida evita descargar al inicio los módulos que el usuario no abre (Lighthouse identificó 84 KiB de JavaScript sin utilizar). |
 | | Capacidad | La paginación (máximo 50 registros por solicitud) y el índice `(estado, created_at DESC)` mantienen el tiempo de respuesta estable aunque crezca el número de pedidos. |
 | **Mantenibilidad** | Modularidad | Arquitectura por capas (rutas → controladores → servicios → repositorios) y módulos de interfaz cargados de forma independiente con `React.lazy`. |
 | | Reusabilidad | Un único cliente HTTP (`pedir()`), componentes compartidos (`FilasCargando`, `EstadoVacio`) y esquemas Zod reutilizados para crear y actualizar. |
@@ -118,8 +118,6 @@ Pautas complementarias usadas en la matriz de la sección 2.3: **2.1** eficienci
 | NF-06 | Las lecturas se guardan 30 s en la caché del cliente y cualquier escritura la vacía. | `CACHE_MS` en `services/api.js`. |
 | NF-07 | Los esqueletos de carga reservan el espacio final de la vista (CLS ≤ 0,02). | `FilasCargando filas={POR_PAGINA}` y `min-height` en `.resultado-filtros`. |
 | NF-08 | Antes de instalar una librería se revisa su peso en Bundlephobia y si existe una alternativa nativa. | Revisión de `package.json` en el Pull Request. |
-| NF-09 | La hoja de estilos de una librería se importa en el componente que la usa, no en el `layout` global (los estilos de Leaflet solo llegan con el mapa). | `import 'leaflet/dist/leaflet.css'` en `MapaRuta.jsx` y `MapaSelector.jsx`. |
-| NF-10 | La vista inicial no espera datos que no muestra: cada tabla se dibuja cuando llega su propia respuesta y la conexión con la API se abre por adelantado (`preconnect`). | `necesita: ['pedidos']` en `App.jsx` y `preconnect()` en `app/layout.js`. |
 
 #### 2.2.4 Integración en CI/CD Verde (GitHub Actions)
 
@@ -195,8 +193,6 @@ jobs:
 
 Los reportes de cada ejecución se publican con `temporary-public-storage` y su enlace aparece en el registro del workflow.
 
-**Resultados de Lighthouse CI (13/11/2026, preset escritorio, desde Huancayo):** con la API en frío la primera auditoría dio LCP 3,9 s y score 74, porque el elemento LCP es una celda de la tabla de pedidos y la tabla esperaba las cinco respuestas de la API. Tras aplicar NF-09 y NF-10 y calentar la API, tres ejecuciones dieron **score 0,95–0,97, FCP 0,27–0,43 s, LCP 1,21–1,36 s, TBT 34–88 ms, CLS 0,0038 y 224–229 KiB**, dentro de los límites de la rúbrica. El TBT queda cerca de su límite (85 ms) en algunas ejecuciones; Lighthouse CI evalúa el mejor valor de las tres.
-
 #### 2.2.5 Flujo de trabajo, pruebas y calidad
 
 - **Ramas:** `main` (estable, se despliega en Vercel), `feature/<tema>` y `docs/<tema>`. Los cambios llegan a `main` mediante **Pull Request**.
@@ -227,26 +223,26 @@ Los reportes de cada ejecución se publican con `temporary-public-storage` y su 
 | 6 | **Solicitudes HTTP:** GET sin preflight, carga por módulo y SVG en línea (12 → 5) | Eficiencia de desempeño — Comportamiento temporal | Eficiencia de carbono | Pauta 3.2 Minimización de solicitudes HTTP | NF-04, NF-05 |
 | 7 | **Caché:** `Cache-Control`, ETag (304) y caché de cliente de 30 s | Eficiencia de desempeño — Comportamiento temporal | Eficiencia energética | Pauta 2.4 Estrategias de caché | NB-04, NF-06 |
 | 8 | **API:** compresión Brotli/Gzip y límite de 100 kB | Eficiencia de desempeño — Capacidad | Eficiencia de carbono | Pauta 3.1 Optimización de red | NB-05, NB-06 |
-| + | **Estabilidad visual:** espacio reservado en la tabla (CLS 0,043 → 0,0022) | Usabilidad — Estética de la interfaz | Eficiencia de hardware | Pauta 2.1 Eficiencia de la experiencia de usuario | NF-07 |
+| + | **Estabilidad visual:** espacio reservado en la tabla (CLS 0,043 → 0,02) | Usabilidad — Estética de la interfaz | Eficiencia de hardware | Pauta 2.1 Eficiencia de la experiencia de usuario | NF-07 |
 
 ---
 
-### 2.4 Verificación de cumplimiento: medición antes y después
+### 2.4 Verificación de cumplimiento: resultados antes y después
 
-Para comprobar las normas con datos reales se midió la carga inicial **antes** (rama `main`, commit `8cbaf93`) y **después** (commit `265aaec`) de las optimizaciones.
+Los valores de esta sección son los de la tabla comparativa del informe 01 (sección 1.4), relacionados con la norma interna que mantiene cada mejora.
 
-**Método:** ambas versiones se compilaron con `next build`, se sirvieron con `next start` y se conectaron al mismo backend y a la misma base de datos (19 pedidos). La carga se registró con Microsoft Edge sin interfaz (Puppeteer + Chrome DevTools Protocol), con la caché del navegador desactivada, una ventana de 1350 × 940 y el CLS medido con `PerformanceObserver`. La versión publicada se midió con el mismo procedimiento el 12/11/2026.
+| Indicador | ANTES | DESPUÉS | Origen (informe 01) | Norma |
+|---|---:|---:|---|---|
+| Solicitudes al servidor al abrir | 12 | **5** | Calculado | NF-05 |
+| Tamaño de una lista de pedidos | 13 558 bytes | **4 773 bytes** | Calculado | NB-01, NB-02 |
+| Lista de pedidos comprimida | 2 934 bytes | **1 245 bytes** | Calculado | NB-05 |
+| Pedidos mostrados por página | 19 | **12** | Medido en prueba | NB-02 |
+| Consulta sin cambios | Se volvía a enviar | **Respuesta 304** | Medido en prueba | NB-04 |
+| CLS | 0,043 | **0,02** | Proyectado | NF-07 |
+| Peso total de la página | 258 KiB | **174 KiB** | Proyectado | NF-03 |
+| CO₂ por visita (SWDM v4) | 0,0392 g | **0,0264 g** | Proyectado | NB-05, NF-03 |
 
-| Indicador | ANTES | DESPUÉS (local) | Producción (Vercel) | Norma |
-|---|---:|---:|---:|---|
-| Solicitudes a la API al abrir | 12 (6 GET + 6 OPTIONS) | **5** (0 OPTIONS) | **5** (0 OPTIONS) | NF-05 |
-| CLS | 0,0469 | **0,0022** | **0,0022** | NF-07 |
-| JavaScript transferido | 175,9 KiB | **154,2 KiB** | 156,6 KiB | NF-03 |
-| Peso total transferido | 273,0 KiB | **251,6 KiB** | **229,2 KiB** | NB-05, NF-03 |
-| Página de pedidos (19 completos → 12 con columnas de tabla) | 13 558 bytes | **4 773 bytes** | 4 773 bytes | NB-01, NB-02 |
-| Consulta repetida sin cambios | 200 con datos | **304** sin cuerpo | **304** sin cuerpo | NB-04 |
-
-**Lectura de los resultados:** la reducción de solicitudes (−58,3 %), la página de pedidos (−64,8 %) y la respuesta 304 coinciden con el informe 01, y el CLS (0,0022) mejora la proyección de 0,02. El JavaScript inicial bajó 21,7 KiB, menos que los 84 KiB de "JavaScript sin utilizar" señalados por Lighthouse, porque gran parte de ese código es el propio React/Next.js y el módulo Pedidos, que es la vista inicial. Los valores definitivos de peso y CO₂ se registran en la sección 1.4 del informe 01 a partir de la auditoría de Lighthouse CI sobre la versión publicada (score 99, LCP 0,86 s, 229,2 KiB, 0,0348 g CO₂e por visita).
+**Lectura de los resultados:** la reducción de solicitudes (−58,3 %), el tamaño de la lista de pedidos (−64,8 %), la paginación de 12 registros y la respuesta 304 se comprobaron en el sistema. Los valores de CLS, peso y CO₂ son proyecciones del informe 01 y, como indica ese documento, deberán confirmarse con una nueva auditoría de PageSpeed Insights sobre la versión publicada. Desde la publicación, el workflow `green-audit.yml` verifica automáticamente los límites de la rúbrica en cada push y Pull Request (sección 2.2.4).
 
 **Evidencia 31: Paginación de pedidos (escritorio)**
 
@@ -297,7 +293,7 @@ El código de las optimizaciones y el workflow de CI se integraron a `main` medi
 2. La matriz de mapeo directo cubre las ocho optimizaciones, más la mejora de estabilidad visual, y vincula cada una con su estándar y con la norma interna que la mantiene.
 3. Las normas Backend (NB-01 a NB-08) y Frontend (NF-01 a NF-08) se apoyan en **Clean Code, SOLID, DRY y YAGNI**, adaptadas de MERN a PostgreSQL con Prisma.
 4. El workflow **`green-audit.yml`** ejecuta las pruebas y una auditoría de **Lighthouse CI** con los límites de la rúbrica en cada push y Pull Request, de modo que una regresión de rendimiento se detecta antes de integrarse.
-5. La medición antes/después confirma la reducción de solicitudes (12 → 5), la estabilidad visual (CLS 0,0469 → 0,0022) y la página de pedidos más liviana (13 558 → 4 773 bytes), también en la versión publicada.
+5. Según el informe 01, las solicitudes al abrir el sistema bajan de 12 a 5, la lista de pedidos pasa de 13 558 a 4 773 bytes y el CLS proyectado baja de 0,043 a 0,02.
 
 ---
 
