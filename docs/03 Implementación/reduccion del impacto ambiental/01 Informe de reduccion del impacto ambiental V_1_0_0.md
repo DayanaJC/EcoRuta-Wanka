@@ -1,6 +1,6 @@
 # EcoRuta Wanka
 
-**Optimizador de rutas sostenibles de última milla — Huancayo, Junín**
+**Optimizador de rutas sostenibles de última milla — Huancayo, Junín** 
 
 # 01. Informe de reducción del impacto ambiental V_1_0_0
 
