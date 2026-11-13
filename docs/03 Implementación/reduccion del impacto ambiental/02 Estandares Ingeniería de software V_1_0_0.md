@@ -2,9 +2,9 @@
 
 **Optimizador de rutas sostenibles de última milla — Huancayo, Junín**
 
-# 02. Estándares de Ingeniería de Software V_1_0_0
+# 02. Estándares de Ingeniería de Software y Guía de Desarrollo Verde V_1_0_0
 
-**Versión:** V_1_0_0 | **Fecha:** 12/11/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
+**Versión:** V_1_0_0 | **Fecha:** 13/11/2026 | **Organización:** WankaLogística S.A.C. | **Ubicación:** Huancayo, Junín, Perú | **Repositorio:** github.com/DayanaJC/EcoRuta-Wanka
 
 **Nombre del proyecto:** EcoRuta Wanka
 
@@ -12,225 +12,245 @@
 
 **Tecnologías del proyecto:** Next.js 16 + React 19 (frontend), Node.js + Express 5 (backend), PostgreSQL (Neon) con Prisma 7 (base de datos) y Vercel (publicación).
 
-**Documento relacionado:** [01 Informe de reducción del impacto ambiental V_1_0_0](01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_0.md)
+**Documento relacionado:** [01 Informe de reducción del impacto ambiental V_1_0_1](01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_1.md)
 
 ---
 
-## 1. Propósito y alcance
+## 2. Estándares de Ingeniería de Software y Guía de Desarrollo Verde
 
-Este documento reúne los estándares de ingeniería de software que sigue el equipo de EcoRuta Wanka para que el sistema sea **mantenible, seguro, accesible y eficiente en el uso de recursos (Green IT)**.
+El informe 01 documenta las ocho optimizaciones aplicadas a EcoRuta Wanka y su efecto en el rendimiento y en las emisiones de CO₂. Este documento fundamenta esas optimizaciones en estándares internacionales y las convierte en **reglas permanentes de desarrollo**, de modo que los cambios futuros no vuelvan a aumentar el peso de la aplicación, las solicitudes al servidor ni el consumo de energía.
 
-El informe 01 explica qué optimizaciones se hicieron y cuánto redujeron el impacto ambiental. Este documento convierte esas optimizaciones en **reglas permanentes**: cualquier cambio futuro en el código debe cumplirlas para que el sistema no vuelva a crecer en peso, solicitudes o consumo de energía.
+**Adaptación del stack:** la guía de referencia del curso está planteada para la arquitectura MERN (MongoDB, Express, React, Node.js). EcoRuta Wanka utiliza Express, React y Node.js, pero reemplaza MongoDB por **PostgreSQL con Prisma**. Por ello, las prácticas de MongoDB se aplican con su equivalente directo:
 
-**Alcance:** todo el código del repositorio (`backend/` y `frontend/`), la base de datos, la documentación de `docs/` y el flujo de trabajo con Git y Vercel.
-
-**Adaptación a las tecnologías del proyecto:** la guía de referencia del curso está planteada para la arquitectura MERN (MongoDB, Express, React, Node). EcoRuta Wanka usa Express, React y Node, pero reemplaza MongoDB por **PostgreSQL con Prisma**. Por eso, las reglas sobre consultas (proyección de campos, índices, paginación) se aplican con `select`, `@@index`, `skip`/`take` de Prisma en lugar de sus equivalentes de Mongoose.
-
----
-
-## 2. Marco normativo adoptado
-
-| Estándar / guía | Qué regula | Cómo se aplica en EcoRuta Wanka |
-|---|---|---|
-| **ISO/IEC 25010:2023** (modelo de calidad del producto) | Características de calidad: eficiencia de desempeño, mantenibilidad, seguridad, usabilidad, fiabilidad. | La eficiencia de desempeño se controla con el presupuesto de rendimiento (sección 7); la mantenibilidad con la arquitectura por capas y SonarQube; la seguridad con OWASP; la usabilidad con WCAG. |
-| **ISO/IEC/IEEE 12207:2017** (procesos del ciclo de vida del software) | Procesos de desarrollo, verificación, gestión de configuración y documentación. | Se aplica con Scrum (sprints, revisión, retrospectiva), control de versiones en Git, Pull Requests y documentación versionada en `docs/`. |
-| **ISO/IEC 21031:2024 — Software Carbon Intensity (SCI)** | Forma de medir las emisiones de un software por unidad funcional. | La unidad funcional adoptada es **una visita a la aplicación**; las emisiones se estiman en g CO₂e por visita (sección 8). |
-| **Sustainable Web Design Model v4 (SWDM v4)** | Fórmula para estimar el CO₂ de una página según los datos transferidos. | Se usa en el informe 01 y en la sección 8 de este documento (0,300 kWh/GB × 494 g CO₂e/kWh). |
-| **W3C Web Sustainability Guidelines (WSG 1.0)** | Buenas prácticas de diseño y desarrollo web sostenible. | Origen de las reglas de Green coding GS-01 a GS-10 (sección 4). |
-| **Principios de la Green Software Foundation** | Eficiencia energética, de hardware y de carbono. | Menos datos transferidos y menos solicitudes = menos energía en servidor, red y dispositivo. |
-| **Core Web Vitals / Lighthouse** | Métricas de experiencia: FCP, LCP, TBT, CLS. | Metas del presupuesto de rendimiento y auditoría con PageSpeed Insights. |
-| **OWASP Top 10:2025** | Riesgos de seguridad en aplicaciones web. | Evaluado en `Sprint 3/04 OWASP V_1_0_0.md`; ningún cambio puede reintroducir hallazgos corregidos. |
-| **WCAG 2.2 nivel AA** | Accesibilidad. | Evaluado en `Sprint 3/05 WCAG V_1_0_0.md`; los componentes nuevos (por ejemplo, la paginación) siguen las mismas reglas. |
-| **Conventional Commits 1.0** | Formato de los mensajes de commit. | `tipo(ámbito): descripción`, por ejemplo `perf(green-it): …` o `docs(green-it): …` (sección 5). |
-| **Versionado de documentos V_X_Y_Z** | Control de versiones de la documentación del proyecto. | X = entrega mayor, Y = cambio de contenido, Z = corrección menor (sección 5.3). |
-
----
-
-## 3. Estándares de codificación
-
-### 3.1 Arquitectura y estructura de carpetas
-
-El sistema sigue una arquitectura **cliente-servidor** con un backend **MVC con capa de servicios**:
-
-```text
-backend/src/
-├── routes/         → define los endpoints REST (/api/v1/...) y valida la entrada
-├── controllers/    → recibe la petición y devuelve la respuesta HTTP
-├── services/       → reglas de negocio (RN-xxx); no conoce Express ni Prisma
-├── repositories/   → único lugar con acceso a la base de datos (Prisma)
-├── schemas/        → esquemas Zod de validación
-├── middlewares/    → validación y manejo centralizado de errores
-└── aplicacion.js   → ensambla la app (inyección de dependencias)
-
-frontend/
-├── app/            → layout, página y estilos globales (Next.js App Router)
-├── components/     → componentes de interfaz; modulos/ = una pantalla por módulo
-├── services/api.js → único punto de comunicación con la API
-└── utils/          → formatos y funciones puras
-```
-
-**Reglas:**
-
-| Código | Regla |
+| Práctica MERN (MongoDB / Mongoose) | Equivalente en EcoRuta Wanka (PostgreSQL / Prisma) |
 |---|---|
-| EC-01 | Las capas solo llaman a la capa inferior: rutas → controladores → servicios → repositorios. |
-| EC-02 | Toda lectura o escritura en la base de datos se hace con **Prisma** dentro de `repositories/`; no se escribe SQL a mano (excepción: `SELECT 1` del health check). |
-| EC-03 | Toda entrada del usuario se valida en el servidor con un esquema **Zod** antes de llegar al servicio. |
-| EC-04 | El frontend se comunica con el backend solo a través de `services/api.js`. |
-| EC-05 | Las reglas de negocio se implementan en el backend; el frontend puede repetir validaciones solo para mejorar la experiencia. |
+| `.select('campo1 campo2')` | `select: { campo1: true, campo2: true }` |
+| `.lean()` (objetos planos sin hidratar) | Prisma devuelve objetos planos por defecto; se transforman con funciones puras (`aPedidoListado`) |
+| `schema.index({ a: 1, b: -1 })` | `@@index([a, b(sort: Desc)])` + migración versionada |
+| `.skip().limit()` + `countDocuments()` | `skip` / `take` + `count()` dentro de `prisma.$transaction` |
+| Middleware `compression` | Compresión Brotli/Gzip automática de Vercel |
+| TanStack Query (caché en cliente) | Caché de lecturas de 30 s en `services/api.js` |
 
-### 3.2 Nomenclatura
+---
 
-| Elemento | Convención | Ejemplo |
+### 2.1 Relación de Estándares Internacionales Aplicados
+
+#### 2.1.1 ISO/IEC 25010:2023 — Calidad del producto de software
+
+| Característica | Subcaracterística | Cómo la atienden las refactorizaciones |
 |---|---|---|
-| Variables y funciones | camelCase, en español y con el término del negocio | `columnasListadoPedido`, `recargar` |
-| Componentes React | PascalCase, un componente principal por archivo | `PedidoLista.jsx`, `RutaDetalle.jsx` |
-| Constantes de configuración | MAYÚSCULAS_CON_GUION | `POR_PAGINA`, `CACHE_MS`, `TIMEOUT_MS` |
-| Tablas y columnas | snake_case en plural (tablas) | `pedidos`, `ventana_entrega_inicio` |
-| Endpoints REST | sustantivos en plural, versión en la ruta | `GET /api/v1/pedidos?pagina=1` |
-| Clases CSS | kebab-case en español | `.resultado-filtros`, `.paginacion` |
+| **Eficiencia de desempeño** | Comportamiento temporal | Las solicitudes al abrir el sistema bajaron de 12 a 5 y se eliminaron las consultas OPTIONS previas, lo que reduce la latencia de la carga inicial. Las consultas repetidas sin cambios responden 304 sin cuerpo. |
+| | Utilización de recursos | La página de pedidos pasó de 13 558 a 4 773 bytes (−64,8 %) al seleccionar solo las columnas necesarias. El JavaScript inicial bajó 21,7 KiB con la carga diferida. |
+| | Capacidad | La paginación (máximo 50 registros por solicitud) y el índice `(estado, created_at DESC)` mantienen el tiempo de respuesta estable aunque crezca el número de pedidos. |
+| **Mantenibilidad** | Modularidad | Arquitectura por capas (rutas → controladores → servicios → repositorios) y módulos de interfaz cargados de forma independiente con `React.lazy`. |
+| | Reusabilidad | Un único cliente HTTP (`pedir()`), componentes compartidos (`FilasCargando`, `EstadoVacio`) y esquemas Zod reutilizados para crear y actualizar. |
+| | Analizabilidad | Menos dependencias (`dotenv` reemplazado por `process.loadEnvFile()` en el seed), comentarios que explican el porqué de cada decisión y análisis estático con SonarQube Cloud. |
+| | Capacidad de ser probado | Inyección de dependencias: las 115 pruebas usan repositorios en memoria y un optimizador simulado, sin depender de la base de datos ni de APIs externas. |
 
-### 3.3 Estilo y legibilidad
+#### 2.1.2 Principios de la Green Software Foundation (GSF)
 
-- **ESLint** (configuración de Next.js) en el frontend; un cambio no se integra con errores de lint.
-- Comentarios en español que explican el **porqué** de una decisión, no el qué (por ejemplo, por qué un GET no lleva `Content-Type`).
-- Funciones cortas con una sola responsabilidad; los números con significado se declaran como constantes con nombre.
-- Los secretos (`DATABASE_URL`, `ORS_API_KEY`) van en variables de entorno; `.env` nunca se sube al repositorio.
+| Principio GSF | Definición | Aplicación en EcoRuta Wanka |
+|---|---|---|
+| **1. Eficiencia de carbono** | Emitir la menor cantidad de carbono posible por unidad de trabajo. | Se mide la intensidad de carbono por visita (g CO₂e/visita) con SWDM v4, alineado con la especificación **SCI (ISO/IEC 21031:2024)**, cuya unidad funcional adoptada es "una visita". |
+| **2. Eficiencia energética** | Consumir la menor cantidad de energía posible. | Menos bytes transferidos y menos solicitudes reducen la energía usada por el servidor, la red y el dispositivo. La caché evita repetir trabajo ya realizado. |
+| **3. Eficiencia de hardware** | Usar la menor cantidad de hardware incorporado posible y prolongar su vida útil. | El navegador procesa menos JavaScript y dibuja 12 filas en lugar de toda la lista, por lo que la aplicación funciona bien en celulares y computadoras de gama baja de los operadores logísticos. |
+| **4. Conciencia de carbono** | Hacer más cuando la electricidad es más limpia y menos cuando es más sucia. | El trabajo pesado se ejecuta bajo demanda (la optimización de rutas solo al generar una ruta; los mapas solo al abrirlos) y no hay procesos en segundo plano ni sondeos periódicos. Pendiente: programar tareas por lotes según la intensidad de la red eléctrica cuando existan. |
 
----
+#### 2.1.3 W3C Web Sustainability Guidelines (WSG 1.0)
 
-## 4. Estándares de Green coding (reglas obligatorias)
+| Pauta | Enunciado | Aplicación en EcoRuta Wanka |
+|---|---|---|
+| **1.2 Optimización de medios (UI & Assets)** | Usar formatos comprimidos de nueva generación y evitar recursos innecesarios. | `images.formats: ["image/avif", "image/webp"]` en `next.config.mjs`. Los íconos son **SVG en línea** generados por componentes (lucide-react), sin solicitudes de imágenes. |
+| **2.4 Arquitectura de código y caché** | Dividir el código, cargar solo lo necesario y aplicar una caché determinista. | Code splitting con `React.lazy`/`Suspense`; `Cache-Control` + ETag en la API; factores de tráfico con `max-age=86400`. |
+| **3.1 Transferencia de datos en red** | Reducir el tamaño de los datos enviados por la red. | Proyección de columnas en las consultas, paginación de 12 registros y compresión Brotli/Gzip de Vercel. |
 
-Cada regla surge de una de las optimizaciones del informe 01 y queda implementada en el código. Un Pull Request que la incumpla debe justificarlo o corregirse.
+Pautas complementarias usadas en la matriz de la sección 2.3: **2.1** eficiencia de la experiencia de usuario, **2.2** código limpio y librerías y **3.2** minimización de solicitudes HTTP.
 
-| Código | Regla | Criterio de verificación | Implementación en el código |
-|---|---|---|---|
-| **GS-01** | Consultar solo las columnas que la vista necesita. | Las consultas de listados usan `select` con las columnas de la tabla; no `include` completo. | `columnasListadoPedido` en `backend/src/repositories/prisma.repositories.js` |
-| **GS-02** | Paginar los listados que pueden crecer. | Máximo **50** registros por página en la API; **12** por página en la tabla. Página < 1 o límite > 50 → error 422. | `filtroPedidos` (`pagina`, `limite`) en `backend/src/schemas/esquemas.js`; `POR_PAGINA = 12` en `frontend/components/PedidoLista.jsx` |
-| **GS-03** | Crear índices para los filtros y ordenamientos frecuentes. | Toda consulta frecuente con `where` + `orderBy` tiene un índice que la cubre. | `@@index([estado, created_at(sort: Desc)])` en `schema.prisma`; migración `20261112231921_indice_pedidos_estado_fecha` |
-| **GS-04** | Imágenes en formatos modernos. | Toda imagen se muestra con `next/image` (AVIF/WebP). Los íconos se dibujan con código (lucide-react), no con archivos. | `images.formats` en `frontend/next.config.mjs` |
-| **GS-05** | Cargar solo el código que la pantalla necesita. | Solo el módulo inicial (Pedidos) va en el paquete principal; el resto se carga con `lazy` + `Suspense`. Los mapas (Leaflet) se cargan al abrir el mapa. | `frontend/components/App.jsx` |
-| **GS-06** | No agregar dependencias para lo que Node.js, React o Next.js ya resuelven. | Antes de instalar una librería se revisa si existe una función nativa equivalente. | `process.loadEnvFile()` en lugar de `dotenv` en `backend/prisma/seed.js` |
-| **GS-07** | Reducir solicitudes HTTP. | Las lecturas (GET) no envían cabeceras que obliguen a una solicitud OPTIONS previa. Cada módulo pide sus datos cuando se abre (las asignaciones, al abrir Rutas). | `frontend/services/api.js` y `frontend/components/App.jsx` |
-| **GS-08** | Usar caché en el navegador y en el servidor. | GET de la API con `Cache-Control: private, no-cache` + ETag (304 si no hubo cambios); factores de tráfico 1 día; caché del cliente de 30 s que se vacía con cualquier escritura. | `backend/src/aplicacion.js`; `CACHE_MS` en `frontend/services/api.js` |
-| **GS-09** | Comprimir las respuestas y limitar los cuerpos recibidos. | Respuestas con Brotli/gzip (Vercel); cuerpo JSON de entrada máximo 100 kB. | Vercel + `express.json({ limit: "100kb" })` en `backend/src/aplicacion.js` |
-| **GS-10** | Reservar el espacio de lo que carga después (estabilidad visual). | CLS ≤ 0,02. Los esqueletos de carga tienen el mismo número de filas que la vista final y los contenedores existen desde el inicio. | `FilasCargando filas={POR_PAGINA}` y `.resultado-filtros { min-height }` |
+#### 2.1.4 Otros estándares que sigue el proyecto
 
-**Regla general:** el mayor aporte ambiental de EcoRuta Wanka es la **optimización de rutas** (menos kilómetros y combustible). Por eso, ninguna regla de este documento puede empeorar el cálculo de rutas, la validación de capacidad ni la precisión de las ventanas horarias.
-
----
-
-## 5. Gestión de versiones y flujo de trabajo
-
-### 5.1 Ramas y Pull Requests
-
-| Rama | Uso |
+| Estándar | Uso |
 |---|---|
-| `main` | Versión estable. Cada cambio en `main` se despliega en Vercel (frontend y backend). |
-| `feature/<tema>` | Nuevas funcionalidades u optimizaciones (por ejemplo, `feature/green-it`). |
-| `docs/<tema>` | Cambios solo de documentación. |
+| ISO/IEC/IEEE 12207:2017 | Procesos del ciclo de vida aplicados con Scrum, control de versiones y documentación versionada. |
+| OWASP Top 10:2025 | Seguridad evaluada en `Sprint 3/04 OWASP V_1_0_0.md`. |
+| WCAG 2.2 AA | Accesibilidad evaluada en `Sprint 3/05 WCAG V_1_0_0.md` (Lighthouse accesibilidad 100). |
+| Conventional Commits 1.0 | Formato de los mensajes de commit (`docs(green-it): …`, `perf(green-it): …`). |
+| Versionado V_X_Y_Z | Versión de cada documento en su nombre de archivo. |
 
-- Los cambios de código llegan a `main` mediante **Pull Request** con la descripción del cambio y su verificación.
-- Antes de integrar: pruebas en verde, lint sin errores y, si cambia la interfaz, una captura de escritorio y otra de celular.
+---
 
-### 5.2 Mensajes de commit (Conventional Commits)
+### 2.2 Buenas Prácticas y Guía de Desarrollo Verde
 
-```text
-<tipo>(<ámbito>): <descripción en imperativo>
+#### 2.2.1 Principios de código limpio aplicados
 
-tipos: feat · fix · perf · docs · test · refactor · chore
+| Principio | Qué exige | Ejemplo en EcoRuta Wanka |
+|---|---|---|
+| **Clean Code** | Nombres que revelan la intención, funciones pequeñas y comentarios que explican el porqué. | `columnasListadoPedido`, `POR_PAGINA`, `CACHE_MS`; el comentario de `api.js` explica que un GET sin `Content-Type` evita la solicitud OPTIONS. |
+| **SOLID — S** (responsabilidad única) | Cada módulo tiene un solo motivo de cambio. | Rutas validan, controladores responden HTTP, servicios aplican reglas de negocio y repositorios acceden a datos. |
+| **SOLID — O** (abierto/cerrado) | Extender sin modificar. | El optimizador de rutas y el geocodificador se inyectan en `crearApp()`; se pueden reemplazar sin tocar los servicios. |
+| **SOLID — L** (sustitución de Liskov) | Una implementación puede reemplazar a otra con el mismo contrato. | Los repositorios en memoria de las pruebas sustituyen a los de Prisma, incluida la nueva respuesta paginada. |
+| **SOLID — I** (segregación de interfaces) | No obligar a depender de lo que no se usa. | Cada endpoint valida con su propio esquema Zod (`filtroPedidos`, `cambiarEstadoPedido`, …) y el frontend expone funciones puntuales en `api` (`listarPedidos`, `crearPedido`, …) en lugar de un cliente genérico. |
+| **SOLID — D** (inversión de dependencias) | Depender de abstracciones, no de implementaciones. | `crearApp({ repos, optimizador, geocodificador, reloj })` recibe sus dependencias por parámetro. |
+| **DRY** | No repetir conocimiento. | Un único `pedir()` para toda la comunicación HTTP; `camposPedido` se reutiliza para crear y, con `.partial()`, para actualizar; `FilasCargando` sirve para todas las tablas. |
+| **YAGNI** | No construir lo que aún no se necesita. | No se instaló `compression` (Vercel ya comprime), ni TanStack Query o Redux (basta una caché de 30 s), ni librerías de imágenes (no hay imágenes propias). El tráfico por horario queda desactivado tras una bandera hasta que se necesite. |
+
+#### 2.2.2 Normas Backend (Node.js / Express / PostgreSQL + Prisma)
+
+| Código | Norma | Cómo se verifica |
+|---|---|---|
+| NB-01 | Prohibido usar `findMany` con `include` completo en listados: seleccionar solo las columnas que muestra la vista (`select`). | Revisión en el Pull Request. |
+| NB-02 | Paginación obligatoria en los endpoints de listado que pueden crecer; máximo **50** registros por página, **12** por defecto. | `backend/tests/green-it.test.js` (página < 1 o límite > 50 → 422). |
+| NB-03 | Toda consulta frecuente con filtro y orden tiene un índice que la cubre, creado con una migración de Prisma. | Migración `20261112231921_indice_pedidos_estado_fecha`. |
+| NB-04 | Las respuestas GET llevan `Cache-Control` y ETag; los catálogos casi estáticos usan `max-age`. | Prueba de 304 y de `max-age=86400`. |
+| NB-05 | Compresión Brotli/Gzip activa en todas las respuestas JSON (Vercel); si se publica en un servidor propio, se agrega el middleware `compression`. | Cabecera `content-encoding: br` en producción. |
+| NB-06 | Cuerpo JSON de entrada limitado a 100 kB y validado con Zod. | `express.json({ limit: "100kb" })` y esquemas en `schemas/esquemas.js`. |
+| NB-07 | Acceso a datos solo con Prisma dentro de `repositories/`; sin SQL escrito a mano. | Revisión en el Pull Request y SonarQube. |
+| NB-08 | No agregar una dependencia si Node.js ya ofrece la función (por ejemplo, `process.loadEnvFile()` en lugar de `dotenv`). | Revisión de `package.json` en el Pull Request. |
+
+#### 2.2.3 Normas Frontend (React / Next.js)
+
+| Código | Norma | Cómo se verifica |
+|---|---|---|
+| NF-01 | Prohibido subir imágenes PNG/JPG mayores a 200 KB; toda imagen se muestra con `next/image` en AVIF/WebP y con `width`/`height` definidos. | `next.config.mjs` y revisión en el Pull Request. |
+| NF-02 | Imágenes y mapas fuera de la primera pantalla se cargan de forma diferida (`loading="lazy"` / importación dinámica). | Los mapas de Leaflet se cargan solo al abrirlos. |
+| NF-03 | Los módulos secundarios se cargan con `React.lazy()` + `Suspense`; solo la vista inicial (Pedidos) va en el paquete principal. | `frontend/components/App.jsx`. |
+| NF-04 | Los íconos se dibujan como SVG en línea (componentes), no como archivos de imagen. | Uso de `lucide-react`. |
+| NF-05 | Cada módulo pide sus datos cuando se abre; las lecturas GET no envían cabeceras que obliguen a una solicitud OPTIONS. | Pestaña Network: 5 solicitudes al abrir, 0 OPTIONS. |
+| NF-06 | Las lecturas se guardan 30 s en la caché del cliente y cualquier escritura la vacía. | `CACHE_MS` en `services/api.js`. |
+| NF-07 | Los esqueletos de carga reservan el espacio final de la vista (CLS ≤ 0,02). | `FilasCargando filas={POR_PAGINA}` y `min-height` en `.resultado-filtros`. |
+| NF-08 | Antes de instalar una librería se revisa su peso en Bundlephobia y si existe una alternativa nativa. | Revisión de `package.json` en el Pull Request. |
+| NF-09 | La hoja de estilos de una librería se importa en el componente que la usa, no en el `layout` global (los estilos de Leaflet solo llegan con el mapa). | `import 'leaflet/dist/leaflet.css'` en `MapaRuta.jsx` y `MapaSelector.jsx`. |
+| NF-10 | La vista inicial no espera datos que no muestra: cada tabla se dibuja cuando llega su propia respuesta y la conexión con la API se abre por adelantado (`preconnect`). | `necesita: ['pedidos']` en `App.jsx` y `preconnect()` en `app/layout.js`. |
+
+#### 2.2.4 Integración en CI/CD Verde (GitHub Actions)
+
+El repositorio incluye el workflow **`.github/workflows/green-audit.yml`**. Se ejecuta en cada push y Pull Request a `main` y consta de dos trabajos:
+
+1. **Pruebas del backend:** instala las dependencias y ejecuta las 115 pruebas de Vitest.
+2. **Auditoría Lighthouse CI:** primero "despierta" la API publicada (Neon, en el plan gratuito, se suspende tras unos minutos sin uso) y luego audita la versión publicada (`https://ecoruta-frontend.vercel.app`) tres veces; falla si no se cumplen los límites de la rúbrica definidos en `lighthouserc.json`.
+
+```yaml
+# .github/workflows/green-audit.yml
+name: Green IT & Performance Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    name: Pruebas del backend (Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  lighthouse:
+    name: Auditoría Lighthouse CI
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Calentar la API publicada
+        run: |
+          API=https://ecoruta-backend.vercel.app
+          curl -s -o /dev/null -w "health %{http_code} %{time_total}s\n" --retry 3 "$API/health" || true
+          for ruta in pedidos vehiculos conductores clientes rutas; do
+            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s\n" --retry 3 "$API/api/v1/$ruta" || true
+          done
+      - name: Ejecutar Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.15.1
+          lhci autorun --config=./lighthouserc.json
 ```
 
-Ejemplos del proyecto:
+**Límites de la auditoría (`lighthouserc.json`):**
 
-```text
-perf(green-it): paginación, carga diferida, caché y menos solicitudes HTTP
-docs(green-it): add MERN performance optimization reports and software engineering standards
-docs(sprint-3): evaluación OWASP Top 10 2025 y WCAG 2.2 AA con correcciones
-```
-
-### 5.3 Versionado de la documentación
-
-Los documentos de `docs/` llevan la versión en el nombre del archivo con el formato **V_X_Y_Z**:
-
-| Posición | Cuándo cambia | Ejemplo |
+| Aserción de Lighthouse CI | Límite | Meta de la rúbrica |
 |---|---|---|
-| X | Entrega o línea base nueva | V_1_0_0 → V_2_0_0 |
-| Y | Se agrega o modifica contenido | V_1_0_0 → V_1_1_0 |
-| Z | Corrección menor u observación del docente | V_1_0_0 → V_1_0_1 |
+| `categories:performance` | `minScore: 0.9` | Score ≥ 90 |
+| `first-contentful-paint` | `maxNumericValue: 1000` | FCP ≤ 1,0 s |
+| `largest-contentful-paint` | `maxNumericValue: 1400` | LCP ≤ 1,4 s |
+| `total-blocking-time` | `maxNumericValue: 85` | TBT ≤ 85 ms |
+| `cumulative-layout-shift` | `maxNumericValue: 0.02` | CLS ≤ 0,02 |
+| `total-byte-weight` | `maxNumericValue: 1153434` | Peso ≤ 1,1 MB |
+| `categories:accessibility` | `minScore: 0.9` | Complemento WCAG |
 
-### 5.4 Base de datos
+Los reportes de cada ejecución se publican con `temporary-public-storage` y su enlace aparece en el registro del workflow.
 
-- Todo cambio de esquema se hace con una **migración de Prisma** versionada en `backend/prisma/migrations/`.
-- Tras `prisma migrate dev` se ejecuta `prisma generate`.
+**Resultados de Lighthouse CI (13/11/2026, preset escritorio, desde Huancayo):** con la API en frío la primera auditoría dio LCP 3,9 s y score 74, porque el elemento LCP es una celda de la tabla de pedidos y la tabla esperaba las cinco respuestas de la API. Tras aplicar NF-09 y NF-10 y calentar la API, tres ejecuciones dieron **score 0,95–0,97, FCP 0,27–0,43 s, LCP 1,21–1,36 s, TBT 34–88 ms, CLS 0,0038 y 224–229 KiB**, dentro de los límites de la rúbrica. El TBT queda cerca de su límite (85 ms) en algunas ejecuciones; Lighthouse CI evalúa el mejor valor de las tres.
 
----
+#### 2.2.5 Flujo de trabajo, pruebas y calidad
 
-## 6. Estándares de pruebas y calidad
+- **Ramas:** `main` (estable, se despliega en Vercel), `feature/<tema>` y `docs/<tema>`. Los cambios llegan a `main` mediante **Pull Request**.
+- **Commits:** Conventional Commits, `tipo(ámbito): descripción` (`feat`, `fix`, `perf`, `docs`, `test`, `ci`, `refactor`, `chore`).
+- **Documentos:** versión V_X_Y_Z en el nombre (X = entrega mayor, Y = contenido nuevo, Z = corrección u observación del docente).
+- **Pruebas:** 115 pruebas en verde, incluidas 6 de Green IT; cobertura del backend de **87,22 % de líneas** (mínimo exigido 80 %).
+- **Calidad y seguridad:** SonarQube Cloud (perfil "Sonar way") y `npm audit` sin vulnerabilidades altas ni críticas.
 
-| Aspecto | Estándar | Estado al 12/11/2026 |
-|---|---|---|
-| Pruebas automatizadas | Vitest + Supertest; cada regla de negocio o regla GS nueva tiene su prueba. | **115 pruebas en verde** (8 archivos), incluidas 6 nuevas de Green IT (`backend/tests/green-it.test.js`). |
-| Cobertura | Mínimo 80 % de líneas en el backend. | **87,22 % de líneas** y 85,91 % de sentencias (`npm run test:coverage`). |
-| Calidad de código | SonarQube Cloud, perfil "Sonar way". | Ver `Sprint 3/03 Calidad de código V_1_0_0.md`. |
-| Dependencias | `npm audit` sin vulnerabilidades altas ni críticas. | 0 vulnerabilidades (Sprint 3). |
-| Rendimiento | Lighthouse ≥ 90 en escritorio y celular. | 100/100 (informe 01, Evidencias 27–29). |
-| Accesibilidad | Lighthouse accesibilidad = 100 y axe sin errores graves. | 100 (Sprint 3). |
+**Lista de verificación de cada Pull Request:**
 
-**Pruebas nuevas de Green IT (`backend/tests/green-it.test.js`):**
-
-1. Sin `pagina`, la API devuelve la lista completa (compatibilidad con las pantallas que necesitan todos los pedidos, como Generar ruta).
-2. Con 19 pedidos, la página 1 devuelve 12 y la página 2 los 7 restantes, con `{ pagina, limite, total, paginas }`.
-3. Página 0 o límite 51 → error 422.
-4. Los listados responden `Cache-Control: private, no-cache` con ETag y devuelven **304** cuando no hubo cambios.
-5. Los factores de tráfico responden `public, max-age=86400`.
-6. Las escrituras no llevan cabecera de caché.
+- [ ] Cumple las normas NB-01 a NB-08 y NF-01 a NF-08.
+- [ ] Respeta las capas y los principios SOLID, DRY y YAGNI.
+- [ ] El workflow `green-audit.yml` termina en verde (pruebas y Lighthouse CI).
+- [ ] Incluye capturas de escritorio y celular si cambia la interfaz.
+- [ ] Usa Conventional Commits y documentos con versión V_X_Y_Z.
 
 ---
 
-## 7. Presupuesto de rendimiento
+### 2.3 Matriz de Mapeo Directo: Estándares vs. Optimizaciones
 
-El presupuesto de rendimiento fija los límites que la aplicación no debe superar. Se revisa con PageSpeed Insights cada vez que se publica un cambio en la interfaz.
-
-| Métrica | Límite | Valor medido (producción, informe 01) |
-|---|---:|---:|
-| Rendimiento Lighthouse | ≥ 90 | 100 |
-| First Contentful Paint (FCP) | ≤ 1,0 s | 0,2 s |
-| Largest Contentful Paint (LCP) | ≤ 1,4 s | 0,5 s |
-| Total Blocking Time (TBT) | ≤ 85 ms | 0 ms |
-| Cumulative Layout Shift (CLS) | ≤ 0,02 | 0,043 antes · 0,0022 después (medición local, sección 8) |
-| Peso total de la página | ≤ 1,1 MB | 258 KiB |
-| Solicitudes a la API al abrir | ≤ 6 | 12 antes · 5 después (sección 8) |
-| Registros por página en la API | ≤ 50 | 12 por defecto |
+| # | Optimización técnica aplicada | Estándar ISO/IEC 25010 | Principio Green Software (GSF) | Lineamiento W3C WSG 1.0 | Norma interna |
+|:-:|---|---|---|---|---|
+| 1 | **Consultas a la base de datos:** `select` de columnas e índice `(estado, created_at DESC)` | Eficiencia de desempeño — Utilización de recursos | Eficiencia de hardware | Pauta 3.1 Transferencia de datos en red | NB-01, NB-03 |
+| 2 | **Paginación:** `skip`/`take` en la API (máx. 50) y 12 filas en la tabla | Eficiencia de desempeño — Capacidad | Eficiencia energética | Pauta 2.1 Eficiencia de la experiencia de usuario | NB-02 |
+| 3 | **Imágenes:** formatos AVIF/WebP con `next/image` | Eficiencia de desempeño — Comportamiento temporal | Eficiencia de carbono | Pauta 1.2 Optimización de medios | NF-01, NF-02 |
+| 4 | **Carga diferida:** `React.lazy` + `Suspense` | Mantenibilidad — Modularidad | Eficiencia de hardware | Pauta 2.4 Arquitectura de código | NF-03 |
+| 5 | **Dependencias:** `process.loadEnvFile()` en lugar de `dotenv` | Mantenibilidad — Analizabilidad | Eficiencia energética | Pauta 2.2 Código limpio y librerías | NB-08, NF-08 |
+| 6 | **Solicitudes HTTP:** GET sin preflight, carga por módulo y SVG en línea (12 → 5) | Eficiencia de desempeño — Comportamiento temporal | Eficiencia de carbono | Pauta 3.2 Minimización de solicitudes HTTP | NF-04, NF-05 |
+| 7 | **Caché:** `Cache-Control`, ETag (304) y caché de cliente de 30 s | Eficiencia de desempeño — Comportamiento temporal | Eficiencia energética | Pauta 2.4 Estrategias de caché | NB-04, NF-06 |
+| 8 | **API:** compresión Brotli/Gzip y límite de 100 kB | Eficiencia de desempeño — Capacidad | Eficiencia de carbono | Pauta 3.1 Optimización de red | NB-05, NB-06 |
+| + | **Estabilidad visual:** espacio reservado en la tabla (CLS 0,043 → 0,0022) | Usabilidad — Estética de la interfaz | Eficiencia de hardware | Pauta 2.1 Eficiencia de la experiencia de usuario | NF-07 |
 
 ---
 
-## 8. Verificación de cumplimiento: medición antes y después
+### 2.4 Verificación de cumplimiento: medición antes y después
 
-Para comprobar las reglas GS con datos reales (y no solo proyectados) se midió la carga inicial de la aplicación **antes** (rama `main`, commit `8cbaf93`) y **después** (rama `feature/green-it`) de las optimizaciones.
+Para comprobar las normas con datos reales se midió la carga inicial **antes** (rama `main`, commit `8cbaf93`) y **después** (commit `265aaec`) de las optimizaciones.
 
-**Método:** ambas versiones se compilaron con `next build` y se sirvieron con `next start` en `localhost:3000`, conectadas al mismo backend (`localhost:4000`) y a la misma base de datos Neon (19 pedidos). La carga se registró con Microsoft Edge sin interfaz (Puppeteer + Chrome DevTools Protocol), con la caché del navegador desactivada, ventana de 1350 × 940 y midiendo el CLS con `PerformanceObserver`.
+**Método:** ambas versiones se compilaron con `next build`, se sirvieron con `next start` y se conectaron al mismo backend y a la misma base de datos (19 pedidos). La carga se registró con Microsoft Edge sin interfaz (Puppeteer + Chrome DevTools Protocol), con la caché del navegador desactivada, una ventana de 1350 × 940 y el CLS medido con `PerformanceObserver`. La versión publicada se midió con el mismo procedimiento el 12/11/2026.
 
-| Indicador | ANTES | DESPUÉS | Variación | Regla |
+| Indicador | ANTES | DESPUÉS (local) | Producción (Vercel) | Norma |
 |---|---:|---:|---:|---|
-| Solicitudes a la API al abrir | 12 (6 GET + 6 OPTIONS) | **5** (5 GET + 0 OPTIONS) | −7 (**−58,3 %**) | GS-07 |
-| CLS | 0,0469 | **0,0022** | −0,0447 (**−95,3 %**) | GS-10 |
-| JavaScript transferido | 175,9 KiB | **154,2 KiB** | −21,7 KiB (**−12,3 %**) | GS-05 |
-| Peso total transferido | 273,0 KiB | **251,6 KiB** | −21,4 KiB (**−7,8 %**) | GS-05, GS-07 |
-| Lista de pedidos (19 completos → 1 página de 12 con columnas de tabla) | 13 558 bytes | **4 773 bytes** | −8 785 bytes (**−64,8 %**) | GS-01, GS-02 |
-| Consulta repetida sin cambios | 200 con todos los datos | **304** sin cuerpo | — | GS-08 |
-| CO₂ por visita (SWDM v4) | 0,0414 g | **0,0382 g** | −0,0032 g (**−7,8 %**) | — |
+| Solicitudes a la API al abrir | 12 (6 GET + 6 OPTIONS) | **5** (0 OPTIONS) | **5** (0 OPTIONS) | NF-05 |
+| CLS | 0,0469 | **0,0022** | **0,0022** | NF-07 |
+| JavaScript transferido | 175,9 KiB | **154,2 KiB** | 156,6 KiB | NF-03 |
+| Peso total transferido | 273,0 KiB | **251,6 KiB** | **229,2 KiB** | NB-05, NF-03 |
+| Página de pedidos (19 completos → 12 con columnas de tabla) | 13 558 bytes | **4 773 bytes** | 4 773 bytes | NB-01, NB-02 |
+| Consulta repetida sin cambios | 200 con datos | **304** sin cuerpo | **304** sin cuerpo | NB-04 |
 
-**Lectura de los resultados:**
-
-- La reducción de solicitudes (12 → 5), el tamaño de la página de pedidos (4 773 bytes) y la respuesta 304 **coinciden** con lo reportado en el informe 01.
-- El CLS bajó a 0,0022, **mejor** que la proyección de 0,02 del informe 01.
-- El JavaScript inicial bajó **21,7 KiB**, menos que los 84 KiB de "JavaScript sin utilizar" que señaló Lighthouse. La diferencia se explica porque gran parte de ese código es el propio React/Next.js y el módulo Pedidos, que es la pantalla inicial y no puede diferirse. Por eso, el peso de 174 KiB y el CO₂ de 0,0264 g del informe 01 deben actualizarse con la auditoría de PageSpeed Insights sobre la versión publicada (V_1_0_1 del informe 01).
-- Los valores de esta medición local son más altos que los de PageSpeed porque `next start` no aplica la misma compresión ni la red de distribución de Vercel; lo que se compara es la **diferencia** entre ambas versiones medidas en las mismas condiciones.
+**Lectura de los resultados:** la reducción de solicitudes (−58,3 %), la página de pedidos (−64,8 %) y la respuesta 304 coinciden con el informe 01, y el CLS (0,0022) mejora la proyección de 0,02. El JavaScript inicial bajó 21,7 KiB, menos que los 84 KiB de "JavaScript sin utilizar" señalados por Lighthouse, porque gran parte de ese código es el propio React/Next.js y el módulo Pedidos, que es la vista inicial. Los valores definitivos de peso y CO₂ se registran en la V_1_0_1 del informe 01 a partir de la auditoría de Lighthouse CI sobre la versión publicada (score 99, LCP 0,86 s, 229,2 KiB, 0,0348 g CO₂e por visita).
 
 **Evidencia 31: Paginación de pedidos (escritorio)**
 
-La tabla muestra 12 pedidos de 19, con los botones Anterior / Siguiente y el indicador "Página 1 de 2".
+La tabla muestra 12 de 19 pedidos, con los botones Anterior / Siguiente y el indicador "Página 1 de 2".
 
 ![Evidencia 31: Paginación de pedidos](../../06%20Otros/evidencias/Evidencia%2031%20Paginacion%20de%20pedidos.jpg)
 
@@ -242,30 +262,42 @@ La paginación se adapta al ancho del celular sin desplazamiento horizontal.
 
 ---
 
-## 9. Lista de verificación para cada Pull Request
+## 3. Guía de Comandos Git para el Despliegue de la Documentación
 
-- [ ] Las capas se respetan (EC-01) y el acceso a datos es con Prisma (EC-02).
-- [ ] Las entradas nuevas se validan con Zod (EC-03).
-- [ ] Los listados nuevos usan `select` y paginación (GS-01, GS-02).
-- [ ] Las consultas nuevas frecuentes tienen índice y migración (GS-03).
-- [ ] No se agregan imágenes sin `next/image` ni dependencias evitables (GS-04, GS-06).
-- [ ] Las pantallas nuevas se cargan de forma diferida (GS-05) y piden solo sus datos (GS-07).
-- [ ] Las escrituras vacían la caché del cliente (GS-08).
-- [ ] Los esqueletos de carga reservan el espacio final (GS-10).
-- [ ] Pruebas en verde, cobertura ≥ 80 % y lint sin errores.
-- [ ] Sin vulnerabilidades altas o críticas en `npm audit`.
-- [ ] Capturas de escritorio y celular si cambia la interfaz.
-- [ ] Mensaje de commit con Conventional Commits y documentos con versión V_X_Y_Z.
+Secuencia ejecutada en el repositorio local para crear la estructura de directorios, guardar ambos informes y sincronizarlos con GitHub:
+
+```bash
+# 1. Verificar el estado actual del repositorio
+git status
+
+# 2. Crear las carpetas de destino en la ruta exacta
+mkdir -p "docs/03 Implementación/reduccion del impacto ambiental"
+
+# 3. Guardar los dos archivos Markdown en la ruta:
+# - docs/03 Implementación/reduccion del impacto ambiental/01 Informe de reduccion del impacto ambiental V_1_0_0.md
+# - docs/03 Implementación/reduccion del impacto ambiental/02 Estandares Ingeniería de software V_1_0_0.md
+
+# 4. Añadir las carpetas y documentos al Staging
+git add "docs/03 Implementación/reduccion del impacto ambiental/"
+
+# 5. Registrar el commit formalizando la documentación
+git commit -m "docs(green-it): add MERN performance optimization reports and software engineering standards"
+
+# 6. Sincronizar los cambios con el repositorio remoto
+git push origin main
+```
+
+El código de las optimizaciones y el workflow de CI se integraron a `main` mediante Pull Request (PR #13 y siguiente), según el flujo de trabajo del proyecto (sección 2.2.5).
 
 ---
 
-## 10. Conclusiones
+## 4. Conclusiones
 
-1. EcoRuta Wanka adopta un marco de estándares reconocidos (ISO/IEC 25010, ISO/IEC/IEEE 12207, ISO/IEC 21031 SCI, WSG 1.0, OWASP, WCAG) adaptado a su arquitectura Node.js + Express + Next.js + PostgreSQL.
-2. Las ocho optimizaciones del informe 01 quedaron convertidas en diez reglas de Green coding (GS-01 a GS-10), cada una con un criterio verificable y su ubicación en el código.
-3. La medición antes/después confirma la reducción de solicitudes al abrir el sistema (12 → 5), la estabilidad visual (CLS 0,0469 → 0,0022) y la página de pedidos más liviana (13 558 → 4 773 bytes).
-4. La reducción real de JavaScript (−21,7 KiB) es menor que la proyectada; el informe 01 debe actualizarse con una nueva auditoría de PageSpeed Insights sobre la versión publicada.
-5. Las reglas se mantienen mediante pruebas automatizadas (115 en verde, 87,22 % de cobertura de líneas) y la lista de verificación de cada Pull Request, para que el sistema no vuelva a crecer en peso ni en consumo de recursos.
+1. Las ocho optimizaciones de EcoRuta Wanka se fundamentan en las subcaracterísticas de **ISO/IEC 25010** (comportamiento temporal, utilización de recursos, capacidad, modularidad y analizabilidad), en los **cuatro principios de la Green Software Foundation** y en las pautas **1.2, 2.4 y 3.1 de W3C WSG 1.0**.
+2. La matriz de mapeo directo cubre las ocho optimizaciones, más la mejora de estabilidad visual, y vincula cada una con su estándar y con la norma interna que la mantiene.
+3. Las normas Backend (NB-01 a NB-08) y Frontend (NF-01 a NF-08) se apoyan en **Clean Code, SOLID, DRY y YAGNI**, adaptadas de MERN a PostgreSQL con Prisma.
+4. El workflow **`green-audit.yml`** ejecuta las pruebas y una auditoría de **Lighthouse CI** con los límites de la rúbrica en cada push y Pull Request, de modo que una regresión de rendimiento se detecta antes de integrarse.
+5. La medición antes/después confirma la reducción de solicitudes (12 → 5), la estabilidad visual (CLS 0,0469 → 0,0022) y la página de pedidos más liviana (13 558 → 4 773 bytes), también en la versión publicada.
 
 ---
 

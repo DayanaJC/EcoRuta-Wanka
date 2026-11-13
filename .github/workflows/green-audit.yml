@@ -1,0 +1,57 @@
+# Auditoría Green IT y de rendimiento (Lighthouse CI).
+# Se ejecuta en cada push y Pull Request a main. Primero corre las pruebas del
+# backend; luego audita la versión publicada en Vercel con los límites de la
+# rúbrica (lighthouserc.json): score >= 90, FCP <= 1.0 s, LCP <= 1.4 s,
+# TBT <= 85 ms, CLS <= 0.02 y peso total <= 1.1 MB.
+name: Green IT & Performance Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pruebas:
+    name: Pruebas del backend (Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # Las pruebas usan repositorios en memoria; la URL solo permite generar el cliente de Prisma
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  lighthouse:
+    name: Auditoría Lighthouse CI
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Neon (plan gratuito) se suspende tras unos minutos sin uso: se "despierta" la API
+      # antes de medir para auditar el rendimiento habitual y no el arranque en frío.
+      - name: Calentar la API publicada
+        run: |
+          API=https://ecoruta-backend.vercel.app
+          curl -s -o /dev/null -w "health %{http_code} %{time_total}s\n" --retry 3 "$API/health" || true
+          for ruta in pedidos vehiculos conductores clientes rutas; do
+            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s\n" --retry 3 "$API/api/v1/$ruta" || true
+          done
+      - name: Ejecutar Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.15.1
+          lhci autorun --config=./lighthouserc.json

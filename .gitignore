@@ -62,3 +62,6 @@ temp/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---------- Reportes locales de Lighthouse CI ----------
+.lighthouseci/

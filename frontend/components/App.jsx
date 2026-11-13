@@ -32,7 +32,7 @@ function CargandoModulo() {
 // - Resumen: agregarlo como primer elemento y cambiar VISTA_INICIAL en navegacion.js.
 // - Asignaciones: { id: 'asignaciones', etiqueta: 'Asignaciones', icono: Link2, componente: Asignaciones }.
 const MODULOS = [
-  { id: 'pedidos', etiqueta: 'Pedidos', icono: Package, componente: Pedidos },
+  { id: 'pedidos', etiqueta: 'Pedidos', icono: Package, componente: Pedidos, necesita: ['pedidos'] },
   { id: 'clientes', etiqueta: 'Clientes', icono: Store, componente: Clientes },
   { id: 'vehiculos', etiqueta: 'Vehículos', icono: Truck, componente: Vehiculos },
   { id: 'conductores', etiqueta: 'Conductores', icono: IdCard, componente: Conductores },
@@ -49,9 +49,20 @@ const CARGADORES = {
   rutas: () => api.listarRutas(),
 }
 
+// Carga inicial: las asignaciones solo las usa Rutas y se piden al abrirlo (Green IT)
+const CLAVES_INICIALES = Object.keys(CARGADORES).filter((c) => c !== 'asignaciones')
+
 function useDatos(notificar) {
   const [datos, setDatos] = useState({ pedidos: [], vehiculos: [], conductores: [], clientes: [], asignaciones: [], rutas: [] })
-  const [cargando, setCargando] = useState(true)
+  // Conjuntos de la carga inicial que aún no llegan: cada tabla se dibuja en cuanto
+  // llega su propia respuesta, sin esperar a la más lenta (mejora el LCP).
+  const [pendientes, setPendientes] = useState(() => new Set(CLAVES_INICIALES))
+  const llego = useCallback((clave) => setPendientes((prev) => {
+    if (!prev.has(clave)) return prev
+    const siguiente = new Set(prev)
+    siguiente.delete(clave)
+    return siguiente
+  }), [])
 
   const recargar = useCallback(
     async (...claves) => {
@@ -62,26 +73,30 @@ function useDatos(notificar) {
       } catch (e) {
         notificar('error', `No se pudo cargar la información: ${e.message}`)
       } finally {
-        setCargando(false)
+        lista.forEach(llego)
       }
     },
-    [notificar],
+    [notificar, llego],
   )
 
-  // Carga inicial: las asignaciones solo las usa Rutas y se piden al abrirlo (Green IT)
   useEffect(() => {
     let activo = true
-    const claves = Object.keys(CARGADORES).filter((c) => c !== 'asignaciones')
-    Promise.all(claves.map((c) => CARGADORES[c]()))
-      .then((r) => activo && setDatos((prev) => ({ ...prev, ...Object.fromEntries(claves.map((c, i) => [c, r[i]])) })))
-      .catch((e) => activo && notificar('error', `No se pudo conectar con el servidor: ${e.message}`))
-      .finally(() => activo && setCargando(false))
+    let avisado = false
+    for (const clave of CLAVES_INICIALES) {
+      CARGADORES[clave]()
+        .then((valor) => activo && setDatos((prev) => ({ ...prev, [clave]: valor })))
+        .catch((e) => {
+          if (activo && !avisado) notificar('error', `No se pudo conectar con el servidor: ${e.message}`)
+          avisado = true
+        })
+        .finally(() => activo && llego(clave))
+    }
     return () => {
       activo = false
     }
-  }, [notificar])
+  }, [notificar, llego])
 
-  return { datos, cargando, recargar }
+  return { datos, pendientes, recargar }
 }
 
 export default function App() {
@@ -101,9 +116,11 @@ export default function App() {
     setSolicitud(null)
   }
 
-  const { datos, cargando, recargar } = useDatos(notificar)
+  const { datos, pendientes, recargar } = useDatos(notificar)
   const modulo = MODULOS.find((m) => m.id === ubicacion.vista) ?? MODULOS[0]
   const Modulo = modulo.componente
+  // Un módulo con `necesita` espera solo esos datos; el resto, toda la carga inicial
+  const cargando = (modulo.necesita ?? CLAVES_INICIALES).some((c) => pendientes.has(c))
 
   useEffect(() => {
     if (modulo.id === 'rutas') recargar('asignaciones')
