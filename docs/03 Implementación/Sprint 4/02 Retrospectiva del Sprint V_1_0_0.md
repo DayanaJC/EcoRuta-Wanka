@@ -61,8 +61,7 @@ Las herramientas utilizadas permitieron desarrollar y revisar las funcionalidade
 
 | Acción | Responsable | Fecha | Métrica de seguimiento |
 |---|---|---|---|
-
-| Revisar el rendimiento y funcionamiento general del sistema antes de la entrega final. | Ambos integrantes | 26/11/2026 | LCP menor a 2,5 s, API menor a 500 ms y 100 % de pruebas Playwright aprobadas. |
+| Revisar el rendimiento y funcionamiento general del sistema antes de la entrega final. | Ambos integrantes | 26/11/2026 | LCP menor a 2,5 s, tiempo de respuesta de la API menor a 500 ms y 79/79 pruebas Playwright aprobadas. |
 | Verificar que la documentación y las evidencias del proyecto estén completas y organizadas. | Javier Curi Dayana | 26/11/2026 | 0 marcadores pendientes y 0 imágenes o enlaces rotos en los documentos del Sprint 4. |
 
 ---
