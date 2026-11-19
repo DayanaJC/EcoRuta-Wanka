@@ -1,0 +1,17 @@
+{
+  "name": "ecoruta-wanka-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pruebas E2E, rendimiento y disponibilidad de EcoRuta Wanka con Playwright (Sprint 4)",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test tests/e2e",
+    "test:rendimiento": "playwright test tests/rendimiento",
+    "test:disponibilidad": "playwright test tests/disponibilidad",
+    "reporte": "playwright show-report reportes/html"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}
