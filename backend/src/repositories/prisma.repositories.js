@@ -58,6 +58,7 @@ const aCliente = (c) =>
     nombre: c.nombre,
     tipo: c.tipo,
     telefono: c.telefono,
+    documento: c.documento,
     direccion: c.direccion,
     punto_referencia: c.punto_referencia,
     latitud: num(c.latitud),
@@ -272,6 +273,18 @@ export function crearRepositorios(prisma) {
     getById: async (id) => (esUuid(id) ? aPedido(await prisma.pedido.findUnique({ where: { id }, include: conBultos })) : null),
     getMuchos: async (ids) =>
       (await prisma.pedido.findMany({ where: { id: { in: ids.filter(esUuid) } }, include: conBultos })).map(aPedido),
+    // Pedidos que ve el cliente en la consulta pública: por el código corto (P-XXXXXX =
+    // primeros 6 hex del id, buscado como rango de UUID) o por sus códigos de cliente
+    buscarPublico: async ({ prefijo, clientes: codigos, limite = 10 }) =>
+      (
+        await prisma.pedido.findMany({
+          where: prefijo
+            ? { id: { gte: `${prefijo}00-0000-0000-0000-000000000000`, lte: `${prefijo}ff-ffff-ffff-ffff-ffffffffffff` } }
+            : { cliente_id: { in: codigos } },
+          orderBy: { created_at: "desc" },
+          take: limite,
+        })
+      ).map(aPedido),
     getByToken: async (token) =>
       esUuid(token) ? aPedido(await prisma.pedido.findUnique({ where: { token_seguimiento: token }, include: conBultos })) : null,
     listar: async ({ estado, prioridad, busqueda, pagina, limite = 12 } = {}) => {
@@ -328,6 +341,20 @@ export function crearRepositorios(prisma) {
     getById: async (id) => (esUuid(id) ? aCliente(await prisma.cliente.findUnique({ where: { id } })) : null),
     getByCodigo: async (codigo) => aCliente(await prisma.cliente.findUnique({ where: { codigo } })),
     getPorCodigos: async (codigos) => (await prisma.cliente.findMany({ where: { codigo: { in: codigos } } })).map(aCliente),
+    // Códigos de los clientes que coinciden con el dato que escribió el cliente
+    buscarContacto: async ({ telefono, documento, codigo }) =>
+      (
+        await prisma.cliente.findMany({
+          where: {
+            OR: [
+              ...(telefono ? [{ telefono: { endsWith: telefono } }] : []),
+              ...(documento ? [{ documento }] : []),
+              ...(codigo ? [{ codigo }] : []),
+            ],
+          },
+          select: { codigo: true },
+        })
+      ).map((c) => c.codigo),
     listar: async ({ estado, busqueda } = {}) => {
       const texto = busqueda?.trim();
       const where = {

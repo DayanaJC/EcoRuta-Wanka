@@ -1,6 +1,7 @@
 // Definición de los endpoints de la API REST (/api/v1).
 
 import { Router } from "express";
+import { limitarPorIp } from "../middlewares/limite.js";
 import { validar } from "../middlewares/validar.js";
 import * as e from "../schemas/esquemas.js";
 
@@ -68,6 +69,9 @@ export function crearRouterApi(c) {
   factores.get("/", c.factoresTrafico.listar);
 
   // Seguimiento público del pedido para el cliente (enlace con token)
+  // Consulta del cliente con un solo dato (código, DNI/RUC o teléfono). Limitada por IP
+  // para que no se pueda recorrer una lista de teléfonos o documentos.
+  api.get("/seguimiento", limitarPorIp({ maximo: 20, ventanaMs: 60_000 }), validar(e.consultaPedido, "query"), c.consultarPedido);
   api.get("/seguimiento/:token", c.seguimiento);
 
   api.get("/geocodificar", validar(e.busquedaDireccion, "query"), c.geocodificar);

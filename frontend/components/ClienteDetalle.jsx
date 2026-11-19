@@ -67,6 +67,10 @@ export function ClienteDetalle({ cliente, pedidos, onCambiarEstado, gestionando 
                 </dd>
               </div>
               <div>
+                <dt>DNI o RUC</dt>
+                <dd className="num">{cliente.documento || '—'}</dd>
+              </div>
+              <div>
                 <dt>Actualizado</dt>
                 <dd>{formatearFecha(cliente.updated_at)}</dd>
               </div>

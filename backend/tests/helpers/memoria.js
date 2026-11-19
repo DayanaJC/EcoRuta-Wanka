@@ -51,9 +51,14 @@ export function crearRepositoriosMemoria() {
     },
     clientes: {
       ...cl,
-      crear: (datos) => cl.crear({ telefono: null, punto_referencia: "", indicaciones: "", estado: "activo", ...datos }),
+      crear: (datos) => cl.crear({ telefono: null, documento: null, punto_referencia: "", indicaciones: "", estado: "activo", ...datos }),
       getByCodigo: async (codigo) => cl.todas().find((x) => x.codigo === codigo) ?? null,
       getPorCodigos: async (codigos) => cl.todas().filter((x) => codigos.includes(x.codigo)),
+      buscarContacto: async ({ telefono, documento, codigo }) =>
+        cl
+          .todas()
+          .filter((x) => (telefono && x.telefono?.endsWith(telefono)) || (documento && x.documento === documento) || (codigo && x.codigo === codigo))
+          .map((x) => x.codigo),
       listar: async ({ estado, busqueda } = {}) => {
         const texto = busqueda?.trim().toLowerCase();
         return cl
@@ -66,6 +71,12 @@ export function crearRepositoriosMemoria() {
       ...p,
       crear: (datos) => p.crear({ punto_referencia: "", tiempo_servicio_min: 5, estado: "pendiente", token_seguimiento: randomUUID(), ...datos }),
       getMuchos: async (ids) => p.todas().filter((x) => ids.includes(x.id)),
+      buscarPublico: async ({ prefijo, clientes: codigos, limite = 10 }) =>
+        p
+          .todas()
+          .filter((x) => (prefijo ? x.id.startsWith(prefijo) : codigos.includes(x.cliente_id)))
+          .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+          .slice(0, limite),
       getByToken: async (token) => p.todas().find((x) => x.token_seguimiento === token) ?? null,
       listar: async ({ estado, prioridad, busqueda, pagina, limite = 12 } = {}) => {
         const texto = busqueda?.trim().toLowerCase();

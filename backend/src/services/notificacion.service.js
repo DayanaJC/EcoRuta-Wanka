@@ -3,7 +3,7 @@
 // El envío es simulado: el aviso queda registrado con el teléfono del cliente y el panel
 // lo abre en WhatsApp (wa.me) con el mensaje ya escrito.
 
-import { PedidoNotFoundError } from "../errors/errores.js";
+import { ConsultaPedidoInvalidaError, PedidoNotFoundError } from "../errors/errores.js";
 import { horaLocal } from "../utils/tiempo.js";
 
 export const EVENTOS_NOTIFICACION = ["pedido_creado", "en_camino", "entregado", "no_entregado"];
@@ -39,6 +39,19 @@ function etapaSeguimiento(pedido, ruta, parada) {
   if (parada?.estado === "no_entregada") return "no_entregado";
   if (ruta?.estado === "generada") return "programado";
   return "registrado";
+}
+
+// Interpreta el único campo de la consulta pública del cliente
+export function interpretarConsulta(texto) {
+  const limpio = String(texto ?? "").trim().toUpperCase().replace(/[\s.]/g, "");
+  const pedido = limpio.match(/^P-?([0-9A-F]{6})$/);
+  if (pedido) return { prefijo: pedido[1].toLowerCase() };
+  const digitos = limpio.replace(/^\+/, "");
+  if (/^51\d{9}$/.test(digitos)) return { telefono: digitos.slice(2), documento: digitos };
+  if (/^\d{9}$/.test(digitos)) return { telefono: digitos };
+  if (/^(\d{8}|\d{11})$/.test(digitos)) return { documento: digitos };
+  if (/^[A-Z0-9-]{3,50}$/.test(limpio) && /[A-Z]/.test(limpio)) return { codigo: limpio };
+  throw new ConsultaPedidoInvalidaError("Escribe el código de tu pedido (P-XXXXXX), tu DNI o RUC, o tu teléfono de 9 dígitos.");
 }
 
 export function crearNotificacionService({ notificaciones, pedidos, clientes, rutas }, { zonaHoraria, almacen }) {
@@ -80,6 +93,37 @@ export function crearNotificacionService({ notificaciones, pedidos, clientes, ru
       const pedido = await pedidos.getById(pedidoId);
       if (!pedido) throw new PedidoNotFoundError(`No existe un pedido con id ${pedidoId}.`);
       return notificaciones.listarPorPedido(pedidoId);
+    },
+
+    // Consulta pública con un solo dato. Devuelve los últimos pedidos que coinciden (sin
+    // dirección ni teléfono: el detalle se abre con el enlace de seguimiento de cada uno).
+    async consultar(texto) {
+      const filtro = interpretarConsulta(texto);
+      let lista = [];
+      if (filtro.prefijo) lista = await pedidos.buscarPublico({ prefijo: filtro.prefijo });
+      else {
+        const codigos = await clientes.buscarContacto(filtro);
+        if (codigos.length) lista = await pedidos.buscarPublico({ clientes: codigos });
+      }
+      if (!lista.length) {
+        throw new PedidoNotFoundError("No encontramos pedidos con ese dato. Revisa que esté bien escrito o usa el código de tu pedido (P-XXXXXX).");
+      }
+      return Promise.all(
+        lista.map(async (p) => {
+          const ruta = await rutas.ultimaDePedido(p.id);
+          const parada = ruta?.paradas.find((x) => x.pedido_id === p.id) ?? null;
+          return {
+            codigo: codigoPedido(p.id),
+            cliente_nombre: p.cliente_nombre,
+            etapa: etapaSeguimiento(p, ruta, parada),
+            fecha_programada: ruta?.fecha ?? null,
+            hora_estimada: parada?.hora_estimada_llegada ?? null,
+            fecha_entrega: p.fecha_entrega,
+            created_at: p.created_at,
+            token: p.token_seguimiento,
+          };
+        }),
+      );
     },
 
     // Vista pública del pedido para el cliente: solo sus propios datos (sin teléfono,

@@ -6,6 +6,7 @@
 
 import { CalendarClock, CircleCheck, CircleX, Clock, MapPin, MessageCircle, PackageCheck, RefreshCw, Truck } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../services/api.js'
 import { diaLima, ETIQUETAS_EVENTO, horaLima } from '../utils/notificaciones.js'
@@ -139,6 +140,9 @@ export function SeguimientoPedido({ token }) {
                 <CircleX size={28} aria-hidden />
                 <h1>No encontramos tu pedido</h1>
                 <p>{error} Revisa que el enlace esté completo.</p>
+                <Link className="boton boton-primario" href="/seguimiento">
+                  Buscar con mi código, DNI o teléfono
+                </Link>
               </>
             ) : (
               <p>Cargando tu pedido…</p>
@@ -213,6 +217,9 @@ export function SeguimientoPedido({ token }) {
         <p className="seg-pie">
           <RefreshCw size={13} aria-hidden /> Se actualiza solo · última vez {actualizado ? horaLima(actualizado.toISOString()) : ''}
           {error && <span className="seg-pie-error"> · sin conexión, reintentando</span>}
+        </p>
+        <p className="seg-pie">
+          <Link href="/seguimiento">¿Tienes otro pedido? Consúltalo aquí</Link>
         </p>
       </div>
     </main>

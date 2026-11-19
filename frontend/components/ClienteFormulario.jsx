@@ -6,6 +6,7 @@ import { Cargando, CampoGrupo } from './ui.jsx'
 // Mismas reglas que la API (backend/src/schemas/esquemas.js)
 const PATRON_CODIGO = /^[A-Z0-9-]{3,50}$/
 const PATRON_TELEFONO = /^\+?\d{6,14}$/
+const PATRON_DOCUMENTO = /^(\d{8}|\d{11})$/
 // Lunes primero, como se lee en Perú
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0]
 
@@ -14,6 +15,7 @@ const desdeCliente = (c) => ({
   nombre: c?.nombre ?? '',
   tipo: c?.tipo ?? 'bodega',
   telefono: c?.telefono ?? '',
+  documento: c?.documento ?? '',
   direccion: c?.direccion ?? '',
   punto_referencia: c?.punto_referencia ?? '',
   latitud: c?.latitud ?? null,
@@ -36,10 +38,12 @@ export function ClienteFormulario({ clienteInicial, onGuardar, onCancelar, guard
 
   const codigo = form.codigo.trim().toUpperCase()
   const telefono = form.telefono.replace(/\s/g, '')
+  const documento = form.documento.replace(/\s/g, '')
   const errores = {
     codigo: !PATRON_CODIGO.test(codigo) ? 'De 3 a 50 letras, dígitos o guiones (ej. CLI-0001).' : null,
     nombre: form.nombre.trim().length < 3 ? 'Escribe el nombre (al menos 3 caracteres).' : null,
     telefono: telefono && !PATRON_TELEFONO.test(telefono) ? 'Solo dígitos (6 a 14), con + opcional al inicio.' : null,
+    documento: documento && !PATRON_DOCUMENTO.test(documento) ? 'DNI de 8 dígitos o RUC de 11 dígitos.' : null,
     ventana: form.ventana_fin <= form.ventana_inicio ? 'El fin del horario debe ser posterior al inicio.' : null,
     dias: form.dias_recepcion.length === 0 ? 'Elige al menos un día.' : null,
     ubicacion: posicion ? null : 'Falta marcar la ubicación de entrega.',
@@ -55,6 +59,7 @@ export function ClienteFormulario({ clienteInicial, onGuardar, onCancelar, guard
       nombre: form.nombre.trim(),
       tipo: form.tipo,
       telefono: telefono || null,
+      documento: documento || null,
       direccion: form.direccion.trim(),
       punto_referencia: form.punto_referencia.trim(),
       latitud: form.latitud,
@@ -106,6 +111,9 @@ export function ClienteFormulario({ clienteInicial, onGuardar, onCancelar, guard
             </CampoGrupo>
             <CampoGrupo etiqueta="Teléfono" htmlFor="telefono" error={error('telefono')} ayuda="Opcional. Para avisar la llegada.">
               <input id="telefono" className="campo num" type="tel" placeholder="964 123 456" value={form.telefono} onChange={cambiar('telefono')} maxLength={18} />
+            </CampoGrupo>
+            <CampoGrupo etiqueta="DNI o RUC" htmlFor="documento" error={error('documento')} ayuda="Opcional. El cliente lo usa para consultar sus pedidos.">
+              <input id="documento" className="campo num" inputMode="numeric" placeholder="45678912" value={form.documento} onChange={cambiar('documento')} maxLength={13} autoComplete="off" />
             </CampoGrupo>
           </div>
         </fieldset>
