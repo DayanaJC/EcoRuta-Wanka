@@ -32,6 +32,7 @@ export function crearRepositoriosMemoria() {
   const a = tabla();
   const r = tabla();
   const cl = tabla();
+  const n = tabla();
   const factores = [];
 
   return {
@@ -63,8 +64,9 @@ export function crearRepositoriosMemoria() {
     },
     pedidos: {
       ...p,
-      crear: (datos) => p.crear({ punto_referencia: "", tiempo_servicio_min: 5, estado: "pendiente", ...datos }),
+      crear: (datos) => p.crear({ punto_referencia: "", tiempo_servicio_min: 5, estado: "pendiente", token_seguimiento: randomUUID(), ...datos }),
       getMuchos: async (ids) => p.todas().filter((x) => ids.includes(x.id)),
+      getByToken: async (token) => p.todas().find((x) => x.token_seguimiento === token) ?? null,
       listar: async ({ estado, prioridad, busqueda, pagina, limite = 12 } = {}) => {
         const texto = busqueda?.trim().toLowerCase();
         const lista = p
@@ -94,6 +96,8 @@ export function crearRepositoriosMemoria() {
           .filter((x) => (!desde || x.fecha >= desde) && (!hasta || x.fecha <= hasta))
           .filter((x) => (!vehiculo_id || x.vehiculo_id === vehiculo_id) && (!conductor_id || x.conductor_id === conductor_id)),
       listarPorVehiculo: async (id) => r.todas().filter((x) => x.vehiculo_id === id),
+      ultimaDePedido: async (pedidoId) =>
+        r.todas().filter((x) => x.estado !== "cancelada" && x.pedido_ids.includes(pedidoId)).at(-1) ?? null,
       crearConParadas: async (datos) =>
         r.crear({ conductor_id: null, incidentes: [], ...datos, paradas: datos.paradas.map((x) => ({ estado: "pendiente", ...x })), pedido_ids: datos.paradas.map((x) => x.pedido_id) }),
       aplicarCambios: async (id, { ruta = {}, paradas = [], pedidos: cambiosPedidos = [] }) => {
@@ -118,6 +122,12 @@ export function crearRepositoriosMemoria() {
       listar: async () => [...factores],
       buscar: async (tipo_dia, hhmm) =>
         factores.find((f) => f.tipo_dia === tipo_dia && f.hora_inicio <= hhmm && hhmm < f.hora_fin) ?? null,
+    },
+    notificaciones: {
+      ...n,
+      crearMuchas: async (lista) => Promise.all(lista.map((x) => n.crear(x))),
+      listarPorPedido: async (id) =>
+        n.todas().filter((x) => x.pedido_id === id).sort((a, b) => a.fecha.localeCompare(b.fecha)),
     },
     salud: { ping: async () => 1 },
   };

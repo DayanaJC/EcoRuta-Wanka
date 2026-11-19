@@ -53,7 +53,10 @@ export function tramosPlanificados(ruta, servicioS) {
 
 export function crearRutaService(
   { rutas, vehiculos, pedidos, factoresTrafico, conductores, clientes },
-  { optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15, reloj = () => new Date(), aleatorio = Math.random },
+  {
+    optimizador, almacen, zonaHoraria, traficoHabilitado = false, margenVentanaMin = 15,
+    reloj = () => new Date(), aleatorio = Math.random, notificar = async () => {},
+  },
 ) {
   const obtener = async (id) => {
     const ruta = await rutas.getById(id);
@@ -73,6 +76,7 @@ export function crearRutaService(
   const cambiosPorResultados = (ruta, pedidosPorId, resultados, cambiosRuta = {}) => {
     const paradas = [];
     const cambiosPedidos = [];
+    const eventos = [];
     for (const { parada, resultado, motivo, instante, registrado_por } of resultados) {
       const pedido = pedidosPorId[parada.pedido_id];
       if (resultado === "entregada") {
@@ -81,17 +85,20 @@ export function crearRutaService(
           dentro_ventana: dentroVentana(instante, pedido), motivo_no_entrega: null, registrado_por,
         });
         cambiosPedidos.push({ id: pedido.id, estado: "entregado", fecha_entrega: instante.toISOString() });
+        eventos.push({ pedido_id: pedido.id, evento: "entregado", fecha: instante.toISOString() });
       } else {
         paradas.push({ orden: parada.orden, estado: "no_entregada", entregado_at: null, dentro_ventana: null, motivo_no_entrega: motivo, registrado_por });
         // El pedido vuelve a quedar disponible para planificarlo en otra ruta (si estaba en curso)
         if (pedido?.estado === "en_ruta") cambiosPedidos.push({ id: pedido.id, estado: "pendiente" });
+        // Un pedido cancelado antes de salir no se avisa: el cliente ya no lo espera
+        if (pedido && registrado_por !== "sistema") eventos.push({ pedido_id: pedido.id, evento: "no_entregado", fecha: instante.toISOString(), motivo });
       }
     }
     const resueltas = new Set(resultados.map((r) => r.parada.orden));
     const quedan = pendientes(ruta).filter((p) => !resueltas.has(p.orden)).length;
     const ultimo = resultados.length ? resultados[resultados.length - 1].instante : reloj();
     const datosRuta = quedan === 0 ? { ...cambiosRuta, estado: "completada", completada_at: ultimo.toISOString() } : cambiosRuta;
-    return { ruta: datosRuta, paradas, pedidos: cambiosPedidos };
+    return { ruta: datosRuta, paradas, pedidos: cambiosPedidos, eventos };
   };
 
   // Iniciar el reparto: los pedidos pasan a 'en_ruta'; los cancelados antes de salir quedan como no entregados
@@ -102,9 +109,24 @@ export function crearRutaService(
       .map((parada) => ({ parada, resultado: "no_entregada", motivo: "Pedido cancelado antes de salir", instante, registrado_por: "sistema" }));
     const cambios = cambiosPorResultados(ruta, pedidosPorId, omitidas, { estado: "en_reparto", iniciada_at: instante.toISOString() });
     for (const p of pendientes(ruta)) {
-      if (pedidosPorId[p.pedido_id]?.estado === "pendiente") cambios.pedidos.push({ id: p.pedido_id, estado: "en_ruta" });
+      if (pedidosPorId[p.pedido_id]?.estado === "pendiente") {
+        cambios.pedidos.push({ id: p.pedido_id, estado: "en_ruta" });
+        cambios.eventos.unshift({ pedido_id: p.pedido_id, evento: "en_camino", fecha: instante.toISOString(), hora: p.hora_estimada_llegada });
+      }
     }
     return cambios;
+  };
+
+  // Guarda los cambios del reparto y después avisa a los clientes (Sprint 4).
+  // Los avisos usan los datos del pedido anteriores al cambio (nombre, ventana), que no cambian.
+  const aplicar = async (id, { eventos = [], ...cambios }, pedidosPorId) => {
+    const ruta = await rutas.aplicarCambios(id, cambios);
+    await notificar(
+      eventos
+        .filter((e) => pedidosPorId[e.pedido_id])
+        .map(({ pedido_id, ...e }) => ({ pedido: pedidosPorId[pedido_id], ...e })),
+    );
+    return ruta;
   };
 
   const cambiarEstado = async (id, estado) => {
@@ -115,7 +137,7 @@ export function crearRutaService(
     }
     const pedidosPorId = await porId(ruta.pedido_ids);
 
-    if (estado === "en_reparto") return rutas.aplicarCambios(id, cambiosAlIniciar(ruta, pedidosPorId, reloj()));
+    if (estado === "en_reparto") return aplicar(id, cambiosAlIniciar(ruta, pedidosPorId, reloj()), pedidosPorId);
 
     if (estado === "completada") {
       const faltan = pendientes(ruta).length;
@@ -150,7 +172,7 @@ export function crearRutaService(
         throw new ParadaYaRegistradaError(`La parada ${orden} ya fue registrada como '${parada.estado}'.`);
       }
       const pedidosPorId = await porId([parada.pedido_id]);
-      return rutas.aplicarCambios(id, cambiosPorResultados(ruta, pedidosPorId, [{ parada, resultado, motivo, instante: reloj(), registrado_por }]));
+      return aplicar(id, cambiosPorResultados(ruta, pedidosPorId, [{ parada, resultado, motivo, instante: reloj(), registrado_por }]), pedidosPorId);
     },
 
     // Simulador: recorre la ruta tramo a tramo como en la calle. Sale del almacén (con una pequeña
@@ -174,7 +196,7 @@ export function crearRutaService(
       if (ruta.estado === "generada") {
         const cargaMin = Math.floor(aleatorio() * 3); // 0 a 2 min terminando de cargar
         const salida = new Date(instanteDe(ruta.hora_salida) + cargaMin * 60000);
-        ruta = await rutas.aplicarCambios(id, cambiosAlIniciar(ruta, pedidosPorId, salida));
+        ruta = await aplicar(id, cambiosAlIniciar(ruta, pedidosPorId, salida), pedidosPorId);
         if (ruta.estado !== "en_reparto") return ruta;
         pedidosPorId = await porId(ruta.pedido_ids);
       }
@@ -214,7 +236,7 @@ export function crearRutaService(
         const vuelta = Math.round((reloj + regresoS * trafico() * 1000) / 1000) * 1000;
         cambios.ruta.regreso_at = new Date(vuelta).toISOString();
       }
-      return rutas.aplicarCambios(id, cambios);
+      return aplicar(id, cambios, pedidosPorId);
     },
 
     listar: ({ geometria, ...filtros } = {}) => rutas.listar({ ...filtros, conGeometria: geometria === "true" }),

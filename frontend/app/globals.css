@@ -1939,3 +1939,468 @@ textarea {
   padding: 6px 10px;
   font-size: 0.85rem;
 }
+
+/* =========================================================
+   Sprint 4 — Avisos al cliente (panel) y seguimiento público
+   ========================================================= */
+
+.icono-titulo {
+  vertical-align: -3px;
+  margin-right: 4px;
+  color: var(--marca-700);
+}
+
+/* Conversación tipo WhatsApp */
+.avisos-telefono {
+  margin: 16px 20px 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  overflow: hidden;
+  background: #efeae2;
+}
+
+.avisos-contacto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--marca-900);
+  color: #fff;
+}
+
+.avisos-contacto .texto-principal {
+  color: #fff;
+}
+
+.avisos-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--marca-600);
+  font-weight: 700;
+}
+
+.avisos-numero {
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 0.78);
+}
+
+.avisos-vacio {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--gris-600);
+}
+
+.avisos-ayuda {
+  padding: 10px 20px 16px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+}
+
+.chat {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.chat-panel {
+  padding: 16px 14px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.chat-burbuja {
+  position: relative;
+  justify-self: end;
+  max-width: min(520px, 92%);
+  padding: 8px 12px 6px;
+  border-radius: 12px 4px 12px 12px;
+  background: #d9fdd3;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.08);
+  color: var(--gris-900);
+  animation: aparecer-burbuja 0.35s ease-out both;
+}
+
+.chat-burbuja p {
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.chat-etiqueta {
+  display: inline-block;
+  margin-bottom: 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--verde);
+}
+
+.chat-en_camino .chat-etiqueta {
+  color: var(--azul);
+}
+
+.chat-no_entregado {
+  background: #fde8e8;
+}
+
+.chat-no_entregado .chat-etiqueta {
+  color: var(--rojo);
+}
+
+.chat-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.chat-hora {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--gris-600);
+  text-align: right;
+}
+
+.chat-enviar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--marca-700);
+  text-decoration: none;
+}
+
+.chat-enviar:hover {
+  text-decoration: underline;
+}
+
+@keyframes aparecer-burbuja {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ---------- Página pública de seguimiento ---------- */
+
+.seg {
+  min-height: 100vh;
+  background: var(--fondo);
+}
+
+.seg-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px max(16px, calc((100% - 640px) / 2)) 64px;
+  background: var(--marca-900);
+  color: #fff;
+}
+
+.seg-marca {
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.seg-cabecera-pedido {
+  font-size: 0.85rem;
+  color: rgb(255 255 255 / 0.8);
+}
+
+.seg-cabecera-pedido strong {
+  color: #fff;
+}
+
+.seg-contenido {
+  display: grid;
+  gap: 14px;
+  max-width: 640px;
+  margin: -48px auto 0;
+  padding: 0 16px 32px;
+}
+
+.seg-tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra);
+  padding: 20px;
+}
+
+.seg-sin-relleno {
+  padding: 0;
+  overflow: hidden;
+}
+
+.seg-vacio {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--gris-700);
+}
+
+.seg-vacio h1 {
+  font-size: 1.15rem;
+}
+
+.seg-estado-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seg-saludo {
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.seg-estado h1 {
+  margin-top: 4px;
+  font-size: clamp(1.35rem, 5vw, 1.7rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.seg-detalle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--marca-700);
+}
+
+.seg-estado-no_entregado .seg-detalle,
+.seg-estado-cancelado .seg-detalle {
+  color: var(--rojo);
+}
+
+.seg-extra {
+  margin-top: 6px;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--marca-50);
+  color: var(--marca-800);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.seg-estado-no_entregado .seg-extra {
+  background: var(--rojo-bg);
+  color: var(--rojo);
+}
+
+.seg-pulso {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--marca-600);
+  box-shadow: 0 0 0 0 rgb(22 163 74 / 0.6);
+  animation: pulso 1.6s infinite;
+}
+
+@keyframes pulso {
+  70% {
+    box-shadow: 0 0 0 10px rgb(22 163 74 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(22 163 74 / 0);
+  }
+}
+
+/* Línea de pasos */
+.seg-pasos {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 22px 0 0;
+  padding: 0;
+}
+
+.seg-paso {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+/* Tramo que une cada paso con el anterior */
+.seg-paso + .seg-paso::before {
+  content: "";
+  position: absolute;
+  top: 17px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--gris-200);
+  z-index: 0;
+}
+
+.seg-paso-hecho::before,
+.seg-paso-actual::before,
+.seg-paso-fallo::before {
+  background: var(--marca-600) !important;
+}
+
+.seg-paso-icono {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gris-100);
+  border: 2px solid var(--gris-200);
+  color: var(--gris-400);
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.seg-paso-hecho .seg-paso-icono {
+  background: var(--marca-600);
+  border-color: var(--marca-600);
+  color: #fff;
+}
+
+.seg-paso-actual .seg-paso-icono {
+  background: #fff;
+  border-color: var(--marca-600);
+  color: var(--marca-700);
+  box-shadow: 0 0 0 4px var(--marca-100);
+}
+
+.seg-paso-fallo .seg-paso-icono {
+  background: var(--rojo);
+  border-color: var(--rojo);
+  color: #fff;
+}
+
+.seg-paso-titulo {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--gris-700);
+}
+
+.seg-paso-futuro .seg-paso-titulo {
+  color: var(--gris-500);
+  font-weight: 500;
+}
+
+.seg-paso-fallo .seg-paso-titulo {
+  color: var(--rojo);
+}
+
+.seg-paso-hora {
+  min-height: 1.1em;
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+/* Mapa y dirección */
+.seg-mapa {
+  height: 210px;
+  width: 100%;
+  z-index: 0;
+}
+
+.seg-pin {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  color: #fff;
+  font: 700 13px/1 system-ui, sans-serif;
+}
+
+.seg-pin-almacen {
+  background: var(--gris-700);
+}
+
+.seg-pin-destino {
+  background: var(--marca-600);
+}
+
+.seg-linea-viva {
+  animation: linea-viva 1s linear infinite;
+}
+
+@keyframes linea-viva {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+.seg-direccion {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  color: var(--marca-700);
+}
+
+.seg-direccion-texto {
+  font-weight: 600;
+  color: var(--gris-900);
+}
+
+.seg-suave {
+  font-size: 0.86rem;
+  color: var(--texto-suave);
+}
+
+.seg-subtitulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 1rem;
+}
+
+.seg-tarjeta .chat {
+  padding: 14px 12px;
+  border-radius: var(--radio);
+  background: #efeae2;
+}
+
+.seg-pie {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+}
+
+.seg-pie-error {
+  color: var(--ambar);
+}
+
+@media (max-width: 420px) {
+  .seg-paso-titulo {
+    font-size: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-burbuja,
+  .seg-pulso,
+  .seg-linea-viva {
+    animation: none;
+  }
+}
