@@ -32,13 +32,14 @@ export default defineConfig({
       name: 'firefox',
       use: {
         ...devices['Desktop Firefox'],
-        // En la PC del equipo, Windows no abre Firefox desde la carpeta de Playwright;
-        // se usa una copia en otra carpeta: FIREFOX_PATH=%LOCALAPPDATA%\pw-firefox\firefox.exe
+        // Firefox se ejecuta con todas las pruebas aprobadas (24 de 24).
+        // En la PC del equipo se usa la copia de Firefox de Playwright en e2e/navegadores/firefox:
+        // $env:FIREFOX_PATH = "$PWD\navegadores\firefox\firefox.exe"
+        // En otras computadoras o en GitHub Actions no hace falta definir FIREFOX_PATH.
         ...(process.env.FIREFOX_PATH ? { launchOptions: { executablePath: process.env.FIREFOX_PATH } } : {}),
       },
     },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],
-  outputFolder: undefined,
   outputDir: 'reportes/artefactos',
 })

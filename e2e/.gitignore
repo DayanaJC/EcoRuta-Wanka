@@ -1,3 +1,5 @@
 node_modules/
 reportes/
 navegadores/
+playwright-report/
+test-results/
