@@ -116,6 +116,7 @@ const aPedido = (p) =>
     tipo_producto: p.tipo_producto,
     estado: p.estado,
     fecha_entrega: iso(p.fecha_entrega),
+    token_seguimiento: p.token_seguimiento,
     created_at: iso(p.created_at),
     updated_at: iso(p.updated_at),
   };
@@ -205,6 +206,18 @@ const aRuta = (r, { conGeometria = true } = {}) => {
   };
 };
 
+const aNotificacion = (n) =>
+  n && {
+    id: n.id,
+    pedido_id: n.pedido_id,
+    evento: n.evento,
+    canal: n.canal,
+    telefono: n.telefono,
+    mensaje: n.mensaje,
+    fecha: iso(n.fecha),
+    created_at: iso(n.created_at),
+  };
+
 const aFactor = (f) =>
   f && {
     id: f.id,
@@ -259,6 +272,8 @@ export function crearRepositorios(prisma) {
     getById: async (id) => (esUuid(id) ? aPedido(await prisma.pedido.findUnique({ where: { id }, include: conBultos })) : null),
     getMuchos: async (ids) =>
       (await prisma.pedido.findMany({ where: { id: { in: ids.filter(esUuid) } }, include: conBultos })).map(aPedido),
+    getByToken: async (token) =>
+      esUuid(token) ? aPedido(await prisma.pedido.findUnique({ where: { token_seguimiento: token }, include: conBultos })) : null,
     listar: async ({ estado, prioridad, busqueda, pagina, limite = 12 } = {}) => {
       const texto = busqueda?.trim();
       const where = {
@@ -369,6 +384,16 @@ export function crearRepositorios(prisma) {
             await prisma.ruta.findMany({ where: { vehiculo_id: vehiculoId }, include: incluirParadas, orderBy: { created_at: "desc" } })
           ).map((r) => aRuta(r, { conGeometria: false }))
         : [],
+    // Última ruta no cancelada que incluye al pedido (seguimiento del cliente)
+    ultimaDePedido: async (pedidoId) =>
+      aRuta(
+        await prisma.ruta.findFirst({
+          where: { estado: { not: "cancelada" }, paradas: { some: { pedido_id: pedidoId } } },
+          include: incluirParadas,
+          orderBy: { created_at: "desc" },
+        }),
+        { conGeometria: false },
+      ),
     // La ruta y sus paradas se crean en una sola operación (transacción implícita de Prisma)
     crearConParadas: async ({ paradas, fecha, hora_salida, hora_disponible, ...datos }) =>
       aRuta(
@@ -446,7 +471,16 @@ export function crearRepositorios(prisma) {
     },
   };
 
+  const notificaciones = {
+    crearMuchas: async (lista) =>
+      prisma.$transaction(lista.map((data) => prisma.notificacionPedido.create({ data }))).then((filas) => filas.map(aNotificacion)),
+    listarPorPedido: async (pedidoId) =>
+      esUuid(pedidoId)
+        ? (await prisma.notificacionPedido.findMany({ where: { pedido_id: pedidoId }, orderBy: [{ fecha: "asc" }, { created_at: "asc" }, { evento: "asc" }] })).map(aNotificacion)
+        : [],
+  };
+
   const salud = { ping: async () => prisma.$queryRaw`SELECT 1` };
 
-  return { vehiculos, conductores, clientes, pedidos, asignaciones, rutas, factoresTrafico, salud };
+  return { vehiculos, conductores, clientes, pedidos, asignaciones, rutas, factoresTrafico, notificaciones, salud };
 }

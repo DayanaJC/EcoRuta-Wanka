@@ -18,10 +18,11 @@ async function detalleError(respuesta) {
   return `Error del servidor (${respuesta.status}).`
 }
 
-async function pedir(ruta, opciones = {}) {
+// fresco: true = consulta sin la caché de 30 s (pantallas que se actualizan solas)
+async function pedir(ruta, { fresco = false, ...opciones } = {}) {
   const lectura = (opciones.method ?? 'GET').toUpperCase() === 'GET'
   if (!lectura) cache.clear()
-  const guardado = lectura ? cache.get(ruta) : null
+  const guardado = lectura && !fresco ? cache.get(ruta) : null
   if (guardado && Date.now() - guardado.hora < CACHE_MS) return guardado.datos
 
   const controlador = new AbortController()
@@ -71,6 +72,9 @@ export const api = {
       body: JSON.stringify({ estado }),
     }),
   cancelarPedido: (id) => pedir(`/pedidos/${id}`, { method: 'DELETE' }),
+  // Sprint 4: avisos enviados al cliente y seguimiento público (por token)
+  notificacionesPedido: (id) => pedir(`/pedidos/${id}/notificaciones`, { fresco: true }),
+  seguimiento: (token) => pedir(`/seguimiento/${encodeURIComponent(token)}`, { fresco: true }),
   listarVehiculos: (params = {}) => pedir(`/vehiculos${aQueryParams(params)}`),
   obtenerVehiculo: (id) => pedir(`/vehiculos/${id}`),
   crearVehiculo: (datos) =>

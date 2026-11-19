@@ -1,5 +1,6 @@
 import { XCircle } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { AvisosCliente } from './AvisosCliente.jsx'
 import { BadgeEstado, BadgePrioridad } from './Badges.jsx'
 import { Aviso } from './ui.jsx'
 import { medidasBulto, volumenBultoM3 } from '../utils/carga.js'
@@ -113,6 +114,8 @@ export function PedidoDetalle({ pedido, onCancelar, gestionando }) {
           </div>
         </section>
       </div>
+
+      <AvisosCliente pedido={pedido} />
 
       <section className="tarjeta">
         <div className="tarjeta-titulo">

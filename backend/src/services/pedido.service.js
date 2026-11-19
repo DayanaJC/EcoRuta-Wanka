@@ -12,7 +12,7 @@ export function validarVentanaEntrega(inicio, fin) {
   }
 }
 
-export function crearPedidoService({ pedidos }) {
+export function crearPedidoService({ pedidos }, { notificar = async () => {} } = {}) {
   const obtener = async (id) => {
     const pedido = await pedidos.getById(id);
     if (!pedido) throw new PedidoNotFoundError(`No existe un pedido con id ${id}.`);
@@ -46,7 +46,10 @@ export function crearPedidoService({ pedidos }) {
 
     async registrar(datos) {
       validarVentanaEntrega(datos.ventana_entrega_inicio, datos.ventana_entrega_fin);
-      return pedidos.crear({ ...datos, ...totalesBultos(datos.bultos) });
+      const pedido = await pedidos.crear({ ...datos, ...totalesBultos(datos.bultos) });
+      // Aviso al cliente: pedido recibido (Sprint 4)
+      await notificar([{ pedido, evento: "pedido_creado", fecha: pedido.created_at }]);
+      return pedido;
     },
 
     async actualizar(id, campos) {

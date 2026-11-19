@@ -35,6 +35,8 @@ export function crearRouterApi(c) {
   pedidos.post("/", validar(e.pedidoCrear), c.pedidos.crear);
   pedidos.get("/", validar(e.filtroPedidos, "query"), c.pedidos.listar);
   pedidos.get("/:id", c.pedidos.obtener);
+  // Avisos enviados al cliente de este pedido (Sprint 4)
+  pedidos.get("/:id/notificaciones", c.pedidos.notificaciones);
   pedidos.put("/:id", validar(e.pedidoActualizar), c.pedidos.actualizar);
   pedidos.patch("/:id/estado", validar(e.cambiarEstadoPedido), c.pedidos.cambiarEstado);
   pedidos.delete("/:id", c.pedidos.cancelar);
@@ -64,6 +66,9 @@ export function crearRouterApi(c) {
 
   const factores = Router();
   factores.get("/", c.factoresTrafico.listar);
+
+  // Seguimiento público del pedido para el cliente (enlace con token)
+  api.get("/seguimiento/:token", c.seguimiento);
 
   api.get("/geocodificar", validar(e.busquedaDireccion, "query"), c.geocodificar);
   // Dirección de un punto marcado en el mapa

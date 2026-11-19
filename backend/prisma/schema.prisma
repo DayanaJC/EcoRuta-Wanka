@@ -81,6 +81,16 @@ enum EstadoParada {
   @@map("estado_parada")
 }
 
+// Avisos al cliente durante el ciclo del pedido (Sprint 4)
+enum EventoNotificacion {
+  pedido_creado
+  en_camino
+  entregado
+  no_entregado
+
+  @@map("evento_notificacion")
+}
+
 enum TipoCliente {
   bodega
   minimarket
@@ -214,12 +224,15 @@ model Pedido {
   estado                 EstadoPedido    @default(pendiente)
   // Fecha y hora real de la entrega (la registra la ruta, no el operador)
   fecha_entrega          DateTime?       @db.Timestamptz(3)
+  // Enlace público de seguimiento para el cliente (no se puede adivinar a partir del id)
+  token_seguimiento      String          @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at             DateTime        @default(now()) @db.Timestamptz(3)
   updated_at             DateTime        @updatedAt @db.Timestamptz(3)
 
-  asignaciones Asignacion[]
-  paradas      RutaParada[]
-  bultos       PedidoBulto[]
+  asignaciones   Asignacion[]
+  paradas        RutaParada[]
+  bultos         PedidoBulto[]
+  notificaciones NotificacionPedido[]
 
   @@index([estado])
   @@index([prioridad])
@@ -367,4 +380,23 @@ model FactorTrafico {
   updated_at  DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("factores_trafico")
+}
+
+// Avisos enviados al cliente: se generan solos al registrar el pedido, al iniciar
+// el reparto y al registrar la entrega. Se guardan con el teléfono del momento.
+model NotificacionPedido {
+  id         String             @id @default(uuid()) @db.Uuid
+  pedido_id  String             @db.Uuid
+  evento     EventoNotificacion
+  canal      String             @default("whatsapp") @db.VarChar(20)
+  telefono   String?            @db.VarChar(15)
+  mensaje    String             @db.VarChar(500)
+  // Instante del evento (en la simulación, la hora simulada)
+  fecha      DateTime           @db.Timestamptz(3)
+  created_at DateTime           @default(now()) @db.Timestamptz(3)
+
+  pedido Pedido @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+
+  @@index([pedido_id, fecha])
+  @@map("notificaciones_pedido")
 }

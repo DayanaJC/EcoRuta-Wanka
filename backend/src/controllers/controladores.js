@@ -2,7 +2,7 @@
 // Express 5 envía automáticamente al manejador de errores las promesas rechazadas.
 
 export function crearControladores(servicios) {
-  const { vehiculos, conductores, clientes, indicadores, reportes, pedidos, asignaciones, rutas, factoresTrafico, geocodificador, salud } = servicios;
+  const { vehiculos, conductores, clientes, indicadores, reportes, pedidos, notificaciones, asignaciones, rutas, factoresTrafico, geocodificador, salud } = servicios;
   const creado = (res, datos) => res.status(201).json(datos);
 
   return {
@@ -39,7 +39,11 @@ export function crearControladores(servicios) {
       actualizar: async (req, res) => res.json(await pedidos.actualizar(req.params.id, req.valido)),
       cambiarEstado: async (req, res) => res.json(await pedidos.cambiarEstado(req.params.id, req.valido.estado)),
       cancelar: async (req, res) => res.json(await pedidos.cancelar(req.params.id)),
+      notificaciones: async (req, res) => res.json(await notificaciones.listarPorPedido(req.params.id)),
     },
+
+    // Página pública del cliente: se consulta con el token del enlace, no con el id
+    seguimiento: async (req, res) => res.json(await notificaciones.seguimiento(req.params.token)),
 
     asignaciones: {
       crear: async (req, res) => creado(res, await asignaciones.asignar(req.valido)),

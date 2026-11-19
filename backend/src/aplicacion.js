@@ -11,6 +11,7 @@ import { crearAsignacionService } from "./services/asignacion.service.js";
 import { crearClienteService } from "./services/cliente.service.js";
 import { crearConductorService } from "./services/conductor.service.js";
 import { crearIndicadoresService } from "./services/indicadores.service.js";
+import { crearNotificacionService } from "./services/notificacion.service.js";
 import { crearPedidoService } from "./services/pedido.service.js";
 import { crearReporteService } from "./services/reporte.service.js";
 import { crearRutaService } from "./services/ruta.service.js";
@@ -29,15 +30,19 @@ export function crearApp({
   aleatorio,
 }) {
   const indicadores = crearIndicadoresService(repos, { zonaHoraria });
+  // Avisos al cliente (Sprint 4): los generan los servicios de pedidos y rutas
+  const notificaciones = crearNotificacionService(repos, { zonaHoraria, almacen });
+  const notificar = notificaciones.registrar;
   const servicios = {
     vehiculos: crearVehiculoService(repos),
     conductores: crearConductorService(repos),
     clientes: crearClienteService(repos),
     indicadores,
     reportes: crearReporteService({ indicadores, zonaHoraria, reloj }),
-    pedidos: crearPedidoService(repos),
+    pedidos: crearPedidoService(repos, { notificar }),
+    notificaciones,
     asignaciones: crearAsignacionService(repos),
-    rutas: crearRutaService(repos, { optimizador, almacen, zonaHoraria, traficoHabilitado, margenVentanaMin, reloj, aleatorio }),
+    rutas: crearRutaService(repos, { optimizador, almacen, zonaHoraria, traficoHabilitado, margenVentanaMin, reloj, aleatorio, notificar }),
     factoresTrafico: { listar: () => repos.factoresTrafico.listar() },
     geocodificador,
     salud: {
