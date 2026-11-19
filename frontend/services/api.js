@@ -75,6 +75,7 @@ export const api = {
   // Sprint 4: avisos enviados al cliente y seguimiento público (por token)
   notificacionesPedido: (id) => pedir(`/pedidos/${id}/notificaciones`, { fresco: true }),
   seguimiento: (token) => pedir(`/seguimiento/${encodeURIComponent(token)}`, { fresco: true }),
+  consultarPedido: (q) => pedir(`/seguimiento?q=${encodeURIComponent(q)}`, { fresco: true }),
   listarVehiculos: (params = {}) => pedir(`/vehiculos${aQueryParams(params)}`),
   obtenerVehiculo: (id) => pedir(`/vehiculos/${id}`),
   crearVehiculo: (datos) =>

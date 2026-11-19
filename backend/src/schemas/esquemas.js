@@ -156,6 +156,11 @@ const camposCliente = {
   nombre: texto(3, 100),
   tipo: z.enum(TIPOS_CLIENTE),
   telefono: camposConductor.telefono,
+  documento: z
+    .string()
+    .trim()
+    .regex(/^(\d{8}|\d{11})$/, "Documento inválido: DNI de 8 dígitos o RUC de 11 dígitos.")
+    .nullable(),
   direccion: texto(5, 200),
   punto_referencia: z.string().trim().max(200),
   latitud: z.number().gte(-90).lte(90),
@@ -176,6 +181,7 @@ export const clienteCrear = z.object({
   ...camposCliente,
   tipo: camposCliente.tipo.default("bodega"),
   telefono: opcional(camposCliente.telefono.default(null)),
+  documento: opcional(camposCliente.documento.default(null)),
   punto_referencia: camposCliente.punto_referencia.default(""),
   dias_recepcion: camposCliente.dias_recepcion.default([1, 2, 3, 4, 5, 6]),
   tiempo_atencion_min: camposCliente.tiempo_atencion_min.default(5),
@@ -184,9 +190,12 @@ export const clienteCrear = z.object({
 });
 // El código no cambia: es el que enlaza al cliente con sus pedidos
 export const clienteActualizar = z
-  .object({ ...camposCliente, telefono: opcional(camposCliente.telefono) })
+  .object({ ...camposCliente, telefono: opcional(camposCliente.telefono), documento: opcional(camposCliente.documento) })
   .omit({ codigo: true })
   .partial();
+// Consulta pública del cliente: un solo campo (código de pedido, DNI/RUC, teléfono o código de cliente)
+const MENSAJE_CONSULTA = "Escribe el código de tu pedido, tu DNI o tu teléfono.";
+export const consultaPedido = z.object({ q: z.string({ error: MENSAJE_CONSULTA }).trim().min(3, MENSAJE_CONSULTA).max(60) });
 export const cambiarEstadoCliente = z.object({ estado: z.enum(ESTADOS_CLIENTE) });
 export const filtroClientes = z.object({ estado: z.enum(ESTADOS_CLIENTE).optional(), busqueda: z.string().optional() });
 

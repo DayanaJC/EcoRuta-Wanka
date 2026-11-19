@@ -35,6 +35,7 @@ export class VehiculoExistenteError extends Conflicto {}
 // Pedidos (RF-02)
 export class PedidoNotFoundError extends NoEncontrado {}
 export class PedidoEstadoInvalidoError extends Conflicto {}
+export class ConsultaPedidoInvalidaError extends NoProcesable {}
 export class VentanaEntregaInvalidaError extends NoProcesable {}
 
 // Asignaciones

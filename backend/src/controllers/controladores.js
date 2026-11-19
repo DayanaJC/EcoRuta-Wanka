@@ -44,6 +44,7 @@ export function crearControladores(servicios) {
 
     // Página pública del cliente: se consulta con el token del enlace, no con el id
     seguimiento: async (req, res) => res.json(await notificaciones.seguimiento(req.params.token)),
+    consultarPedido: async (req, res) => res.json(await notificaciones.consultar(req.valido.q)),
 
     asignaciones: {
       crear: async (req, res) => creado(res, await asignaciones.asignar(req.valido)),
