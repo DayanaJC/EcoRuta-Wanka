@@ -7,11 +7,11 @@
 #   3. Comprueba que producción responde (API con base de datos conectada y sitio web).
 #
 # Cómo se despliega:
-#   - Vercel está conectado a este repositorio (integración Git): cada push a main
-#     publica automáticamente el backend y el frontend. No se necesita ningún secreto.
-#   - Opcional: si existen los GitHub Secrets VERCEL_DEPLOY_HOOK_BACKEND y
-#     VERCEL_DEPLOY_HOOK_FRONTEND (Vercel → Settings → Git → Deploy Hooks), el workflow
-#     llama a esos hooks para ordenar el despliegue desde GitHub Actions.
+#   - Con los GitHub Secrets VERCEL_DEPLOY_HOOK_BACKEND y VERCEL_DEPLOY_HOOK_FRONTEND
+#     (Vercel → Settings → Git → Deploy Hooks de cada proyecto), el workflow ordena
+#     el despliegue de producción en Vercel.
+#   - Mientras esos secretos no existan, el workflow no ordena un despliegue nuevo:
+#     solo comprueba que la versión publicada en producción funciona.
 name: Deploy Production
 
 on:
@@ -69,12 +69,14 @@ jobs:
             echo "Despliegue ordenado con los Deploy Hooks guardados en GitHub Secrets."
             curl -sf -X POST "$HOOK_BACKEND" -o /dev/null && echo "Backend: despliegue solicitado."
             curl -sf -X POST "$HOOK_FRONTEND" -o /dev/null && echo "Frontend: despliegue solicitado."
+            echo "DESPLIEGUE_ORDENADO=si" >> "$GITHUB_ENV"
           else
-            echo "::notice title=Despliegue::Vercel publica este commit automáticamente con su integración Git (push a main)."
+            echo "::warning title=Despliegue no ordenado::Faltan los secretos VERCEL_DEPLOY_HOOK_BACKEND y VERCEL_DEPLOY_HOOK_FRONTEND. Solo se comprueba la versión publicada."
           fi
 
       - name: Esperar a que Vercel publique la nueva versión
-        run: sleep 90
+        if: env.DESPLIEGUE_ORDENADO == 'si'
+        run: sleep 120
 
       - name: Comprobar la API en producción (base de datos conectada)
         run: |

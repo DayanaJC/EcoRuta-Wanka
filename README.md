@@ -324,10 +324,10 @@ npx playwright show-report reportes/html
 | -------- | ------- | -------- | ---------- |
 | CI | [`ci.yml`](.github/workflows/ci.yml) | Instala y valida dependencias, auditoría de seguridad, lint (ESLint), análisis estático, validación del esquema Prisma y compilación del frontend y backend. | `push` y `pull_request` a `main` y `develop` |
 | Tests | [`tests.yml`](.github/workflows/tests.yml) | Pruebas unitarias e integración (Vitest) con cobertura y suite E2E de Playwright en modo headless en Chromium, Firefox y WebKit. Guarda los reportes como artefactos. | `push` y `pull_request` a `main` y `develop` |
-| Deploy Production | [`deploy-production.yml`](.github/workflows/deploy-production.yml) | Vuelve a probar el backend, despliega en Vercel y comprueba que la API (con base de datos conectada) y el sitio web respondan en producción. | `push` a `main` o tag `v*` |
+| Deploy Production | [`deploy-production.yml`](.github/workflows/deploy-production.yml) | Vuelve a probar el backend, ordena el despliegue en Vercel (Deploy Hooks) y comprueba que la API (con base de datos conectada) y el sitio web respondan en producción. | `push` a `main` o tag `v*` |
 | Green IT & Performance Audit | [`green-audit.yml`](.github/workflows/green-audit.yml) | Auditoría Lighthouse CI con los límites de rendimiento del proyecto. | `push` y `pull_request` a `main` |
 
-El despliegue lo publica Vercel automáticamente con su integración Git en cada push a `main`, por lo que no se necesitan secretos. De forma opcional, si se agregan en **Settings → Secrets and variables → Actions** los secretos `VERCEL_DEPLOY_HOOK_BACKEND` y `VERCEL_DEPLOY_HOOK_FRONTEND` (Deploy Hooks de Vercel), el workflow ordena el despliegue desde GitHub Actions.
+Para que el workflow ordene el despliegue en Vercel se usan dos secretos en **Settings → Secrets and variables → Actions**: `VERCEL_DEPLOY_HOOK_BACKEND` y `VERCEL_DEPLOY_HOOK_FRONTEND` (Deploy Hooks de cada proyecto en Vercel → Settings → Git). Mientras no existan, el workflow solo comprueba que la versión publicada en producción funciona.
 
 Las credenciales de la base de datos y de OpenRouteService se guardan como variables de entorno en Vercel y nunca en el repositorio.
 

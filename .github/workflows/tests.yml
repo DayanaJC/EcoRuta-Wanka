@@ -53,6 +53,11 @@ jobs:
     needs: unitarias
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Imagen oficial de Playwright (misma versión que e2e/package.json): ya trae los
+    # tres navegadores y sus dependencias del sistema, sin depender del Ubuntu del runner.
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -64,20 +69,21 @@ jobs:
       CI: true
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: e2e/package-lock.json
-      - run: npm ci
-      - name: Instalar el navegador ${{ matrix.navegador }} y sus dependencias del sistema
-        run: npx playwright install --with-deps ${{ matrix.navegador }}
+      - name: Instalar dependencias de la suite
+        run: npm ci
       # Neon (plan gratuito) se suspende sin uso: se "despierta" la API antes de medir
       - name: Calentar la API publicada
         run: |
-          for ruta in health api/v1/pedidos api/v1/vehiculos api/v1/clientes api/v1/rutas; do
-            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s\n" --retry 3 "https://ecoruta-backend.vercel.app/$ruta" || true
-          done
+          node -e "
+            const rutas = ['health', 'api/v1/pedidos', 'api/v1/vehiculos', 'api/v1/clientes', 'api/v1/rutas'];
+            (async () => {
+              for (const r of rutas) {
+                const t = Date.now();
+                try { const res = await fetch('https://ecoruta-backend.vercel.app/' + r); console.log(r, res.status, (Date.now() - t) + ' ms'); }
+                catch (e) { console.log(r, 'sin respuesta'); }
+              }
+            })();
+          "
       - name: Ejecutar la suite E2E en modo headless
         run: npx playwright test --project=${{ matrix.navegador }}
       - name: Guardar el reporte HTML y las métricas de Playwright
