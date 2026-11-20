@@ -1,0 +1,82 @@
+# Integración continua (CI) de EcoRuta Wanka.
+# Verifica estilo (lint), análisis estático, compilación (build) y dependencias
+# del frontend (Next.js) y del backend (Node.js + Express + Prisma).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Si llega un push nuevo a la misma rama, se cancela la ejecución anterior (ahorra recursos)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend · lint, build y dependencias
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # URL pública de la API (no es un secreto): se incrusta en el build de Next.js
+      NEXT_PUBLIC_API_URL: https://ecoruta-backend.vercel.app/api/v1
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias (exactas según package-lock.json)
+        run: npm ci
+      - name: Validar el árbol de dependencias
+        run: npm ls --omit=dev
+      - name: Auditoría de seguridad de dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
+      - name: Verificación de estilo y análisis estático (ESLint + reglas de Next.js)
+        run: npm run lint
+      - name: Compilación de producción (next build)
+        run: npm run build
+
+  backend:
+    name: Backend · análisis estático, build y dependencias
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # Valores ficticios: solo permiten generar el cliente de Prisma y validar el esquema
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Instalar dependencias (genera el cliente de Prisma)
+        run: npm ci
+      - name: Validar el árbol de dependencias
+        run: npm ls --omit=dev
+      # Nivel "critical": el CLI de Prisma (herramienta de desarrollo) arrastra un aviso "high"
+      # de la librería effect cuya única corrección es bajar de versión mayor; queda registrado.
+      - name: Auditoría de seguridad de dependencias de producción
+        run: npm audit --omit=dev --audit-level=critical
+      - name: Validar el esquema de base de datos (Prisma)
+        run: npx prisma validate
+      - name: Análisis estático de sintaxis de todos los archivos JavaScript
+        run: |
+          find src prisma tests -name "*.js" -print0 | xargs -0 -n1 node --check
+          echo "Sintaxis correcta en $(find src prisma tests -name '*.js' | wc -l) archivos."
+      - name: Compilación (build) — la aplicación Express carga sin errores
+        run: node -e "import('./src/aplicacion.js').then(({ crearApp }) => { if (typeof crearApp !== 'function') process.exit(1); console.log('Aplicación cargada correctamente') })"

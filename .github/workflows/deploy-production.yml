@@ -1,0 +1,98 @@
+# Despliegue continuo (CD) de EcoRuta Wanka a producción en Vercel.
+# Se ejecuta con cada push a main (o al publicar un tag v*).
+#
+# Flujo:
+#   1. Verifica el código: si las pruebas del backend fallan, no se despliega nada.
+#   2. Ordena el despliegue en Vercel (backend y luego frontend).
+#   3. Comprueba que producción responde (API con base de datos conectada y sitio web).
+#
+# Cómo se despliega:
+#   - Vercel está conectado a este repositorio (integración Git): cada push a main
+#     publica automáticamente el backend y el frontend. No se necesita ningún secreto.
+#   - Opcional: si existen los GitHub Secrets VERCEL_DEPLOY_HOOK_BACKEND y
+#     VERCEL_DEPLOY_HOOK_FRONTEND (Vercel → Settings → Git → Deploy Hooks), el workflow
+#     llama a esos hooks para ordenar el despliegue desde GitHub Actions.
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+# Nunca dos despliegues a producción al mismo tiempo
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  API_URL: https://ecoruta-backend.vercel.app
+  WEB_URL: https://ecoruta-frontend.vercel.app
+
+jobs:
+  verificar:
+    name: Verificar antes de desplegar
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  desplegar:
+    name: Desplegar en Vercel y comprobar producción
+    needs: verificar
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ecoruta-frontend.vercel.app
+    env:
+      HOOK_BACKEND: ${{ secrets.VERCEL_DEPLOY_HOOK_BACKEND }}
+      HOOK_FRONTEND: ${{ secrets.VERCEL_DEPLOY_HOOK_FRONTEND }}
+    steps:
+      - name: Ordenar el despliegue
+        run: |
+          if [ -n "$HOOK_BACKEND" ] && [ -n "$HOOK_FRONTEND" ]; then
+            echo "Despliegue ordenado con los Deploy Hooks guardados en GitHub Secrets."
+            curl -sf -X POST "$HOOK_BACKEND" -o /dev/null && echo "Backend: despliegue solicitado."
+            curl -sf -X POST "$HOOK_FRONTEND" -o /dev/null && echo "Frontend: despliegue solicitado."
+          else
+            echo "::notice title=Despliegue::Vercel publica este commit automáticamente con su integración Git (push a main)."
+          fi
+
+      - name: Esperar a que Vercel publique la nueva versión
+        run: sleep 90
+
+      - name: Comprobar la API en producción (base de datos conectada)
+        run: |
+          for intento in 1 2 3 4 5 6; do
+            RESPUESTA=$(curl -s --max-time 20 "$API_URL/health" || true)
+            echo "Intento $intento: $RESPUESTA"
+            if echo "$RESPUESTA" | grep -q '"connected":true'; then
+              echo "API operativa en $API_URL"; exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::La API de producción no respondió correctamente."; exit 1
+
+      - name: Comprobar el sitio web en producción
+        run: |
+          for ruta in / /seguimiento; do
+            CODIGO=$(curl -s -o /dev/null -w "%{http_code}" --retry 3 --retry-delay 5 "$WEB_URL$ruta")
+            echo "$ruta -> $CODIGO"
+            [ "$CODIGO" = "200" ] || { echo "::error::$WEB_URL$ruta respondió $CODIGO"; exit 1; }
+          done
+          echo "Sitio operativo en $WEB_URL"

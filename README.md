@@ -15,9 +15,11 @@
 7. [Configuración de servicios](#configuración-de-servicios)
 8. [Variables de entorno](#variables-de-entorno)
 9. [Ejecución local](#ejecución-local)
-10. [Estrategia Git](#estrategia-git)
-11. [Versionamiento](#versionamiento)
-12. [Documentación](#documentación)
+10. [Pruebas y CI/CD](#pruebas-y-cicd)
+11. [Estrategia Git](#estrategia-git)
+12. [Versionamiento](#versionamiento)
+13. [Documentación](#documentación)
+14. [Estado del proyecto](#estado-del-proyecto)
 
 ---
 
@@ -72,6 +74,8 @@ Desarrollar una plataforma web que permita apoyar la gestión logística de Wank
 | Geocodificación                | Nominatim (OpenStreetMap)                             |
 | Autenticación                  | JWT + bcrypt                                          |
 | Pruebas                        | Vitest + Supertest                                    |
+| Pruebas E2E y monitoreo        | Playwright (Chromium, Firefox y WebKit)               |
+| Integración y despliegue (CI/CD) | GitHub Actions + Vercel                             |
 | Control de versiones           | Git + GitHub                                          |
 | Gestión del proyecto           | Jira Software                                         |
 | Documentación de API           | OpenAPI                                               |
@@ -152,20 +156,38 @@ EcoRuta-Wanka/
 │   ├── .env.example
 │   └── package.json
 │
+├── e2e/
+│   ├── tests/
+│   │   ├── e2e/
+│   │   ├── rendimiento/
+│   │   ├── disponibilidad/
+│   │   └── apoyo/
+│   ├── playwright.config.js
+│   └── package.json
+│
 ├── docs/
 │   ├── 01 Inicio/
-│   ├── 02 Planificación/
+│   ├── 02 Planificacion/
 │   ├── 03 Implementación/
 │   │   ├── Sprint 1/
-│   │   └── Sprint 2/
+│   │   ├── Sprint 2/
+│   │   ├── Sprint 3/
+│   │   ├── Sprint 4/
+│   │   └── reduccion del impacto ambiental/
 │   ├── 04 Seguimiento_control/
 │   ├── 05 Cierre/
 │   └── 06 Otros/
 │       └── evidencias/
 │
 ├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml
+│   │   ├── tests.yml
+│   │   ├── deploy-production.yml
+│   │   └── green-audit.yml
 │   └── pull_request_template.md
 │
+├── lighthouserc.json
 ├── .gitignore
 └── README.md
 ```
@@ -177,7 +199,8 @@ EcoRuta-Wanka/
 * **backend/prisma/**: contiene el modelo de datos, migraciones y datos iniciales.
 * **docs/**: contiene la documentación académica del proyecto.
 * **backend/tests/**: contiene las pruebas del backend.
-* **.github/**: contiene la plantilla de Pull Request.
+* **e2e/**: contiene la suite de pruebas End-to-End, rendimiento y disponibilidad con Playwright.
+* **.github/**: contiene la plantilla de Pull Request y los workflows de GitHub Actions (CI/CD).
 
 ---
 
@@ -270,6 +293,43 @@ npm run dev
 | GET    | `/api/v1/rutas?desde=&hasta=&geometria=` | Rutas de un periodo; con trazado para el mapa del día (RF-04) |
 | GET    | `/api/v1/indicadores?desde=&hasta=&vehiculo_id=` | Indicadores de sostenibilidad del periodo (RF-05) |
 | GET    | `/api/v1/reportes/sostenibilidad.pdf?desde=&hasta=&vehiculo_id=` | Reporte de sostenibilidad en PDF (RF-06) |
+| CRUD   | `/api/v1/clientes`                       | Clientes y preferencias de entrega (RF-09)       |
+| POST   | `/api/v1/rutas/:id/incidentes`           | Registra un incidente y reoptimiza la ruta (RF-07) |
+| GET    | `/api/v1/pedidos/:id/notificaciones`     | Avisos enviados al cliente del pedido (US-010)   |
+| GET    | `/api/v1/seguimiento/:token`             | Seguimiento público del pedido (US-010)          |
+| GET    | `/api/v1/seguimiento?q=`                 | Consulta pública por código, DNI/RUC o teléfono (US-010) |
+
+---
+
+## Pruebas y CI/CD
+
+### Pruebas locales
+
+```bash
+# Pruebas unitarias y de integración del backend
+cd backend
+npm test
+
+# Suite E2E, rendimiento y disponibilidad con Playwright
+cd e2e
+npm install
+npx playwright install chromium firefox webkit
+npx playwright test
+npx playwright show-report reportes/html
+```
+
+### Workflows de GitHub Actions
+
+| Workflow | Archivo | Qué hace | Se ejecuta |
+| -------- | ------- | -------- | ---------- |
+| CI | [`ci.yml`](.github/workflows/ci.yml) | Instala y valida dependencias, auditoría de seguridad, lint (ESLint), análisis estático, validación del esquema Prisma y compilación del frontend y backend. | `push` y `pull_request` a `main` y `develop` |
+| Tests | [`tests.yml`](.github/workflows/tests.yml) | Pruebas unitarias e integración (Vitest) con cobertura y suite E2E de Playwright en modo headless en Chromium, Firefox y WebKit. Guarda los reportes como artefactos. | `push` y `pull_request` a `main` y `develop` |
+| Deploy Production | [`deploy-production.yml`](.github/workflows/deploy-production.yml) | Vuelve a probar el backend, despliega en Vercel y comprueba que la API (con base de datos conectada) y el sitio web respondan en producción. | `push` a `main` o tag `v*` |
+| Green IT & Performance Audit | [`green-audit.yml`](.github/workflows/green-audit.yml) | Auditoría Lighthouse CI con los límites de rendimiento del proyecto. | `push` y `pull_request` a `main` |
+
+El despliegue lo publica Vercel automáticamente con su integración Git en cada push a `main`, por lo que no se necesitan secretos. De forma opcional, si se agregan en **Settings → Secrets and variables → Actions** los secretos `VERCEL_DEPLOY_HOOK_BACKEND` y `VERCEL_DEPLOY_HOOK_FRONTEND` (Deploy Hooks de Vercel), el workflow ordena el despliegue desde GitHub Actions.
+
+Las credenciales de la base de datos y de OpenRouteService se guardan como variables de entorno en Vercel y nunca en el repositorio.
 
 ---
 
@@ -327,10 +387,13 @@ La documentación del proyecto se encuentra organizada de acuerdo con las etapas
 docs/
 │
 ├── 01 Inicio/
-├── 02 Planificación/
+├── 02 Planificacion/
 ├── 03 Implementación/
 │   ├── Sprint 1/
-│   └── Sprint 2/
+│   ├── Sprint 2/
+│   ├── Sprint 3/
+│   ├── Sprint 4/
+│   └── reduccion del impacto ambiental/
 ├── 04 Seguimiento_control/
 ├── 05 Cierre/
 └── 06 Otros/
@@ -367,10 +430,10 @@ Documentos relacionados con la planificación ágil, Jira, riesgos y presupuesto
 
 | # | Documento                                                                                               |
 | - | ------------------------------------------------------------------------------------------------------- |
-| 1 | [Transformando a ágil](docs/02%20Planificaci%C3%B3n/01%20Transformando%20a%20%C3%A1gil%20V_1_0_0.md)    |
-| 2 | [Artefactos Jira](docs/02%20Planificaci%C3%B3n/02%20Artefactos%20Jira%20V_1_0_0.md)                     |
-| 3 | [Registro de riesgos](docs/02%20Planificaci%C3%B3n/03%20Registro%20de%20riesgos%20V_1_0_0.md)           |
-| 4 | [Presupuesto del proyecto](docs/02%20Planificaci%C3%B3n/04%20Presupuesto%20del%20proyecto%20V_1_0_0.md) |
+| 1 | [Transformando a ágil](docs/02%20Planificacion/01%20Transformando%20a%20%C3%A1gil%20V_1_0_0.md)    |
+| 2 | [Artefactos Jira](docs/02%20Planificacion/02%20Artefactos%20Jira%20V_1_0_0.md)                     |
+| 3 | [Registro de riesgos](docs/02%20Planificacion/03%20Registro%20de%20riesgos%20V_1_0_0.md)           |
+| 4 | [Presupuesto del proyecto](docs/02%20Planificacion/04%20Presupuesto%20del%20proyecto%20V_1_0_0.md) |
 
 ---
 
@@ -408,13 +471,59 @@ La documentación de implementación está organizada por Sprint.
 | 3 | [Revisión del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%202/03.%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md)                      |
 | 4 | [Retrospectiva del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%202/04.%20Retrospectiva%20del%20Sprint%20V_1_0_0.md)                 |
 
+### Sprint 3
+
+**Periodo:** 23/10/2026 – 29/10/2026
+
+**Historias completadas:** US-007 y US-009
+
+**Story Points:** 18 SP
+
+| # | Documento |
+| - | --------- |
+| 1 | [Revisión del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%203/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) |
+| 2 | [Retrospectiva del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%203/02%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) |
+| 3 | [Calidad de código (SonarQube)](docs/03%20Implementaci%C3%B3n/Sprint%203/03%20Calidad%20de%20c%C3%B3digo%20V_1_0_0.md) |
+| 4 | [Seguridad OWASP Top 10](docs/03%20Implementaci%C3%B3n/Sprint%203/04%20OWASP%20V_1_0_0.md) |
+| 5 | [Accesibilidad WCAG 2.2](docs/03%20Implementaci%C3%B3n/Sprint%203/05%20WCAG%20V_1_0_0.md) |
+
+### Sprint 4
+
+**Periodo:** 14/11/2026 – 19/11/2026
+
+**Historias completadas:** US-010
+
+**Story Points:** 8 SP
+
+| # | Documento |
+| - | --------- |
+| 1 | [Revisión del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%204/01%20Revisi%C3%B3n%20del%20Sprint%20V_1_0_0.md) |
+| 2 | [Retrospectiva del Sprint](docs/03%20Implementaci%C3%B3n/Sprint%204/02%20Retrospectiva%20del%20Sprint%20V_1_0_0.md) |
+| 3 | [Análisis con Playwright (E2E, rendimiento y disponibilidad)](docs/03%20Implementaci%C3%B3n/Sprint%204/03%20Analisis%20PlayWrigth%20V_1_0_0.md) |
+| 4 | [Evaluación de usabilidad (SUS)](docs/03%20Implementaci%C3%B3n/Sprint%204/04%20Usabilidad%20V_1_0_0.md) |
+
+**Estado de los workflows del Sprint 4:**
+
+[![CI](https://github.com/DayanaJC/EcoRuta-Wanka/actions/workflows/ci.yml/badge.svg)](https://github.com/DayanaJC/EcoRuta-Wanka/actions/workflows/ci.yml)
+[![Tests](https://github.com/DayanaJC/EcoRuta-Wanka/actions/workflows/tests.yml/badge.svg)](https://github.com/DayanaJC/EcoRuta-Wanka/actions/workflows/tests.yml)
+[![Deploy Production](https://github.com/DayanaJC/EcoRuta-Wanka/actions/workflows/deploy-production.yml/badge.svg)](https://github.com/DayanaJC/EcoRuta-Wanka/actions/workflows/deploy-production.yml)
+
+### Reducción del impacto ambiental (Green IT)
+
+| # | Documento |
+| - | --------- |
+| 1 | [Informe de reducción del impacto ambiental](docs/03%20Implementaci%C3%B3n/reduccion%20del%20impacto%20ambiental/01%20Informe%20de%20reduccion%20del%20impacto%20ambiental%20V_1_0_0.md) |
+| 2 | [Estándares de ingeniería de software](docs/03%20Implementaci%C3%B3n/reduccion%20del%20impacto%20ambiental/02%20Estandares%20Ingenier%C3%ADa%20de%20software%20V_1_0_0.md) |
+
 ---
 
 ## 04. Seguimiento y control
 
 Documentación relacionada con el seguimiento de cambios realizados durante el proyecto.
 
-Actualmente se encuentra pendiente de completar al finalizar el desarrollo del proyecto.
+| # | Documento |
+| - | --------- |
+| 1 | [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_2_0.md) |
 
 ---
 
@@ -439,6 +548,9 @@ Incluyen las evidencias relacionadas con:
 * Jira y planificación.
 * Sprint 1.
 * Sprint 2.
+* Sprint 3 (evidencias 17 a 26).
+* Reducción del impacto ambiental (evidencias 27 a 34).
+* Sprint 4 (evidencias 35 a 45).
 * Demostraciones y avances del proyecto.
 
 ---
@@ -466,15 +578,34 @@ Incluyen las evidencias relacionadas con:
 
 **Total:** 29 SP.
 
+### Sprint 3
+
+**EW Sprint 3:** 2 de 2 historias completadas:
+
+* **US-007** – Reoptimización dinámica de rutas ante incidentes – 13 SP
+* **US-009** – Preferencias de entrega de clientes y bodegas – 5 SP
+
+**Total:** 18 SP.
+
+### Sprint 4
+
+**EW Sprint 4:** 1 de 1 historia completada:
+
+* **US-010** – Avisos al cliente y seguimiento público del pedido – 8 SP
+
+**Total:** 8 SP.
+
 ### Avance acumulado
 
 | Sprint    | Historias completadas | Story Points |
 | --------- | --------------------: | -----------: |
 | Sprint 1  |                     3 |        23 SP |
 | Sprint 2  |                     4 |        29 SP |
-| **Total** |                 **7** |    **52 SP** |
+| Sprint 3  |                     2 |        18 SP |
+| Sprint 4  |                     1 |         8 SP |
+| **Total** |                **10** |    **78 SP** |
 
-Las historias **US-007** y **US-009** permanecen pendientes para los siguientes Sprints.
+Todas las historias planificadas se encuentran completadas.
 
 | Componente             | URL                                       |
 | ---------------------- | ----------------------------------------- |
@@ -485,6 +616,8 @@ El detalle de los avances se encuentra en la documentación correspondiente a ca
 
 * [Documentación Sprint 1](docs/03%20Implementaci%C3%B3n/Sprint%201/)
 * [Documentación Sprint 2](docs/03%20Implementaci%C3%B3n/Sprint%202/)
+* [Documentación Sprint 3](docs/03%20Implementaci%C3%B3n/Sprint%203/)
+* [Documentación Sprint 4](docs/03%20Implementaci%C3%B3n/Sprint%204/)
 
 ---
 

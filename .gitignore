@@ -41,6 +41,12 @@ coverage/
 *.lcov
 .nyc_output/
 
+# ---------- Reportes temporales de Playwright ----------
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
 # ---------- Logs ----------
 *.log
 npm-debug.log*
@@ -59,6 +65,7 @@ temp/
 .idea/
 *.swp
 *.swo
+*~
 .DS_Store
 Thumbs.db
 desktop.ini

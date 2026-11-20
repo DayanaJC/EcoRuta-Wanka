@@ -1,0 +1,94 @@
+# Pruebas automatizadas de EcoRuta Wanka.
+# 1) Pruebas unitarias y de integración del backend (Vitest + Supertest) con cobertura.
+# 2) Suite E2E de Playwright en modo headless (Chromium, Firefox y WebKit) contra producción.
+# Los reportes se guardan como artefactos (artifacts) de la ejecución.
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unitarias:
+    name: Unitarias e integración (Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # Las pruebas usan repositorios en memoria: no tocan la base de datos real
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DATABASE_URL_UNPOOLED: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Ejecutar pruebas con cobertura
+        run: npm run test:coverage
+      - name: Guardar el reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/coverage/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  e2e:
+    name: E2E Playwright (${{ matrix.navegador }})
+    needs: unitarias
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        navegador: [chromium, firefox, webkit]
+    defaults:
+      run:
+        working-directory: e2e
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - run: npm ci
+      - name: Instalar el navegador ${{ matrix.navegador }} y sus dependencias del sistema
+        run: npx playwright install --with-deps ${{ matrix.navegador }}
+      # Neon (plan gratuito) se suspende sin uso: se "despierta" la API antes de medir
+      - name: Calentar la API publicada
+        run: |
+          for ruta in health api/v1/pedidos api/v1/vehiculos api/v1/clientes api/v1/rutas; do
+            curl -s -o /dev/null -w "$ruta %{http_code} %{time_total}s\n" --retry 3 "https://ecoruta-backend.vercel.app/$ruta" || true
+          done
+      - name: Ejecutar la suite E2E en modo headless
+        run: npx playwright test --project=${{ matrix.navegador }}
+      - name: Guardar el reporte HTML y las métricas de Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright-${{ matrix.navegador }}
+          path: |
+            e2e/reportes/html/
+            e2e/reportes/resultados.json
+            e2e/reportes/metricas/
+            e2e/reportes/artefactos/
+          retention-days: 14
+          if-no-files-found: ignore
