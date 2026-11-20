@@ -38,7 +38,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - name: Ejecutar pruebas con cobertura
-        run: npm run test:coverage
+        run: npx vitest run --coverage --coverage.reporter=text-summary --coverage.reporter=html --coverage.reporter=lcov
       - name: Guardar el reporte de cobertura
         if: always()
         uses: actions/upload-artifact@v4
