@@ -60,19 +60,21 @@ La siguiente captura muestra el **Roadmap de EcoRuta-Wanka**, donde se pueden ob
 
 ### 4.2 Evidencia 2: Backlog priorizado
 
-La captura muestra las **9 Historias de Usuario del proyecto en el Backlog de Jira**, organizadas de acuerdo con la planificación de los Sprints.
+La captura muestra las **10 Historias de Usuario del proyecto en Jira**, organizadas en los cuatro Sprints, cada uno con su Sprint Goal. Todas están en estado **Listo**.
 
 ![Evidencia 2: Backlog Priorizado](../06%20Otros/evidencias/Evidencia%202%20Backlog%20Priorizado.png)
 
 Las historias de usuario se distribuyeron de la siguiente manera:
 
-* **Sprint 1:** US-001, US-002 y US-003 — **23 Story Points**.
+* **Sprint 1 (10/09 – 25/09):** US-001, US-002 y US-003 — **23 Story Points**.
 
-* **Sprint 2:** US-004, US-005, US-006 y US-008 — **29 Story Points**.
+* **Sprint 2 (28/09 – 08/10):** US-004, US-005, US-006 y US-008 — **29 Story Points**.
 
-Las historias **US-007 y US-009** permanecen en el Backlog para una planificación posterior.
+* **Sprint 3 (23/10 – 29/10):** US-007 y US-009 — **18 Story Points**.
 
-En total, el proyecto cuenta con **9 Historias de Usuario**.
+* **Sprint 4 (14/11 – 19/11):** US-010 — **8 Story Points** (historia agregada como cambio de alcance).
+
+En total, el proyecto cuenta con **10 Historias de Usuario y 78 Story Points**.
 
 ---
 
@@ -164,6 +166,19 @@ Estas cuatro historias forman parte del Sprint 2 y permiten ampliar el sistema m
 
 Las historias **US-007** y **US-009** permanecen en el Backlog para una planificación posterior.
 
+### 5.3 Historias de los Sprints 3 y 4
+
+Después del Sprint 2 se planificaron dos sprints más, que también se ven en la Evidencia 2:
+
+| Sprint | Historia | Épica | Story Points |
+| --- | --- | --- | ---: |
+| Sprint 3 | US-007 – Re-optimización dinámica ante incidentes de tránsito | EP-03 | 13 |
+| Sprint 3 | US-009 – Preferencias de entrega de clientes/bodegas | EP-02 | 5 |
+| Sprint 4 | US-010 – Avisos al cliente y seguimiento público del pedido | EP-04 | 8 |
+| **Total Sprints 3 y 4** | | | **26** |
+
+US-010 se agregó al backlog en el Sprint 4 como cambio de alcance. Con ella el proyecto tiene **10 historias de usuario y 78 Story Points**.
+
 ---
 
 ## 6. Resumen
@@ -173,11 +188,15 @@ Las historias **US-007** y **US-009** permanecen en el Backlog para una planific
 | Proyecto                  | EcoRuta-Wanka              |
 | Metodología               | Scrum                      |
 | Épicas                    | 5                          |
-| Historias de Usuario      | 9                          |
+| Historias de Usuario      | 10 (9 iniciales + US-010)  |
 | Historias del Sprint 1    | 3                          |
 | Story Points del Sprint 1 | 23                         |
 | Historias del Sprint 2    | 4                          |
 | Story Points del Sprint 2 | 29                         |
+| Historias del Sprint 3    | 2                          |
+| Story Points del Sprint 3 | 18                         |
+| Historias del Sprint 4    | 1                          |
+| Story Points del Sprint 4 | 8                          |
 | Sprint Goal               | Configurado                |
 | Release                   | V1.0.0 - MVP EcoRuta Wanka |
 | Evidencias                | 5                          |
@@ -193,6 +212,8 @@ El **Sprint 1** considera las historias **US-001, US-002 y US-003**, con un tota
 El **Sprint 2** considera las historias **US-004, US-005, US-006 y US-008**, con un total de **29 Story Points**, para ampliar las funcionalidades desarrolladas en el Sprint 1.
 
 Las historias **US-007 y US-009** permanecen en el Backlog para una planificación posterior.
+
+Posteriormente, el **Sprint 3** desarrolló **US-007 y US-009** (18 Story Points) y el **Sprint 4** desarrolló **US-010** (8 Story Points), historia agregada como cambio de alcance.
 
 Las cinco evidencias presentadas muestran la configuración realizada en Jira y sirven como respaldo de la planificación y seguimiento del proyecto.
 

@@ -16,7 +16,7 @@ EcoRuta Wanka transforma los requisitos definidos durante la etapa inicial del p
 
 La transformación considera:
 
-* **Requisitos funcionales (RF-01 a RF-09):** se organizan en cinco épicas y nueve Historias de Usuario.
+* **Requisitos funcionales (RF-01 a RF-09):** se organizan en cinco épicas y nueve Historias de Usuario. En el Sprint 4 se agregó **RF-10** con su historia **US-010**.
 * **Requisitos no funcionales (RNF-01 a RNF-09):** se convierten en Enablers, criterios de aceptación o criterios transversales del Definition of Done.
 * **Reglas de negocio:** se utilizan como condiciones de aceptación de las historias relacionadas.
 * **Arquitectura:** las historias técnicas consideran la **arquitectura cliente-servidor** con el patrón **MVC con capa de servicios** definida para el proyecto (CC-01).
@@ -89,6 +89,8 @@ Las principales relaciones son:
 | RN-008 Re-optimización de rutas         | US-007               |
 | RN-009 Asignación de conductores        | US-008               |
 | RN-010 Preferencias de entrega          | US-009               |
+| RN-015 Avisos al cliente                | US-010               |
+| RN-016 Consulta pública del pedido      | US-010               |
 | RN-011 Indicadores de sostenibilidad    | US-005, US-006       |
 
 ---
@@ -106,6 +108,9 @@ Las principales relaciones son:
 | RF-07 | EP-03 | US-007      | Re-optimización dinámica ante incidentes de tránsito | Alta      |           13 |
 | RF-08 | EP-01 | US-008      | Registro y asignación de conductores a rutas         | Alta      |            8 |
 | RF-09 | EP-02 | US-009      | Preferencias de entrega de clientes/bodegas          | Media     |            5 |
+| RF-10 | EP-04 | US-010      | Avisos al cliente y seguimiento público del pedido   | Media     |            8 |
+
+> US-010 se agregó al backlog en el Sprint 4 (cambio de alcance de +8 SP); el backlog pasó de 70 a 78 Story Points.
 
 ---
 
@@ -152,7 +157,7 @@ Permite organizar las rutas de reparto y apoyar la reducción de distancias, tie
 **Descripción:**
 Agrupa las funcionalidades relacionadas con la visualización y seguimiento de las rutas de reparto.
 
-**Requisito relacionado:** RF-04.
+**Requisito relacionado:** RF-04. En el Sprint 4 se agregó **RF-10** (avisos al cliente y seguimiento público del pedido).
 
 **Valor de negocio:**
 Permite consultar de manera visual la información de las rutas y sus puntos de entrega.
@@ -487,6 +492,44 @@ Escenario: Considerar una preferencia en una ruta
 
 ---
 
+## US-010 – Avisos al cliente y seguimiento público del pedido
+
+**ID:** US-010
+**Título:** Avisos al cliente y seguimiento público del pedido
+**Épica:** EP-04 – Seguimiento y visualización de rutas
+**Requisito fuente:** RF-10
+**Prioridad:** Media
+**Story Points:** 8
+
+> Historia agregada al backlog en el Sprint 4 (cambio de alcance).
+
+**Historia:**
+
+> Como **Operador**,
+> quiero **que el sistema prepare avisos para el cliente cuando su pedido se registra, sale a reparto y se entrega**,
+> para **que el cliente sepa cómo va su pedido sin necesidad de llamar**.
+
+### Criterios de aceptación
+
+```gherkin
+Escenario: Generar los avisos del pedido
+  Dado un pedido de un cliente registrado
+  Cuando el pedido se registra, sale a reparto o se registra su entrega
+  Entonces el sistema genera el aviso y permite abrirlo en WhatsApp con el mensaje preparado
+
+Escenario: Consultar el seguimiento del pedido
+  Dado un cliente con el enlace, el código del pedido, su DNI/RUC o su celular
+  Cuando consulta su pedido
+  Entonces el sistema muestra la etapa del pedido, el mapa y los avisos
+
+Escenario: Consultar con un dato no válido
+  Dado un enlace o dato que no corresponde a ningún pedido
+  Cuando el cliente lo consulta
+  Entonces el sistema informa que no encontró el pedido y no muestra datos de otros
+```
+
+---
+
 # 6. Historias Técnicas — Enablers
 
 Los Enablers representan actividades técnicas necesarias para cumplir los requisitos no funcionales y mantener la calidad del producto.
@@ -735,6 +778,7 @@ Los elementos definidos en este documento se utilizan como base para la configur
 | US-007 | Re-optimización dinámica ante incidentes de tránsito |           13 |
 | US-008 | Registro y asignación de conductores a rutas         |            8 |
 | US-009 | Preferencias de entrega de clientes/bodegas          |            5 |
+| US-010 | Avisos al cliente y seguimiento público del pedido   |            8 |
 
 ---
 
@@ -782,6 +826,45 @@ De acuerdo con la planificación realizada en Jira, el segundo Sprint continúa 
 | **Total**                                               |       |       **29** |
 
 Estas cuatro historias conforman **29 Story Points** para el Sprint 2. Las historias **US-007 – Re-optimización dinámica ante incidentes de tránsito** y **US-009 – Preferencias de entrega de clientes/bodegas** permanecen pendientes para los siguientes Sprints.
+
+---
+
+### Priorización para Sprint 3
+
+**Sprint:** EW Sprint 3
+
+**Periodo:** 23/10/2026 – 29/10/2026
+
+**Sprint Goal:**
+
+> **“Mejorar la planificación de las entregas mediante las preferencias de recepción de los clientes y la reoptimización de las rutas ante incidentes de tránsito.”**
+
+| Historia                                                      | Épica | Story Points |
+| ------------------------------------------------------------- | ----- | -----------: |
+| US-007 – Re-optimización dinámica ante incidentes de tránsito | EP-03 |           13 |
+| US-009 – Preferencias de entrega de clientes/bodegas          | EP-02 |            5 |
+| **Total**                                                     |       |       **18** |
+
+Con el Sprint 3 se completan las nueve historias del backlog inicial (70 Story Points).
+
+---
+
+### Priorización para Sprint 4
+
+**Sprint:** EW Sprint 4
+
+**Periodo:** 14/11/2026 – 19/11/2026
+
+**Sprint Goal:**
+
+> **“Mantener informado al cliente sobre su pedido mediante avisos y permitirle consultar su estado a través de un enlace público de seguimiento.”**
+
+| Historia                                                    | Épica | Story Points |
+| ----------------------------------------------------------- | ----- | -----------: |
+| US-010 – Avisos al cliente y seguimiento público del pedido | EP-04 |            8 |
+| **Total**                                                   |       |        **8** |
+
+US-010 se agregó al backlog como cambio de alcance. Con ella el proyecto suma **10 historias y 78 Story Points**.
 
 ---
 
@@ -833,7 +916,7 @@ Las principales restricciones consideradas durante la transformación ágil son:
 
 La transformación ágil permite pasar de los requisitos definidos en la etapa inicial a una estructura organizada de **Épicas, Historias de Usuario y Enablers**.
 
-Los nueve requisitos funcionales se relacionan con cinco épicas y nueve Historias de Usuario. Los requisitos no funcionales se incorporan mediante Enablers, criterios de aceptación y criterios transversales del Definition of Done.
+Los nueve requisitos funcionales iniciales se relacionan con cinco épicas y nueve Historias de Usuario; en el Sprint 4 se sumó RF-10 / US-010 a la épica EP-04. Los requisitos no funcionales se incorporan mediante Enablers, criterios de aceptación y criterios transversales del Definition of Done.
 
 La planificación mantiene la trazabilidad con las reglas de negocio, objetivos del proyecto, arquitectura cliente-servidor (MVC) y restricciones identificadas.
 
@@ -842,6 +925,8 @@ Los elementos resultantes sirven como base para la configuración de **Jira Soft
 El Sprint 1 queda conformado por **US-001, US-002 y US-003**, con un total de **23 Story Points**, y tiene como objetivo disponer de la información básica de vehículos y pedidos necesaria para generar rutas optimizadas de reparto.
 
 El Sprint 2 queda conformado por **US-004, US-005, US-006 y US-008**, con un total de **29 Story Points**, y amplía las funcionalidades del sistema mediante la visualización de rutas en el mapa, los indicadores de sostenibilidad, los reportes en PDF y la gestión y asignación de conductores.
+
+El Sprint 3 queda conformado por **US-007 y US-009**, con **18 Story Points**, y el Sprint 4 por **US-010**, con **8 Story Points**, historia agregada como cambio de alcance (requisito RF-10). Al final, el backlog tiene **10 Historias de Usuario y 78 Story Points**.
 
 ---|
 

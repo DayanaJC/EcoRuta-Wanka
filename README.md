@@ -174,8 +174,8 @@ EcoRuta-Wanka/
 │   │   ├── Sprint 3/
 │   │   ├── Sprint 4/
 │   │   └── reduccion del impacto ambiental/
-│   ├── 04 Seguimiento_control/
-│   ├── 05 Cierre/
+│   ├── 04 Cierre/
+│   ├── 05 Video proyecto/
 │   └── 06 Otros/
 │       └── evidencias/
 │
@@ -394,8 +394,8 @@ docs/
 │   ├── Sprint 3/
 │   ├── Sprint 4/
 │   └── reduccion del impacto ambiental/
-├── 04 Seguimiento_control/
-├── 05 Cierre/
+├── 04 Cierre/
+├── 05 Video proyecto/
 └── 06 Otros/
     └── evidencias/
 ```
@@ -517,21 +517,22 @@ La documentación de implementación está organizada por Sprint.
 
 ---
 
-## 04. Seguimiento y control
+## 04. Cierre
 
-Documentación relacionada con el seguimiento de cambios realizados durante el proyecto.
+Documentos de gestión y cierre del proyecto (estado, variaciones, valor ganado, tableros, radiadores, reporte final y lecciones aprendidas).
 
 | # | Documento |
 | - | --------- |
-| 1 | [Registro de control de cambios](docs/04%20Seguimiento_control/01%20Registro%20de%20control%20de%20cambios%20V_1_2_0.md) |
+| 1 | [Reporte de Estado](docs/04%20Cierre/01%20Reporte%20de%20Estado%20V_1_0_0.md) |
+| 2 | [Reporte de Variación](docs/04%20Cierre/02%20Reporte%20de%20Variaci%C3%B3n%20V_1_0_0.md) |
+| 3 | [Reporte de Análisis de Valor Ganado - EVM](docs/04%20Cierre/03%20Reporte%20de%20An%C3%A1lisis%20de%20Valor%20Ganado%20-%20EVM%20V_1_0_0.md) |
+| 4 | [Tableros de Control - Híbridos](docs/04%20Cierre/04%20Tableros%20de%20Control%20-%20H%C3%ADbridos%20V_1_0_0.md) |
 
 ---
 
-## 05. Cierre
+## 05. Video del proyecto
 
-Esta sección contiene los documentos correspondientes al cierre del proyecto.
-
-Actualmente se encuentra pendiente de completar al finalizar el desarrollo del proyecto.
+Video en formato `.mp4` (elevator pitch y demostración funcional) ubicado en `docs/05 Video proyecto/`.
 
 ---
 
@@ -551,6 +552,7 @@ Incluyen las evidencias relacionadas con:
 * Sprint 3 (evidencias 17 a 26).
 * Reducción del impacto ambiental (evidencias 27 a 34).
 * Sprint 4 (evidencias 35 a 45).
+* Tableros de control del cierre (evidencias 46 a 49).
 * Demostraciones y avances del proyecto.
 
 ---
