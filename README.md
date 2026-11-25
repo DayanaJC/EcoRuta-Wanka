@@ -527,6 +527,9 @@ Documentos de gestión y cierre del proyecto (estado, variaciones, valor ganado,
 | 2 | [Reporte de Variación](docs/04%20Cierre/02%20Reporte%20de%20Variaci%C3%B3n%20V_1_0_0.md) |
 | 3 | [Reporte de Análisis de Valor Ganado - EVM](docs/04%20Cierre/03%20Reporte%20de%20An%C3%A1lisis%20de%20Valor%20Ganado%20-%20EVM%20V_1_0_0.md) |
 | 4 | [Tableros de Control - Híbridos](docs/04%20Cierre/04%20Tableros%20de%20Control%20-%20H%C3%ADbridos%20V_1_0_0.md) |
+| 5 | [Radiadores de Información](docs/04%20Cierre/05%20Radiadores%20de%20Informaci%C3%B3n%20V_1_0_0.md) |
+| 6 | [Reporte Final del Proyecto](docs/04%20Cierre/06%20Reporte%20Final%20del%20Proyecto%20V_1_0_0.md) |
+| 7 | [Reporte Final de Lecciones Aprendidas](docs/04%20Cierre/07%20Reporte%20Final%20de%20Lecciones%20Aprendidas%20V_1_0_0.md) |
 
 ---
 
@@ -553,6 +556,7 @@ Incluyen las evidencias relacionadas con:
 * Reducción del impacto ambiental (evidencias 27 a 34).
 * Sprint 4 (evidencias 35 a 45).
 * Tableros de control del cierre (evidencias 46 a 49).
+* Radiadores de información del cierre (evidencias 50 a 54).
 * Demostraciones y avances del proyecto.
 
 ---
