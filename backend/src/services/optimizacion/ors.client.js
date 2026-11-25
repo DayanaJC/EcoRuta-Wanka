@@ -6,8 +6,8 @@ import { OptimizacionExternaError, OptimizacionNoConfiguradaError } from "../../
 import { horaASegundos } from "../../utils/tiempo.js";
 import { capacidadVolumenM3 } from "../carga.js";
 
-const URL_ORS = "https://api.openrouteservice.org/optimization";
-const URL_DIRECCIONES = "https://api.openrouteservice.org/v2/directions/driving-car";
+const URL_ORS = "https://api.heigit.org/vroom/v0";
+const URL_DIRECCIONES = "https://api.heigit.org/openrouteservice/v2/directions/driving-car";
 
 // VROOM solo acepta cantidades enteras y admite varias capacidades a la vez:
 // [peso en gramos, volumen en litros]. La demanda se redondea hacia arriba y la
