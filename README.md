@@ -219,6 +219,8 @@ EcoRuta-Wanka/
 2. Solicitar un token.
 3. Copiar el token en la variable `ORS_API_KEY` del backend.
 
+Desde el 24/11/2026 el backend usa el dominio `api.heigit.org` (optimización VROOM en `/vroom/v0` y direcciones en `/openrouteservice/v2/directions/driving-car`), porque OpenRouteService retiró `api.openrouteservice.org`.
+
 Las credenciales reales deben mantenerse fuera del repositorio.
 
 ---
@@ -537,6 +539,10 @@ Documentos de gestión y cierre del proyecto (estado, variaciones, valor ganado,
 
 Video en formato `.mp4` (elevator pitch y demostración funcional) ubicado en `docs/05 Video proyecto/`.
 
+| Video | Duración | Calidad | Contenido |
+| ----- | -------- | ------- | --------- |
+| [EcoRuta Wanka - Video del Proyecto V_1_0_0.mp4](docs/05%20Video%20proyecto/EcoRuta%20Wanka%20-%20Video%20del%20Proyecto%20V_1_0_0.mp4) | 5 min 12 s | Full HD (1920 × 1080, 30 fps) | Elevator pitch (problema, solución, propuesta de valor y público objetivo) y demostración funcional del sistema desplegado |
+
 ---
 
 ## 06. Otros
@@ -613,6 +619,21 @@ Incluyen las evidencias relacionadas con:
 
 Todas las historias planificadas se encuentran completadas.
 
+### Cierre del proyecto
+
+El proyecto se cerró el **26/11/2026**, antes de la fecha planificada (06/12/2026), con todos sus entregables:
+
+| Indicador | Resultado |
+| --------- | --------- |
+| Alcance | 10 de 10 historias (78 SP) y 7 documentos de cierre |
+| Cronograma | SPI 1,077: terminó 10 días antes de lo planificado |
+| Costo | CPI 0,939; costo final S/ 61,884.25, dentro del presupuesto aprobado (S/ 65,049.60) |
+| Calidad | 131 pruebas del backend y 79 pruebas E2E aprobadas; cobertura de 86,1 % |
+| Usabilidad | SUS 79,06 (grado A−) |
+| Video | Elevator pitch y demostración funcional (5 min 12 s) |
+
+El detalle está en los [documentos de cierre](#04-cierre) y en el [video del proyecto](#05-video-del-proyecto).
+
 | Componente             | URL                                       |
 | ---------------------- | ----------------------------------------- |
 | Aplicación web (Vista) | https://ecoruta-frontend.vercel.app       |
@@ -624,6 +645,8 @@ El detalle de los avances se encuentra en la documentación correspondiente a ca
 * [Documentación Sprint 2](docs/03%20Implementaci%C3%B3n/Sprint%202/)
 * [Documentación Sprint 3](docs/03%20Implementaci%C3%B3n/Sprint%203/)
 * [Documentación Sprint 4](docs/03%20Implementaci%C3%B3n/Sprint%204/)
+* [Documentación de Cierre](docs/04%20Cierre/)
+* [Video del proyecto](docs/05%20Video%20proyecto/)
 
 ---
 
